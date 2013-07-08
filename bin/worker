@@ -1,0 +1,58 @@
+#! /usr/bin/env bash
+
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Run a worker on your dev instance."
+    echo "Usage (show available workers): ${PROGNAME}"
+    echo "Usage (run a worker): ${PROGNAME} worker_name"
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo "You must run this program from within ZEnv."
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo 'You must use a checkout before you can run its workers.'
+    exit 1
+fi
+
+WORKERS_DIR="${ZENV_SERVERDIR}/web/services/jobworkers"
+
+if [ "$1" == '' ]; then
+    echo 'The possible workers are:'
+    ls "${WORKERS_DIR}"
+    echo ''
+    echo 'To run a worker, pass its name as the first argument to this program.'
+    exit 0
+fi
+
+# Some workers shut down after a period of inactivity. We want to stop this, so
+# the rest of this program is an async version of this:
+# bool done = 0;
+# while (true) {
+#     if (!done) {
+#         // Run the SSH command
+#     }
+# }
+
+INT=
+# This will set the done flag on interrupt
+finish() {
+    INT=1
+}
+trap finish SIGINT
+
+WORKER="$1"
+
+runWorker() {
+    # This will run the worker and fire SIGUSR1 when it completes
+    if [ -z "$INT" ]; then
+        ssh "$ZENV_DEVSERVER" "cd ${WORKERS_DIR} && php ${WORKER}"
+        kill -USR1 $$
+    fi
+}
+# Run the worker again when it fires its done signal
+trap runWorker SIGUSR1
+
+# Start the loop
+runWorker

@@ -1,0 +1,32 @@
+#! /usr/bin/env bash
+
+# Usage information
+PROGNAME=$(basename $0)
+USAGE="Usage: ${PROGNAME} repo_name [branch_name]"
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    echo "${PROGNAME}: Check out an SVN repo and initialize a workspace in it."
+    echo "$USAGE"
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+fi
+
+if [ "$1" == '' ]; then
+    echoerr $USAGE
+    exit 1
+fi
+
+if [ "$2" == '' ]; then
+    URL="https://s.zoosk.com/${1}/trunk"
+    NAME="$1"
+else
+    URL="https://s.zoosk.com/${1}/branches/${2}"
+    NAME="${1}-${2}"
+fi
+
+svn co "$URL" "${ZENV_WORKSPACE}/${NAME}" || exit 1
+cd "$NAME"
+work_init

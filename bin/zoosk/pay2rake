@@ -1,0 +1,35 @@
+#! /usr/bin/env bash -e
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Build the payment service from the secure payment repo."
+    echo "Usage (install trunk): ${PROGNAME} use[trunk]"
+    echo "Usage (install a branch): ${PROGNAME} use[<branch-name>]"
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+fi
+
+# If there isn't a properties file, create it
+PROP_DIR="/srv/dev${ZENV_DEVID}_payment-service"
+PAYMENT_PROPS="${PROP_DIR}/dev${ZENV_DEVID}.properties"
+echo "creating property file: ${PAYMENT_PROPS}"
+mkdir -p "$PROP_DIR"
+
+printf "dev_id=${ZENV_DEVID}\ndevid_padded=${ZENV_DEVID_PADDED}\ndev_hostname=${ZENV_DEVSERVER}\ndev_serverid=\ndev_dbhostip=${ZENV_DBIP}\ndev_dbprefix=$(readprop dbprefix)\ndev_amazon_api_secret=$(readprop amazon_api_secret)\ndev_test_email=$(readprop dev_test_email)\n\n" > "$PAYMENT_PROPS"
+
+# Set up the SSH tunnel so we can check out
+ssh bastion.sea.zoosk.com -L 9443:svn2prod:443 -L 9543:svn2prod:1443 -Nf || exit 1
+
+# Normally we'd use & to background the process and look at $!, but ssh needs to block until it gets a connection
+TUNNEL_PID=$(ps -U $(whoami) | grep 'ssh bastion.sea.zoosk.com' | grep ' -L 9443:svn2prod:443 -L 9543:svn2prod:1443 -Nf' | awk '{print $1}')
+function quit() {
+    kill $TUNNEL_PID
+}
+trap quit EXIT
+
+rake -f "$ZENV_ROOT"/utils/pay2rake.rake $*

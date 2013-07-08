@@ -1,0 +1,123 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Watch for changes to files and build them automatically."
+    echo 'Note: this command currently only functions for Zephyr and some subsets of zoosk core repos.'
+    echo "Usage: ${PROGNAME}"
+    exit 0
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echoerr 'You must set a workspace before building it.'
+    exit 1
+fi
+
+cd "$ZENV_CURRENT_WORK"
+
+REPO_TYPE=$(inspect "$PWD" repo_type 2>/dev/null)
+
+# Fail if the user doesn't have the mac developer tools installed
+if [ "$(which clang)" == '' ]; then
+    echoerr 'You must have the Xcode command line tools installed to run the automatic builder.'
+    echoerr 'http://docwiki.embarcadero.com/RADStudio/XE4/en/Installing_the_Xcode_Command_Line_Tools_on_a_Mac'
+    exit 1
+fi
+# Automatically install MacFSEvents when you try to run this without it
+if [ "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
+    echoerr 'You need to install MacFSEvents to use the automatic builder. If prompted, please type your sudo password below to install it.'
+    sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future easy_install macfsevents || exit 1
+    echo -e "---------------------------------------------------------\n"
+fi
+
+
+case "$REPO_TYPE" in
+    'zoosk' )
+        python "${ZENV_ROOT}/utils/autobuilder.py" &
+        WORKER_PID=$!
+        echo 'These directories are now being watched for changes:'
+        find "$ZENV_CURRENT_WORK" -name autobuild_settings | xargs -n 1 dirname
+        function quit() {
+            kill "$WORKER_PID"
+        }
+        trap quit EXIT
+        ;;
+        
+    'payment-service' )
+        python "${ZENV_ROOT}/utils/autobuilder.py" &
+        WORKER_PID=$!
+        echo 'These directories are now being watched for changes:'
+        find "$ZENV_CURRENT_WORK" -name autobuild_settings | xargs -n 1 dirname
+        function quit() {
+            kill "$WORKER_PID"
+        }
+        trap quit EXIT
+        ;;
+        
+    'catalog-service' )
+        python "${ZENV_ROOT}/utils/autobuilder.py" &
+        WORKER_PID=$!
+        echo 'These directories are now being watched for changes:'
+        find "$ZENV_CURRENT_WORK" -name autobuild_settings | xargs -n 1 dirname
+        function quit() {
+            kill "$WORKER_PID"
+        }
+        trap quit EXIT
+        ;;
+
+    'wordpress-love' )
+        python "${ZENV_ROOT}/utils/autobuilder.py" &
+        WORKER_PID=$!
+        echo 'These directories are now being watched for changes:'
+        find "$ZENV_CURRENT_WORK" -name autobuild_settings | xargs -n 1 dirname
+        function quit() {
+            kill "$WORKER_PID"
+        }
+        trap quit EXIT
+        ;;
+
+    'touch_js' )
+        # The Zephyr build needs to use the SASS watcher to resolve dependencies, so we need to create its
+        # config using the regular build process if none exists
+        if [ ! -e 'subprojects/css/build/config.rb' ]; then
+            echo 'No CSS files currently exist to update. Please run "build debugCss" or "build :css:compile" before running autobuild.'
+            exit 1
+        fi
+        python "${ZENV_ROOT}/utils/autobuilder.py" &
+        WORKER_PID=$!
+
+        cd subprojects/css
+        compass watch -c build/config.rb &
+        COMPASS_PID=$!
+        function quit() {
+            kill -2 "$COMPASS_PID"
+            kill "$WORKER_PID"
+        }
+        trap quit EXIT
+        sleep 5
+        if [ "$(kill -0 $COMPASS_PID 2>/dev/null; echo $?)" != '0' ]; then
+            echo 'Compass failed to start. Make sure you have compass installed.'
+            exit 1
+        fi
+        ;;
+
+    'zephyr_css' )
+        build watch
+        ;;
+
+    * )
+        echo "Autobuild is currently not supported for $REPO_TYPE checkouts."
+        exit 1
+        ;;
+
+esac
+
+
+echo 'Press enter or Ctrl+C to stop watching.'
+read
+quit

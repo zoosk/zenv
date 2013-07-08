@@ -1,0 +1,3 @@
+[submodule "utils/zli"]
+	path = utils/zli
+	url = git@g.zoosk.com:merrickp/zli.git

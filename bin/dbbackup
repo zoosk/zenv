@@ -1,0 +1,73 @@
+#! /usr/bin/env bash
+
+PROGNAME=$(basename $0)
+DB_BACKUP_PARENT_DIR=web/test/data/testdata
+DB_BACKUP_DATASETS_DIR=datasets
+
+if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
+    echo "${PROGNAME}: Back up/restore all DBs in your dev instance, and list the current DB backups."
+    echo
+    echo "Usage: ${PROGNAME} list"
+    echo
+    echo "Usage: ${PROGNAME} backup|restore <backup_name> [--show-output]"
+    echo "   Backing up: SQL dump is placed in a directory with a time stamp: <zoosk_core_dir>/web/test/data/testdata/bkup_<backup_name>_<date_stamp>/*"
+    echo "   Restoring: provide the exact name of the SQL dump dir."
+
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo "You must run this program from within ZEnv."
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo 'You must use a checkout before you can run its scripts.'
+    exit 1
+fi
+
+DB_BACKUP_ACTION="$1"
+
+DB_BACKUP_NAME="$2"
+
+DB_BACKUP_SEE_OUTPUT="$3"
+
+CURRENT_DIR=$(pwd)
+TESTDATA_DIR_EXISTS=$(ls -d $DB_BACKUP_PARENT_DIR 2>/dev/null | tail -1)
+
+if [ ! "$TESTDATA_DIR_EXISTS" ]; then
+    echo "${PROGNAME}: Please 'cd' into your workspace Zoosk Core directory first"
+    exit 1;
+fi;
+
+cd $DB_BACKUP_PARENT_DIR
+
+if [ $DB_BACKUP_ACTION == 'backup' -o $DB_BACKUP_ACTION == 'restore' ]; then
+
+    if [ "$DB_BACKUP_NAME" == '' ]; then
+        echo "${PROGNAME}: Must enter a backup name"
+        exit 1
+    fi;
+
+    if [ "$DB_BACKUP_ACTION" == 'backup' ]; then
+        DB_DATASET=bkup_${DB_BACKUP_NAME}_$(date '+%Y%m%d_%H%M%S')
+    else
+        DB_DATASET=${DB_BACKUP_NAME}
+    fi
+
+    if [ "$DB_BACKUP_SEE_OUTPUT" == '--show-output' ]; then
+        python testdata.py --${DB_BACKUP_ACTION} --dataset=${DB_DATASET} --prefix=$ZENV_DEVID --dbhost=sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com --dbpass=nwN9vrsbzl@vdc4f
+    else
+        python testdata.py --${DB_BACKUP_ACTION} --dataset=${DB_DATASET} --prefix=$ZENV_DEVID --dbhost=sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com --dbpass=nwN9vrsbzl@vdc4f 1>/dev/null
+    fi;
+
+
+
+elif [ $DB_BACKUP_ACTION == 'list' ]; then
+
+    echo `pwd`/${DB_BACKUP_DATASETS_DIR};
+    ls -lt ${DB_BACKUP_DATASETS_DIR}/
+
+else
+    echo "Not a recognized command '$DB_BACKUP_ACTION'"
+fi
+
+cd $CURRENT_DIR

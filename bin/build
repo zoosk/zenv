@@ -1,0 +1,23 @@
+#! /usr/bin/env bash
+
+# This file is unusual in that it does not implement the regular --help option; instead,
+# it passes all options along to the $ZENV_BUILD_COMMAND.
+
+if [ -z "$ZENV_CURRENT_WORK" ]; then
+    echoerr 'There is no workspace currently set.'
+    return 1
+fi
+
+
+shift  # $* is now the arguments to pass to the build command
+cd $ZENV_CURRENT_WORK
+(eval $ZENV_BUILD_COMMAND $*)
+RC=$?
+
+if [ $RC -eq 0 ]; then
+    (eval $ZENV_COMPLETE_COMMAND)
+else
+    (eval $ZENV_FAILED_COMMAND)
+fi
+
+exit $RC

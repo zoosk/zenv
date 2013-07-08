@@ -1,0 +1,10 @@
+#! /usr/bin/env bash
+
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Print to standard error."
+    echo "Usage: ${PROGNAME} args..."
+    exit 1
+fi
+
+echo "$@" 1>&2

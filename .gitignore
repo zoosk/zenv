@@ -1,0 +1,8 @@
+.idea
+.project
+.DS_Store
+*~
+#*
+utils/zbranch/*
+*.pyc
+utils/zli

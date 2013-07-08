@@ -1,0 +1,51 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Push code (rsync) to your Dev VM instance."
+    echo "Usage: ${PROGNAME} [-v] [folder]..."
+    echo 'Folder names are relative to your /srv directory (for example, dev67/current)'
+    echo 'If no folders are passed, all folders relating to your current checkout will be synced.'
+    echo "Pass -v for a progress dialog during sync."
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echoerr 'You must use a checkout before syncing its code.'
+    exit 1
+fi
+
+# If we want a verbose flag
+ph=""
+if [ "$1" == "-v" ]; then
+    ph="--progress"
+    shift
+fi
+
+if [ "$1" != '' ]; then
+    DIRS="$*"
+else
+    DIRS="${ZENV_RSYNC_DIRECTORIES}"
+fi
+for d in ${DIRS}; do
+    if [ "$(echo "$d" | egrep '^/srv/')" != '' ]; then
+        # For usability, automatically remove /srv/ from the beginning of args
+        d="$(echo "$d" | sed 's|^/srv/||')"
+    fi
+    if [ -e ${ZENV_LOCAL_DEPLOY_DIR}/${d} ]; then
+        echo "Rsync ${ZENV_LOCAL_DEPLOY_DIR}/${d} to ${ZENV_DEVSERVER}:/srv/${d}/ at $(date)"
+        rsync -az --delete $ph  --exclude="media" \
+                               --exclude="working" \
+                               --exclude="photoworking" \
+                               --exclude="certs" \
+                               --exclude="log" \
+                               --exclude="environment.json" \
+                               --exclude="server.json" \
+                               --exclude="paypal-certs" \
+            ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
+    fi
+done

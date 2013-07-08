@@ -1,0 +1,30 @@
+#! /usr/bin/env bash
+
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Update your checkout of ZEnv to the latest version."
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo "You must run this program from within ZEnv."
+    exit 1
+fi
+
+cd "$ZENV_ROOT"
+LAST_REV="$(git rev-parse HEAD)"
+git pull || exit 1
+NEW_REV="$(git rev-parse HEAD)"
+
+if [ "$LAST_REV" != "$NEW_REV" ]; then
+    UPDATED_FILES=$(git diff --name-only "$LAST_REV"..)
+
+    # If anything in the environment folder has been updated, the update won't apply until a restart
+    if [ "$(echo "$UPDATED_FILES" | egrep '^environment/')" != '' ]; then
+        echo ''
+        echo "${BOLD}##############################################################"
+        echo "#       Your environment variables have been updated!        #"
+        echo "# These changes won't apply until you restart your terminal. #
+        echo "##############################################################${TXTRESET}"
+    fi
+fi

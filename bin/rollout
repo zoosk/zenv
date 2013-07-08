@@ -1,0 +1,83 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' -o "$3" == '' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Change the rollout of missions on your dev instance."
+    echo "Usage: ${PROGNAME} <mission_name> <product_name> <rollout_percent>"
+    echo 'Where product_name is an ID or one of:'
+    echo 'www, touch, touch_tablet, iphone, ipad, android, android_tablet, kindle, messenger, or all'
+    exit 1
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echoerr 'You must set a workspace before using this script.'
+    exit 1
+fi
+
+PRODUCT_ID="$2"
+case "$PRODUCT_ID" in
+    'www' )
+        PRODUCT_ID=1
+        ;;
+    'messenger' )
+        PRODUCT_ID=2
+        ;;
+    'iphone' )
+        PRODUCT_ID=3
+        ;;
+    'android' )
+        PRODUCT_ID=4
+        ;;
+    'mobile' )
+        PRODUCT_ID=5
+        ;;
+    'facebook' )
+        PRODUCT_ID=6
+        ;;
+    'myspace' )
+        PRODUCT_ID=7
+        ;;
+    'bebo' )
+        PRODUCT_ID=8
+        ;;
+    'hifive' )
+        PRODUCT_ID=9
+        ;;
+    'tagged' )
+        PRODUCT_ID=10
+        ;;
+    'services' )
+        PRODUCT_ID=11
+        ;;
+    'syndicate' )
+        PRODUCT_ID=12
+        ;;
+    'ipad' )
+        PRODUCT_ID=13
+        ;;
+    'admin' )
+        PRODUCT_ID=14
+        ;;
+    'touch' )
+        PRODUCT_ID=15
+        ;;
+    'touch_tablet' )
+        PRODUCT_ID=16
+        ;;
+    'android_tablet' )
+        PRODUCT_ID=17
+        ;;
+    'kindle' )
+        PRODUCT_ID=18
+        ;;
+    'all' )
+        PRODUCT_ID=0
+        ;;
+esac
+
+ssh -t "$ZENV_DEVSERVER" "cd ${ZENV_SERVERDIR}/web/scripts/mission_control_commandline_tools && php update_rollout.php ${1} ${PRODUCT_ID} ${3} && bash start.sh"

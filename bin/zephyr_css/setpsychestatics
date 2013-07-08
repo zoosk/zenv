@@ -1,0 +1,7 @@
+#! /usr/bin/env bash
+
+cd "$ZENV_CURRENT_WORK"
+./zephyr versionPhp
+scp build/staticversion.js $ZENV_LDAP_USERNAME@$ZENV_DEVSERVER:/srv/psyche-dev$ZENV_DEVID/current/config/staticversion.js
+ssh $ZENV_LDAP_USERNAME@$ZENV_DEVSERVER "cd /srv/psyche-dev$ZENV_DEVID/current/config; if grep -q \"cssUrl\" development.js; then sed -ie \"s/^.*cssUrl:.*\$/  cssUrl: 'https:\/\/static$ZENV_DEVID_PADDED.sfo2.zoosk.com\/20000101\/css',/;\" development.js; else sed -i \"2i\  cssUrl: 'https://static$ZENV_DEVID_PADDED.sfo2.zoosk.com/20000101/css',\" development.js; fi;"
+ssh -t $ZENV_LDAP_USERNAME@$ZENV_DEVSERVER "/srv/psyche-dev$ZENV_DEVID/restart.sh"

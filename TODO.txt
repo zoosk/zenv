@@ -1,0 +1,4 @@
+- Ability to have a default workspace (use $SOMETHING)
+- Test running
+- Better docs
+- Improved find utilities
