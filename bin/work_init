@@ -1,0 +1,98 @@
+#! /usr/bin/env bash
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+fi
+
+if [ "$ZENV_CURRENT_WORK" != "" ]; then
+    cd "$ZENV_CURRENT_WORK"
+fi
+
+echo "Please answer some questions to set up ${PWD} as a workspace."
+
+ZENV_DEVSERVER="web$(($ZENV_DEVID / 10 + 1))dev.sfo2.zoosk.com"
+read -p "Enter the name or IP of the server that will serve this workspace (${ZENV_DEVSERVER}): " TEMP
+if [ "$TEMP" != '' ]; then
+    ZENV_DEVSERVER="$TEMP"
+fi
+
+ZENV_DBIP='192.168.130.104'  # Default because it's my db host and I'm on web4dev
+read -p "Enter the IP address of the database used for the dev server (${ZENV_DBIP}): " TEMP
+if [ "$TEMP" != '' ]; then
+    ZENV_DBIP="$TEMP"
+fi
+
+ZENV_SERVERDIR="/srv/dev${ZENV_DEVID}"
+read -p "Enter the path to the mounted folder that corresponds to the dev server (${ZENV_SERVERDIR}): " TEMP
+if [ "$TEMP" != '' ]; then
+    ZENV_SERVERDIR="$TEMP"
+fi
+
+read -p 'Many commands require a connection to your dev instance. Would you like to set up an SSH key to log in without a password [y/n] (n)?' TEMP
+if [ "$TEMP" == 'y' ]; then
+    if [ ! -e ~/.ssh/id_rsa ]; then
+        ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa
+    fi
+    echo 'If prompted, please enter your password to log into your dev instance.'
+    ssh "$ZENV_DEVSERVER" "mkdir -p .ssh; echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys"
+fi
+
+ZENV_BUILDPROPS="${PWD}/dev.properties"
+read -p "Enter the path to your dev properties file if you have one (${ZENV_BUILDPROPS}): " TEMP
+if [ "$TEMP" != '' ]; then
+    ZENV_BUILDPROPS="$TEMP"
+fi
+
+# Generate the setup file
+echo "#! /usr/bin/env bash
+# The hostname of your dev server.
+export ZENV_DEVSERVER=${ZENV_DEVSERVER}
+
+# The IP address of your database.
+export ZENV_DBIP=${ZENV_DBIP}
+
+# The directory on your local machine containing the built files.
+export ZENV_SERVERDIR=${ZENV_SERVERDIR}
+
+# The properties file used to build this workspace.
+export ZENV_BUILDPROPS=${ZENV_BUILDPROPS}
+
+" > work.properties
+
+if [ -e "$ZENV_BUILDPROPS" ]; then
+    read -p 'Would you like me to fill in some values in your properties file [y/n] (n)? ' TEMP
+    if [ "$TEMP" == 'y' ]; then
+        if [ $ZENV_DEVID -lt 10 ]; then
+            NUMBERPAD='0'
+        else
+            NUMBERPAD=''
+        fi
+        # TODO: Change .* to $ to only replace empty settings
+        sed -e "s/^devid=.*/devid=${ZENV_DEVID}/" \
+            -e "s/^dbprefix=.*/dbprefix=${NUMBERPAD}\${devid}/" \
+            -e "s/^memcache_port=.*/memcache_port=$(($ZENV_DEVID % 10))/" \
+            -e "s/^dev_hostip=.*/dev_hostip=$(host ${ZENV_DEVSERVER} | awk '{print $4}')/" \
+            -e "s/^dev_hostname=.*/dev_hostname=${ZENV_DEVSERVER}/" \
+            -e "s/^dev_serverid=.*/dev_serverid=${ZENV_SERVERID}/" \
+            -e "s/^dev_dbhostip=.*/dev_dbhostip=${ZENV_DBIP}/" \
+            -e "s/^dev_aws_secret_access_key=.*/dev_aws_secret_access_key=C7eDlLbtQ8fiIXseo69g3aeOXZf7QzsyxnpMTQWy/" \
+            -e "s/^dev_offerpal_api_secret=.*/dev_offerpal_api_secret=1830806557011586/" \
+            -e "s/^dev_rootdbpass=.*/dev_rootdbpass=nwN9vrsbzl@vdc4f/" \
+            -e "s/^dev_saftpay_api_secret=.*/dev_saftpay_api_secret=347ae91d1bac4d4a88760ca1d875b9cf/" \
+            -e "s/^dev_iovation_dra_password=.*/dev_iovation_dra_password=86TNJS89S/" \
+            -e "s/^dev_recatpcha_api_secret=.*/dev_recatpcha_api_secret=6Ld0CAQAAAAAALe6IDgE8F0skZAhNVg81EGO7Mni/" \
+            -e "s/^dev_syniverseftpusername=.*/dev_syniverseftpusername=pickuser/" \
+            -e "s/^dev_syniverseftppassword=.*/dev_syniverseftppassword=S\&F#T9P/" \
+            -e "s/^dev_test_email=.*/dev_test_email=$(whoami)@zoosk.com/" \
+            -e "s/^dev_tigasebuildno=.*/dev_tigasebuildno=0.0.0.0/" \
+            -e "s/^dev_chatbuildno=.*/dev_chatbuildno=0.0.0.\${devid}/" \
+            -e "s/^dev_chat_port=.*/dev_chat_port=6${NUMBERPAD}$(($ZENV_DEVID % 10))0/" \
+            -e "s/^dev_bosh_port=.*/dev_bosh_port=6${NUMBERPAD}$(($ZENV_DEVID % 10))2/" \
+            -e "s/^dev_bosh_ssl_port=.*/dev_bosh_ssl_port=6${NUMBERPAD}$(($ZENV_DEVID % 10))3/" \
+            -i '' "$ZENV_BUILDPROPS"
+    fi
+fi
+
+# Switch to the new workspace
+use $(basename "$PWD")
