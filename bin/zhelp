@@ -1,9 +1,15 @@
 #! /usr/bin/env bash
 
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    ARG=""
+else
+    ARG="$1"
+fi
+
 ##
 # Help for built-in functions. If you're adding a function, you should add some documentation here.
 #
-case "$1" in
+case "$ARG" in
     'use' )
         echo 'use: Change the current workspace.'
         echo 'Usage (print current workspace): use'
@@ -11,16 +17,9 @@ case "$1" in
         ;;
     
     'build' | 'buildweb' | 'buildstatic' )
-        echo 'build, build-web, build-static: Build the current workspace.'
+        echo 'build, buildweb, buildstatic: Build files in the current workspace.'
         echo 'Usage: build <command args>...'
         echo 'Arguments will be passed to the build process.'
-        ;;
-    
-    'log' )
-        echo 'log: Tail a log.'
-        echo 'Usage (list logs): log'
-        echo 'Usage (tail syslog): log syslog'
-        echo 'Usage (tail apache log): log <log_name> <log_type="error">'
         ;;
     
     'devbox' )
@@ -29,12 +28,6 @@ case "$1" in
     
     'dbbox' )
         echo 'dbbox: Log into your MySQL database.'
-        ;;
-    
-    'clearmem' )
-        echo 'clearmem: Clear memcached.'
-        echo 'Usage (clear everything): clearmem'
-        echo 'Usage (clear specific caches): clearmem <cache_name>...'
         ;;
     
     'deactivate' )
@@ -49,19 +42,25 @@ case "$1" in
         echo 'Each program should maintain its own help or usage details.'
         ;;
 
-    * )
-        echo 'The current built-in commands are:
-zhelp           This help program.
+    '' )
+        echo "The current built-in commands are:
 use             Change the current workspace.
 build           Build something at the root level.
 buildweb        Build something at the web/ level.
 buildstatic     Build static files.
-log             Tail a log.
-devbox          SSH into your dev instance.
-dbbox           Log into your MySQL database.
-clearmem        Clear memcached.
 deactivate      Exit ZEnv.
 
-For help on individual commands, type "zhelp <command>". To see a list of utilities, type "zhelp -l" or "zhelp --list-utils".'
-    ;;
+The current utilities are:
+$(ls -1 "${ZENV_ROOT}/bin")
+
+For help on individual commands, type 'zhelp <command>'. You can also pass -h or --help to utilities."
+        ;;
+
+    * )
+        if [ -e "${ZENV_ROOT}/bin/$1" ]; then
+            "${ZENV_ROOT}/bin/$1" --help
+        else
+            echo "${1}: Command not found"
+        fi
+        ;;
 esac

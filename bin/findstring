@@ -1,0 +1,32 @@
+#! /usr/bin/env bash                                                                                                                                                                                                     
+
+SEARCH_TERM="$1";
+
+if [ "$SEARCH_TERM" == "" -o "$1" == '-h' -o "$1" == '--help' ]; then
+        PROGNAME=$(basename $0)
+        echo "${PROGNAME}: Search the working tree for occurrences of a given string declared inside strings in code or present in HTML text content."
+        echo "This program currently searches JS, PHP, HTML, and SOY files."
+        echo "NOTE: This script does NOT search HTML text in PHP files!"
+        echo ""
+        echo "Usage: $(basename $0) string_to_find"
+        echo ""
+        exit 0;
+fi
+
+### Code files                                                                                                                                                                                                           
+SEARCH_INPUT="";
+for EXT in js php; do
+        SEARCH_INPUT="${SEARCH_INPUT}\n$(find . -name "*.${EXT}" | xargs grep -n -i "$SEARCH_TERM")";
+done
+# The first regex matches an even number of quotes on a line (0 is even) followed by the search term in quotes. The second one highlights the matched string.                                                            
+SINGLE_QUOTE=$(echo "$SEARCH_INPUT" | egrep -i "^([^']*|([^']*'[^']*'[^']*)*)'[^']*${SEARCH_TERM}[^']*'" | egrep -i --color=always "'+[^']*${SEARCH_TERM}[^']*'");
+DOUBLE_QUOTE=$(echo "$SEARCH_INPUT" | egrep -i '^([^"]*|([^"]*"[^"]*"[^"]*)*)"[^"]*${SEARCH_TERM}[^"]*"' | egrep -i --color=always '"+[^"]*${SEARCH_TERM}[^"]*"');
+echo "$SINGLE_QUOTE" "$DOUBLE_QUOTE" | sort
+
+### HTML files                                                                                                                                                                                                           
+SEARCH_INPUT="";
+for EXT in html soy; do
+        SEARCH_INPUT="${SEARCH_INPUT}\n$(find . -name "*.${EXT}" | xargs grep -n -i "$SEARCH_TERM")";
+done
+# This is the same regex as above with < and > separated for beginning and ending quotes. This searches HTML text.                                                                                                       
+echo "$SEARCH_INPUT" | egrep -i "^([^<]*|([^<]*<[^>]*>[^<]*)*)${SEARCH_TERM}" | egrep -i --color=always "${SEARCH_TERM}"

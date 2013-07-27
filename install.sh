@@ -87,9 +87,6 @@ alias ZENV_BUILD_COMMAND=\"phing -logger phing.listener.DefaultLogger -Dpf1=\\\$
 # An optional command that will run after builds complete. For example, 'osascript -e \"beep 3\"'
 alias ZENV_COMPLETE_COMMAND=
 
-# The fancy colored prompt that appears.
-export PS1='(\\e[1;32mZ\\e[1;34mEnv\\e[00m) \\W\\\$ '
-
 ############################## Anything below this line SHOULD NOT BE EDITED!!! ##############################
 
 export PATH=\"\${ZENV_ROOT}/bin:\$PATH\"

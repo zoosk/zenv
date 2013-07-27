@@ -1,5 +1,13 @@
 #! /usr/bin/env bash
 
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Initialize a workspace."
+    echo "Usage: While using the workspace to be initialized, '${PROGNAME}'"
+    exit 1
+fi
+
 if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'This script must be run from within ZEnv.'
     exit 1

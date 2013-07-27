@@ -1,0 +1,29 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Clear memcached on your dev instance."
+    echo "Usage: ${PROGNAME} cache_name..."
+    echo "Available cache names are 'mem', 'search', 'and 'cookie'. Passing nothing will clear everything."
+    exit 1
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo 'You must set a workspace before clearing its memcached.'
+    exit 1
+fi
+
+
+if [ "$1" == '' ]; then
+    local ARGS="mem search cookie"
+else
+    local ARGS=$*
+fi
+# Create memcache clear commands linked by semicolons
+local CMD=$(for i in $ARGS; do echo $i | sed "s|\(.*\)|sudo /etc/init.d/memcached-\1-dev${ZENV_DEVID} restart;|"; done)
+ssh -t "$ZENV_DEVSERVER" "$CMD"
