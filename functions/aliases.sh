@@ -3,10 +3,10 @@
 
 ##########################  UTILITY ALIASES  ##########################
 # Log into your dev instance
-alias devbox="ssh \${ZENV_DEVSERVER}"
+alias devbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH into its dev instance."; else ssh "${ZENV_DEVSERVER}"; fi'
 
 # Log into your database
-alias dbbox="mysql -h \${ZENV_DBIP} -u root -pnwN9vrsbzl@vdc4f"
+alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH into its database."; else mysql -h ${ZENV_DBIP} -u root -pnwN9vrsbzl@vdc4f; fi'
 
 
 ##########################  BUILD ALIASES  ##########################

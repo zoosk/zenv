@@ -138,6 +138,4 @@ export ZENV_BUILD_COMMAND=\"${ZENV_BUILD_COMMAND}\"
 " > "$ZENV_WORKSPACE_SETTINGS"
 
 
-# Switch to the new workspace
 echo 'Your new workspace is ready to use.'
-use $(basename "$PWD")

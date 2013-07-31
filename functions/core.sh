@@ -35,7 +35,7 @@ function use() {
     else
         echo 'This workspace must be initialized before you use it.'
         work_init
-        return 0
+        source "$ZENV_WORKSPACE_SETTINGS"
     fi
     echo "Workspace changed to ${ZENV_CURRENT_WORK}"
 }

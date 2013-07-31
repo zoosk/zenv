@@ -31,7 +31,7 @@ case "$ARG" in
         ;;
     
     'deactivate' )
-        echo 'deactivate: Exit ZEnv.'
+        echo 'deactivate: Exit ZEnv (also Ctrl+D).'
         echo 'This will exit the current shell, so look out!'
         ;;
     
@@ -39,7 +39,7 @@ case "$ARG" in
         echo 'The utilities that work inside ZEnv are:'
         ls -1 "${ZENV_ROOT}/bin"
         echo ''
-        echo 'Each program should maintain its own help or usage details.'
+        echo "For help on individual commands or utils, type 'zhelp <command>'."
         ;;
 
     '' )
@@ -50,17 +50,26 @@ buildweb        Build something at the web/ level.
 buildstatic     Build static files.
 deactivate      Exit ZEnv.
 
+The current aliases are:
+devbox          Log into your dev instance.
+dbbox           Log into your database.
+install-all     Install everything.
+install-most    Install everything except test data.
+install-test    Install test data only.
+reinstall-all   Delete everything, then reinstall it.
+del-work        Completely wipe your dev instance.
+
 The current utilities are:
 $(ls -1 "${ZENV_ROOT}/bin")
 
-For help on individual commands, type 'zhelp <command>'. You can also pass -h or --help to utilities."
+For help on individual commands or utils, type 'zhelp <command>'. You can also pass -h or --help to utilities."
         ;;
 
     * )
         if [ -e "${ZENV_ROOT}/bin/$1" ]; then
             "${ZENV_ROOT}/bin/$1" --help
         else
-            echo "${1}: Command not found"
+            echo "${1}: Command not found. Help with aliases is not available."
         fi
         ;;
 esac
