@@ -7,6 +7,7 @@
 # Change the current workspace to be the one specified in $1
 #
 function use() {
+    # If nothing is passed, return the current workspace
     if [ -z "$1" ]; then
         if [ -z "$ZENV_CURRENT_WORK" ]; then
             echo 'There is no workspace currently set.'
@@ -15,17 +16,28 @@ function use() {
         fi
         return 0
     fi
+
+    # Make sure the new workspace exists
     local NEW_WORK="${ZENV_WORKSPACE}/$1"
     if [ ! -d "$NEW_WORK" ]; then
         echo "$NEW_WORK is not a valid workspace."
         return 1
     fi
-    if [ -e "${NEW_WORK}/work.properties" ]; then
-        source "${NEW_WORK}/work.properties"
-    fi
+
+    # Get in there!
     export ZENV_CURRENT_WORK="$NEW_WORK"
-    echo "Workspace changed to ${ZENV_CURRENT_WORK}"
     cd "$ZENV_CURRENT_WORK"
+
+    # Make sure the workspace is initialized
+    source "$ZENV_SETTINGS"
+    if [ -e "$ZENV_WORKSPACE_SETTINGS" ]; then
+        source "$ZENV_WORKSPACE_SETTINGS"
+    else
+        echo 'This workspace must be initialized before you use it.'
+        work_init
+        return 0
+    fi
+    echo "Workspace changed to ${ZENV_CURRENT_WORK}"
 }
 export -f use
 

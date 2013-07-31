@@ -20,10 +20,10 @@ fi
 
 
 if [ "$1" == '' ]; then
-    local ARGS="mem search cookie"
+    ARGS="mem search cookie"
 else
-    local ARGS=$*
+    ARGS=$*
 fi
 # Create memcache clear commands linked by semicolons
-local CMD=$(for i in $ARGS; do echo $i | sed "s|\(.*\)|sudo /etc/init.d/memcached-\1-dev${ZENV_DEVID} restart;|"; done)
+CMD=$(for i in $ARGS; do echo $i | sed "s|\(.*\)|sudo /etc/init.d/memcached-\1-dev${ZENV_DEVID} restart;|"; done)
 ssh -t "$ZENV_DEVSERVER" "$CMD"

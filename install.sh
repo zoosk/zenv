@@ -81,16 +81,12 @@ export ZENV_DEVID=${ZENV_DEVID}
 # The ID of your dev instance.
 export ZENV_SERVERID=${ZENV_SERVERID}
 
-# The command that will be used to build your code. Arguments are appended.
-alias ZENV_BUILD_COMMAND=\"phing -logger phing.listener.DefaultLogger -Dpf1=\\\${ZENV_BUILDPROPS} -Dpf2=\\\${ZENV_CURRENT_WORK}/zooskdev.properties\"
-
 # An optional command that will run after builds complete. For example, 'osascript -e \"beep 3\"'
-alias ZENV_COMPLETE_COMMAND=
+export ZENV_COMPLETE_COMMAND=
 
 ############################## Anything below this line SHOULD NOT BE EDITED!!! ##############################
 
 export PATH=\"\${ZENV_ROOT}/bin:\$PATH\"
-FUNC_FILES=
 for i in \$(find \${ZENV_ROOT}/functions -name '*.sh'); do
     source \$i
 done
@@ -108,5 +104,4 @@ if [ "$TEMP" == 'y' ]; then
     work_init
 fi
 
-echo "echo 'Welcome to ZEnv.'" >> "$ZENV_SETTINGS"
 echo 'Setup complete!'

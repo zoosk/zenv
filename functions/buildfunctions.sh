@@ -13,17 +13,17 @@ function buildgeneric() {
         echo 'There is no workspace currently set.'
         return 1
     fi
-    local PHING_DIR="$1"
-    if [ ! -d "$PHING_DIR" ]; then
+    local BUILD_DIR="$1"
+    if [ ! -d "$BUILD_DIR" ]; then
         echo "Cannot build in ${1}: directory does not exist"
         return 1
     fi
     shift  # $* is now the arguments to pass to the build command
-    cd $PHING_DIR
-    ZENV_BUILD_COMMAND $*
+    cd $BUILD_DIR
+    (eval $ZENV_BUILD_COMMAND $*)
     local RC=$?
-    ZENV_COMPLETE_COMMAND
-    cd -
+    (eval $ZENV_COMPLETE_COMMAND)
+    cd - 1>/dev/null
     return $RC
 }
 export -f buildgeneric
