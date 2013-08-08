@@ -10,8 +10,15 @@ if [ ! -e ~/.zenvrc ]; then
     exit 1
 fi
 
-# Auto init to a workspace if there's a properties file in the current directory
-INIT='if [ "$(dirname $PWD)" == "$ZENV_WORKSPACE" -a -e "$ZENV_WORKSPACE_SETTINGS" ]; then use $(basename $PWD); fi'
+# Build the subshell init out of your current bash login file and the ZEnv settings file, adding an auto-workspace init
+INIT="$(cat ~/.bash_login)
+$(cat ~/.zenvrc)
+trap deactivate EXIT
+echo \"Welcome to ZEnv. \${RED}<3\${TXTRESET}\"
+if [ -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then 
+    use \$(python -c \"from os import path; print path.relpath('\${PWD}', '\${ZENV_WORKSPACE}')\")
+fi
+"
 
-# Start a subshell with the zenv settings file as the init file, and add the deactivate function to shell exits
-bash --rcfile <(cat ~/.bash_login ~/.zenvrc; echo 'trap deactivate EXIT'; echo $INIT)
+# Start the subshell using the INIT variable
+bash --rcfile <(echo "$INIT")

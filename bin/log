@@ -27,7 +27,7 @@ fi
 # Create a command to run on the server based on the different arguments this program can take
 if [ "$1" == '' ]; then
     # Just list the logs
-    echo 'Last Update      Log Title'
+    echo "${UNDERLINE}Last Update${TXTRESET}      ${UNDERLINE}Log Title${TXTRESET}"
     CMD="ls -lt /var/log/apache2 | grep dev${ZENV_DEVID} | head | awk '{print \$6, \$7, \$8}' | sed 's/_web4dev_dev30_/ /' | sed 's/\.log.*//'"
 elif [ "$1" == 'syslog' ]; then
     # Tail syslog

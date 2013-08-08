@@ -35,6 +35,14 @@ case "$ARG" in
         echo 'This will exit the current shell, so look out!'
         ;;
     
+    'alias' | 'aliases' )
+        # Colorize the aliases file for easy reading
+        sed -e "s/^\(#.*#\)$/${BOLD}${UNDERLINE}\1${TXTRESET}/" \
+            -e "s/^\(#.*[^#]\)$/${BOLD}\1${TXTRESET}/" \
+            -e "s/^alias \([^=]*\)=.*/\1/" \
+             "${ZENV_ROOT}/functions/aliases.sh"
+        ;;
+
     '-l' | '--list-utils' )
         echo 'The utilities that work inside ZEnv are:'
         ls -1 "${ZENV_ROOT}/bin"
@@ -43,26 +51,18 @@ case "$ARG" in
         ;;
 
     '' )
-        echo "The current built-in commands are:
+        echo "${BOLD}The current built-in commands are:${TXTRESET}
 use             Change the current workspace.
 build           Build something at the root level.
 buildweb        Build something at the web/ level.
 buildstatic     Build static files.
 deactivate      Exit ZEnv.
 
-The current aliases are:
-devbox          Log into your dev instance.
-dbbox           Log into your database.
-install-all     Install everything.
-install-most    Install everything except test data.
-install-test    Install test data only.
-reinstall-all   Delete everything, then reinstall it.
-del-work        Completely wipe your dev instance.
-
-The current utilities are:
+${BOLD}The current utilities are:${TXTRESET}
 $(ls -1 "${ZENV_ROOT}/bin")
 
-For help on individual commands or utils, type 'zhelp <command>'. You can also pass -h or --help to utilities."
+For help on individual commands or utils, type '${BOLD}zhelp <command>${TXTRESET}'. You can also pass -h or --help to utilities.
+To see a list of available aliases, type '${BOLD}zhelp alias${TXTRESET}'."
         ;;
 
     * )

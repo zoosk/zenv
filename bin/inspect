@@ -1,0 +1,44 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Gather information about workspaces."
+    echo "Usage (find initialized workspaces): ${PROGNAME}"
+    echo "Usage (get information about a workspace): ${PROGNAME} workspace_name"
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+fi
+
+if [ "$1" == '' ]; then
+    find "$ZENV_WORKSPACE" -maxdepth 5 -name "$ZENV_WORKSPACE_SETTINGS" | xargs -n 1 dirname | xargs basename
+elif [ ! -e "${ZENV_WORKSPACE}/$1" ]; then
+    echo "$1: Workspace not found"
+    exit 1
+else
+    cd "${ZENV_WORKSPACE}/$1"
+    source "${ZENV_WORKSPACE_SETTINGS}"
+
+    if [ ! -e .svn ]; then
+        echo "There is no SVN checkout in $PWD"
+        exit 1
+    fi
+
+    URL=$(svn info | egrep --only-matching 'URL: .*')
+    REPO_KIND=$(echo "$URL" | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
+    BRANCH=$(echo "$URL" | egrep --only-matching 'URL: .*' | sed 's|.*/||')
+
+    echo "Workspace: ${PWD}
+Repo type: ${REPO_KIND}
+Branch: ${BRANCH}
+Dev server: ${ZENV_DEVSERVER}
+Database IP: ${ZENV_DBIP}
+Local server directory: ${ZENV_SERVERDIR}
+Properties file: ${ZENV_BUILDPROPS}
+Build command: ${ZENV_BUILD_COMMAND}
+"
+fi

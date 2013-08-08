@@ -3,8 +3,8 @@
 # Usage information
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
-    echo "${PROGNAME}: Initialize a workspace."
-    echo "Usage: While using the workspace to be initialized, '${PROGNAME}'"
+    echo "${PROGNAME}: Initialize a workspace in the current directory."
+    echo "Usage: ${PROGNAME}"
     exit 1
 fi
 
@@ -83,7 +83,7 @@ if [ "$TEMP" == 'y' ]; then
     ssh "$ZENV_DEVSERVER" "mkdir -p .ssh; echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys"
 fi
 
-ZENV_BUILDPROPS="${PWD}/dev.properties"
+ZENV_BUILDPROPS="${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties"
 read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
 if [ "$TEMP" != '' ]; then
     ZENV_BUILDPROPS="$TEMP"
