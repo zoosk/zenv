@@ -16,11 +16,8 @@ alias reinstall-all='(delete-all && install-all)'
 # Install everything except test data
 alias install-most='(build install-tools install-schwartz install-web install-web-test build-thrift-php-interface)'
 
-# Delete everything
-alias delete-all='(delete-work && delete-db)'
-
 # Get rid of all the work files (done using ssh for speed)
-alias delete-work="(ssh -t \"\$ZENV_DEVSERVER\" \"rm -rf \${ZENV_SERVERDIR}/current/*\" 2>/dev/null)"
+alias delete-all="(ssh -t \"\$ZENV_DEVSERVER\" \"rm -rf \${ZENV_SERVERDIR}/current/*\" 2>/dev/null)"
 
 # Get rid of all the database info
 alias delete-db='(build truncate-all)'
