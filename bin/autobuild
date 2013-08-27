@@ -33,6 +33,7 @@ if [ "$REPO_TYPE" == 'zoosk' ]; then
     function quit() {
         kill "$WORKER_PID"
     }
+    trap quit EXIT
 
 elif [ "$REPO_TYPE" == 'zephyr_css' ]; then
     # The Zephyr build needs to use the SASS watcher to resolve dependencies, so we need to create its
@@ -40,19 +41,24 @@ elif [ "$REPO_TYPE" == 'zephyr_css' ]; then
     if [ ! -e 'build/config.rb' ]; then
         ./zephyr compileSass
     fi
-    compass watch -c build/config.rb 2>/dev/null &
+    compass watch -c build/config.rb &
     COMPASS_PID=$!
     python "${ZENV_ROOT}/utils/autobuilder.py" &
     WORKER_PID=$!
-    echo 'Now watching for file system changes.'
     function quit() {
-        kill "$COMPASS_PID"
+        kill -2 "$COMPASS_PID"
         kill "$WORKER_PID"
     }
+    trap quit EXIT
+    sleep 5
+    if [ "$(kill -0 $COMPASS_PID 2>/dev/null; echo $?)" != '0' ]; then
+        echo 'Compass failed to start. Make sure you have compass installed.'
+        exit 1
+    fi
+
 fi
 
 
-trap quit EXIT
 echo 'Press enter or Ctrl+C to stop watching.'
 read
 quit

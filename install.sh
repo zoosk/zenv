@@ -68,7 +68,7 @@ if [ "$TEMP" != '' ]; then
     fi
 fi
 
-if [ "$(python -c 'import fsevents' 2>/dev/null; echo \$?)" == '1' ]; then
+if [ "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
     TEMP='y'
     read -p 'You need to have MacFSEvents installed if you want to use the automatic builder. Would you like to install it now [y/n] (y)? ' TEMP
     if [ "$TEMP" == 'y' ]; then
@@ -124,7 +124,7 @@ fi
 if [ "$(egrep 'source .*\\.zenvrc' ~/.bash_login)" == '' ]; then
     read -p 'Would you like to set ZEnv as your default shell [y/n] (n)? ' TEMP
     if [ "$TEMP" == 'y' ]; then
-        echo 'source "$ZENV_SETTINGS"' >> ~/.bash_login
+        echo "source '${ZENV_SETTINGS}'" >> ~/.bash_login
     else
         echo 'You can start ZEnv at any time by typing "zenv".'
     fi
