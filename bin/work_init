@@ -126,6 +126,7 @@ while [ $DONE -eq 0 ]; do
                     sudo gem install --version 0.11.7 compass
                     sudo gem install --version 0.9 compass-susy-plugin
                 fi
+            fi
             DONE=1
             ;;
             
