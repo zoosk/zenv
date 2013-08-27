@@ -83,12 +83,6 @@ if [ "$TEMP" == 'y' ]; then
     ssh "$ZENV_DEVSERVER" "mkdir -p .ssh; echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys"
 fi
 
-ZENV_BUILDPROPS="${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties"
-read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
-if [ "$TEMP" != '' ]; then
-    ZENV_BUILDPROPS="$TEMP"
-fi
-
 
 # Detect what kind of workspace we're in by using SVN
 if [ ! -e '.svn' ]; then
@@ -102,14 +96,31 @@ DONE=0
 while [ $DONE -eq 0 ]; do
     case "$REPO_KIND" in 
         'zoosk' )
+            ZENV_BUILDPROPS="${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties"
+            read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
+            if [ "$TEMP" != '' ]; then
+                ZENV_BUILDPROPS="$TEMP"
+            fi
             ZENV_BUILD_COMMAND="phing -logger phing.listener.DefaultLogger -Dpf1=\${ZENV_BUILDPROPS} -Dpf2=\${ZENV_CURRENT_WORK}/zooskdev.properties"
             update_properties
             DONE=1
             ;;
+
         'touch_js' )
+            ZENV_BUILDPROPS="${PWD}/dev${ZENV_DEVID}.properties"
+            read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
+            if [ "$TEMP" != '' ]; then
+                ZENV_BUILDPROPS="$TEMP"
+            fi
             ZENV_BUILD_COMMAND="./gradlew -Pproperties_file=\${ZENV_BUILDPROPS}"
             DONE=1
             ;;
+
+        'zephyr_css' )
+            ZENV_BUILD_COMMAND="./zephyr build"
+            DONE=1
+            ;;
+            
         * )
             echo "Couldn't determine the checkout type. Please enter it manually."
             echo 'The type should be the name of the svn directory, e.g. zoosk or touch_js.'

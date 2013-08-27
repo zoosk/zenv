@@ -1,0 +1,58 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Watch for changes to files and build them automatically."
+    echo 'Note: this command currently only functions for Zephyr and some subsets of zoosk core repos.'
+    echo "Usage: ${PROGNAME}"
+    exit 0
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo 'You must set a workspace before building it.'
+    exit 1
+fi
+
+REPO_TYPE=$(svn info | egrep --only-matching 'URL: .*' | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
+if [ "$REPO_TYPE" != 'zoosk' -a "$REPO_TYPE" != 'zephyr_css' ]; then
+    echo 'Autobuild currently only works for Zoosk core and Zephyr checkouts.'
+    exit 1
+fi
+
+
+if [ "$REPO_TYPE" == 'zoosk' ]; then
+    python "${ZENV_CURRENT_WORK}/robuild.py" &
+    WORKER_PID=$!
+    echo 'These directories are now being watched for changes:'
+    find "$ZENV_CURRENT_WORK" -name Makefile | xargs -n 1 dirname
+    function quit() {
+        kill "$WORKER_PID"
+    }
+
+elif [ "$REPO_TYPE" == 'zephyr_css' ]; then
+    # The Zephyr build needs to use the SASS watcher to resolve dependencies, so we need to create its
+    # config using the regular build process if none exists
+    if [ ! -e 'build/config.rb' ]; then
+        ./zephyr compileSass
+    fi
+    compass watch -c build/config.rb 2>/dev/null &
+    COMPASS_PID=$!
+    python "${ZENV_ROOT}/utils/autobuilder.py" &
+    WORKER_PID=$!
+    echo 'Now watching for file system changes.'
+    function quit() {
+        kill "$COMPASS_PID"
+        kill "$WORKER_PID"
+    }
+fi
+
+
+trap quit EXIT
+echo 'Press enter or Ctrl+C to stop watching.'
+read
+quit

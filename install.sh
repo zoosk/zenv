@@ -47,7 +47,11 @@ if [ ! -e "$ZENV_WORKSPACE" ]; then
     mkdir -p "$ZENV_WORKSPACE"
 fi
 
-read -p "Enter your dev ID: " ZENV_DEVID
+ZENV_DEVID="$DEVID"  # Pick this up from the old build system
+read -p "Enter your dev ID (${ZENV_DEVID}): " TEMP
+if [ "$TEMP" != '' ]; then
+    ZENV_DEVID=$TEMP
+fi
 if [ ! "$ZENV_DEVID" -eq "$ZENV_DEVID" ]; then
     echo 'You must enter a number for your dev id.'
     return 1
@@ -61,6 +65,18 @@ if [ "$TEMP" != '' ]; then
         return 1
     else
         ZENV_SERVERID="$TEMP"
+    fi
+fi
+
+if [ "$(python -c 'import fsevents' 2>/dev/null; echo \$?)" == '1' ]; then
+    TEMP='y'
+    read -p 'You need to have MacFSEvents installed if you want to use the automatic builder. Would you like to install it now [y/n] (y)? ' TEMP
+    if [ "$TEMP" == 'y' ]; then
+        if [ "$(which pip)" == '' ]; then
+            sudo easy_install macfsevents
+        else
+            sudo pip install macfsevents
+        fi
     fi
 fi
 
@@ -96,6 +112,23 @@ export ZENV_INITIALIZED=1
 
 # Load all the properties from the .rc file
 source "$ZENV_SETTINGS"
+
+# Create the command alias so zenv can be run
+if [ "$(egrep '^alias zenv=.*activate.sh$' ~/.bash_login)" == '' ]; then
+    echo "alias zenv=${ZENV_ROOT}/activate.sh" >> ~/.bash_login
+else
+    sed -i '' "s/alias zenv=.*/alias zenv=${ZENV_ROOT}/activate.sh/" ~/.bash_login
+fi
+
+# Attempt to make ZEnv start by default
+if [ "$(egrep 'source .*\\.zenvrc' ~/.bash_login)" == '' ]; then
+    read -p 'Would you like to set ZEnv as your default shell [y/n] (n)? ' TEMP
+    if [ "$TEMP" == 'y' ]; then
+        echo 'source "$ZENV_SETTINGS"' >> ~/.bash_login
+    else
+        echo 'You can start ZEnv at any time by typing "zenv".'
+    fi
+fi
 
 read -p 'Would you like to create a workspace now [y/n]? ' TEMP
 if [ "$TEMP" == 'y' ]; then

@@ -43,6 +43,7 @@ function buildweb() {
     buildgeneric "$ZENV_CURRENT_WORK/web" $*
 }
 export -f buildweb
+alias build-web=buildweb
 
 ##
 # Build a static target
@@ -51,3 +52,4 @@ function buildstatic() {
     buildgeneric "${ZENV_CURRENT_WORK}/web/static" $*
 }
 export -f buildstatic
+alias build-static=buildstatic

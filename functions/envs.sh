@@ -21,7 +21,7 @@ export WHITE="$(tput setaf 7)"
 export TXTRESET="$(tput sgr0)"
 
 # The fancy colored prompt that appears.
-export PS1="(${BOLD}${GREEN}Z${BLUE}Env${TXTRESET}) \\W\\\$ "
+export PS1="(\[${BOLD}${GREEN}\]Z\[${BLUE}\]Env\[${TXTRESET}\]) \\W\\\$ "
 
 # Color the output of grep when it's printing to stdout
 export GREP_OPTIONS='--color=auto'
