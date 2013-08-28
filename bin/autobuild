@@ -18,6 +18,8 @@ elif [ -z "$ZENV_CURRENT_WORK" ]; then
     exit 1
 fi
 
+cd "$ZENV_CURRENT_WORK"
+
 REPO_TYPE=$(svn info | egrep --only-matching 'URL: .*' | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
 if [ "$REPO_TYPE" != 'zoosk' -a "$REPO_TYPE" != 'zephyr_css' ]; then
     echo 'Autobuild currently only works for Zoosk core and Zephyr checkouts.'
@@ -26,10 +28,10 @@ fi
 
 
 if [ "$REPO_TYPE" == 'zoosk' ]; then
-    python "${ZENV_CURRENT_WORK}/robuild.py" &
+    python "${ZENV_ROOT}/utils/autobuilder.py" &
     WORKER_PID=$!
     echo 'These directories are now being watched for changes:'
-    find "$ZENV_CURRENT_WORK" -name Makefile | xargs -n 1 dirname
+    find "$ZENV_CURRENT_WORK" -name autobuild_settings | xargs -n 1 dirname
     function quit() {
         kill "$WORKER_PID"
     }

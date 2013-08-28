@@ -57,7 +57,7 @@ function update_properties() {
 echo "Please answer some questions to set up ${PWD} as a workspace."
 
 ZENV_DEVSERVER="web$(($ZENV_DEVID / 10 + 1))dev.sfo2.zoosk.com"
-read -p "Enter the name or IP of the server that will serve this workspace (${ZENV_DEVSERVER}): " TEMP
+read -p "Enter the name of the server that will serve this workspace (${ZENV_DEVSERVER}): " TEMP
 if [ "$TEMP" != '' ]; then
     ZENV_DEVSERVER="$TEMP"
 fi

@@ -26,6 +26,7 @@ function use() {
 
     # Get in there!
     export ZENV_CURRENT_WORK="$NEW_WORK"
+    export WORK="$NEW_WORK"  # Backwards compatibility
     cd "$ZENV_CURRENT_WORK"
 
     # Make sure the workspace is initialized

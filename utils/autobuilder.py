@@ -47,6 +47,9 @@ local_path = os.environ['ZENV_CURRENT_WORK']
 server_path = os.environ['ZENV_SERVERDIR']
 
 
+def is_excluded_path(path):
+    return '.svn' in path or '.idea' in path
+
 def is_excluded_filename(name):
     """ Check if a file should be excluded from builds. """
     return name.startswith('.') or name.startswith('#') or name.endswith('~') or name == BUILD_SETTINGS_FILE
@@ -55,7 +58,7 @@ def callback(event):
     """ Callback function for when a file is changed. """
     if DEBUG:
         print 'Caught event %d for %s' % (event.mask, event.name)
-    if event.mask == UPDATE_EVENT or event.mask == ADD_EVENT or event.mask == DELETE_EVENT and '.svn' not in event.name:
+    if (event.mask == UPDATE_EVENT or event.mask == ADD_EVENT or event.mask == DELETE_EVENT) and not is_excluded_path(event.name):
         # Get the name of the changed file
         filename = basename(event.name)
         if is_excluded_filename(filename):
@@ -91,7 +94,7 @@ def callback(event):
         # Get the contents of the settings file
         matched_rule = None
         commands = None
-        envs = {}
+        envs = []
         rules = []
         with open(settings_dir + '/' + BUILD_SETTINGS_FILE) as fp:
             while matched_rule is None:
@@ -100,7 +103,7 @@ def callback(event):
                 # Read the variable settings
                 if line.startswith(KEY_SET):
                     env_name, env_value = re.search('%s ([^=]+)=(.*)' % KEY_SET, line).groups()
-                    envs[env_name] = env_value
+                    envs.append('%s=%s' % (env_name, env_value))
                     if DEBUG:
                         print 'Found a variable declaration: %s = %s' % (env_name, env_value)
                     continue
@@ -180,7 +183,7 @@ def callback(event):
         # Add the inherited ZEnv variables
         inherited_envs = '; '.join('%s=%s' % (i, quote(os.environ[i])) for i in os.environ if i.startswith('ZENV_'))
         # Add variable declarations to the beginning of the commands
-        var_decls = '; '.join('%s=%s' % (i, envs[i]) for i in envs)
+        var_decls = '; '.join(envs)
         full_program = '; '.join([inherited_envs, var_decls, commands])
 
         # Run the command
