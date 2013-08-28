@@ -4,7 +4,7 @@ try:
     from fsevents import Observer
     from fsevents import Stream
 except ImportError:
-    print 'You need to install fsevents to be able to watch for changes. Please run sudo pip install macfsevents.'
+    print 'You need to install fsevents to be able to watch for changes. Please run sudo easy_install macfsevents.'
     exit(1)
 
 import os
@@ -38,6 +38,13 @@ KEY_ADDUP = 'addupdate'
 KEY_ADDDEL = 'adddelete'
 KEY_UPDEL = 'updatedelete'
 
+# Excluded file names
+EXCLUDED_FILE_NAMES = set([
+    BUILD_SETTINGS_FILE,
+    'build.xml',
+    'Makefile'
+])
+
 
 if 'ZENV_CURRENT_WORK' not in os.environ:
     print 'You must use a workspace before you start robuild.'
@@ -48,11 +55,11 @@ server_path = os.environ['ZENV_SERVERDIR']
 
 
 def is_excluded_path(path):
-    return '.svn' in path or '.idea' in path
+    return '.svn' in path or '.idea' in path or '/sass-cache' in path
 
 def is_excluded_filename(name):
     """ Check if a file should be excluded from builds. """
-    return name.startswith('.') or name.startswith('#') or name.endswith('~') or name == BUILD_SETTINGS_FILE
+    return name.startswith('.') or name.startswith('#') or name.endswith('~') or name in EXCLUDED_FILE_NAMES
 
 def callback(event):
     """ Callback function for when a file is changed. """
