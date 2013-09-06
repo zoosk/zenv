@@ -24,13 +24,28 @@ function use() {
         return 1
     fi
 
+    # Save old repo type we are changing from
+    local NEED_TO_STRIP_OLD="false"
+    if [ -n "$ZENV_CURRENT_WORK" ]; then
+        local NEED_TO_STRIP_OLD="true"
+    fi
+    local OLD_REPO_KIND="$(inspect $ZENV_CURRENT_WORK repo_type)"
+
     # Get in there!
     export ZENV_CURRENT_WORK="$NEW_WORK"
     export WORK="$NEW_WORK"  # Backwards compatibility
     cd "$ZENV_CURRENT_WORK"
 
+    # setup path to look for commands specific to repo type
+    local REPO_KIND=$(svn info | egrep --only-matching 'URL: .*' | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
+    # if old repo was set, strip its "bin" directory from the path 
+    if [ "$NEED_TO_STRIP_OLD" = "true" ]; then
+        export PATH=$(echo $PATH|sed -e "s@$ZENV_ROOT/bin/$OLD_REPO_KIND[:]?@@;s/:$//;")
+    fi
+    # now prepend new repo's "bin" dir to path
+    export PATH=$(echo $PATH|sed -e "s|^|$ZENV_ROOT/bin/$REPO_KIND:|")
+
     # Make sure the workspace is initialized
-    source "$ZENV_SETTINGS"
     if [ -e "$ZENV_WORKSPACE_SETTINGS" ]; then
         source "$ZENV_WORKSPACE_SETTINGS"
     else
