@@ -2,64 +2,76 @@
 
 import os
 import re
-from sys import argv
-
-if 'ZENV_INITIALIZED' not in os.environ:
-    print 'This program only works from within ZEnv.'
-    exit(1)
-elif 'ZENV_CURRENT_WORK' not in os.environ:
-    print 'You must select a workspace before using this program.'
-    exit(1)
-
-if len(argv) == 1 or '--help' in argv:
-    progname = argv[0]
-    print '%s: Read one or more build properties from the settings for the current workspace.' % progname
-    print 'Usage: %s <property_name>...' % progname
-    exit(0)
-
-os.chdir(os.environ['ZENV_CURRENT_WORK'])
-
-with open(os.environ['ZENV_BUILDPROPS'], 'r') as fp:
-    settings_string = fp.read()
-
-# Special case for zoosk core, which has two properties files
-if os.path.exists('zooskdev.properties'):
-    with open('zooskdev.properties', 'r') as fp:
-        settings_string += fp.read()
 
 
-required_settings = set(argv[1:])
-values = {}
+def readprops(*property_names):
+    """ Read one or more property names from the configuration files of the current workspace. """
+    required_settings = set(property_names)
+    values = {}
+    separator = '='
 
-separator = '='
+    def expand_vars(string):
+        return re.sub('\$\{([^}]+)\}', '%(\\1)s', string) % values
 
-def expand_vars(string):
-    return re.sub('\$\{([^}]+)\}', '%(\\1)s', string) % values
+    with open(os.environ['ZENV_BUILDPROPS'], 'r') as fp:
+        settings_string = fp.read()
 
-settings = settings_string.split("\n")
-for line in settings:
-    # Read the setting
-    split = line.split(separator)
-    name = split[0].strip()
-    if len(split) == 1:
-        # The value is empty
-        values[name] = ''
-    else:
-        values[name] = split[1].strip()
+    # Special case for zoosk core, which has two properties files
+    if os.path.exists('zooskdev.properties'):
+        with open('zooskdev.properties', 'r') as fp:
+            settings_string += fp.read()
 
-    # Check to see if we're done
-    if name in required_settings:
-        required_settings.remove(name)
-        if len(required_settings) == 0:
-            break
+    settings = settings_string.split("\n")
+    for line in settings:
+        # Read the setting
+        split = line.split(separator)
+        name = split[0].strip()
+        if len(split) == 1:
+            # The value is empty
+            values[name] = ''
+        else:
+            values[name] = split[1].strip()
 
-for arg in argv[1:]:
-    # Expand variables
-    old = values[arg]
-    while True:
-        value = expand_vars(old)
-        if value == old:
-            break
-        old = value
+        # Check to see if we're done
+        if name in required_settings:
+            required_settings.remove(name)
+            if len(required_settings) == 0:
+                break
 
-    print value
+    for prop in property_names:
+        # Expand variables
+        old = values[prop]
+        while True:
+            value = expand_vars(old)
+            if value == old:
+                break
+            old = value
+
+        values[prop] = value
+
+    return values
+
+
+
+if __name__ == '__main__':
+    from os.path import basename
+    from sys import argv
+
+    if 'ZENV_INITIALIZED' not in os.environ:
+        print 'This program only works from within ZEnv.'
+        exit(1)
+    elif 'ZENV_CURRENT_WORK' not in os.environ:
+        print 'You must select a workspace before using this program.'
+        exit(1)
+
+    if len(argv) == 1 or '--help' in argv:
+        progname = basename(argv[0])
+        print '%s: Read one or more build properties from the settings for the current workspace.' % progname
+        print 'Usage: %s <property_name>...' % progname
+        exit(0)
+
+    os.chdir(os.environ['ZENV_CURRENT_WORK'])
+    props = readprops(*argv[1:])
+    for arg in argv[1:]:
+        print props[arg]
+

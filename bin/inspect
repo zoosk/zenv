@@ -5,7 +5,8 @@ if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
     echo "${PROGNAME}: Gather information about workspaces."
     echo "Usage (find initialized workspaces): ${PROGNAME}"
-    echo "Usage (get information about a workspace): ${PROGNAME} workspace_name"
+    echo "Usage (get information about a workspace): ${PROGNAME} workspace_name [key]"
+    echo '    where key is one of repo_type, branch, dev_server, db_ip, server_dir, props_file, or build_cmd'
     exit 1
 fi
 
@@ -32,7 +33,30 @@ else
     REPO_KIND=$(echo "$URL" | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
     BRANCH=$(echo "$URL" | egrep --only-matching 'URL: .*' | sed 's|.*/||')
 
-    echo "Workspace: ${PWD}
+    case "$2" in
+        'repo_type' )
+            echo "$REPO_KIND"
+            ;;
+        'branch' )
+            echo "$BRANCH"
+            ;;
+        'dev_server' )
+            echo "$ZENV_DEVSERVER"
+            ;;
+        'db_ip' )
+            echo "$ZENV_DBIP"
+            ;;
+        'server_dir' )
+            echo "$ZENV_SERVERDIR"
+            ;;
+        'props_file' )
+            echo "$ZENV_BUILDPROPS"
+            ;;
+        'build_cmd' )
+            echo "$ZENV_BUILD_COMMAND"
+            ;;
+        * )
+            echo "Workspace: ${PWD}
 Repo type: ${REPO_KIND}
 Branch: ${BRANCH}
 Dev server: ${ZENV_DEVSERVER}
@@ -41,4 +65,6 @@ Local server directory: ${ZENV_SERVERDIR}
 Properties file: ${ZENV_BUILDPROPS}
 Build command: ${ZENV_BUILD_COMMAND}
 "
+            ;;
+    esac
 fi
