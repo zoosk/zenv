@@ -1,7 +1,6 @@
 #! /usr/bin/env bash
 
-pushd "$ZENV_CURRENT_WORK"
+cd "$ZENV_CURRENT_WORK"
 ./zephyr versionPhp
 scp build/staticversion.js node1dev.sfo2.zoosk.com:/srv/psyche-dev$ZENV_DEVID/current/config/staticversion.js
 ssh node1dev.sfo2.zoosk.com "/srv/psyche-dev$ZENV_DEVID/restart.sh"
-popd
