@@ -17,11 +17,15 @@ fi
 
 if [ "$1" == '' ]; then
     find "$ZENV_WORKSPACE" -maxdepth 5 -name "$ZENV_WORKSPACE_SETTINGS" | xargs -n 1 dirname | xargs basename
-elif [ ! -e "${ZENV_WORKSPACE}/$1" ]; then
+elif [ ! -e "${ZENV_WORKSPACE}/$1" -a "$(echo "$1" | egrep '^/'; echo $?)" == '1' ]; then
     echo "$1: Workspace not found"
     exit 1
 else
-    cd "${ZENV_WORKSPACE}/$1"
+    if [ "$(echo "$1" | egrep '^/'; echo $?)" == '1' ]; then
+        cd "${ZENV_WORKSPACE}/$1"
+    else
+        cd "$1"
+    fi
     source "${ZENV_WORKSPACE_SETTINGS}"
 
     if [ ! -e .svn ]; then
