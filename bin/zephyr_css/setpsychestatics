@@ -1,0 +1,8 @@
+#! /usr/bin/env bash
+
+DEVID=$(readprop devid)
+pushd "$ZENV_CURRENT_WORK"
+./zephyr versionPhp
+scp build/staticversion.js node1dev.sfo2.zoosk.com:/srv/psyche-dev$DEVID/current/config/staticversion.js
+ssh node1dev.sfo2.zoosk.com "/srv/psyche-dev$DEVID/restart.sh"
+popd
