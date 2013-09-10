@@ -3,4 +3,5 @@
 cd "$ZENV_CURRENT_WORK"
 ./zephyr versionPhp
 scp build/staticversion.js node1dev.sfo2.zoosk.com:/srv/psyche-dev$ZENV_DEVID/current/config/staticversion.js
-ssh node1dev.sfo2.zoosk.com "/srv/psyche-dev$ZENV_DEVID/restart.sh"
+ssh node1dev.sfo2.zoosk.com "cd /srv/psyche-dev$ZENV_DEVID/current/config; if grep -q \"cssUrl\" development.js; then sed -ie \"s/^.*cssUrl:.*\$/  cssUrl: 'https:\/\/static-$ZENV_DEVID.dev$ZENV_SERVERID.sfo2.zoosk.com\/20000101\/css\/web',/;\" development.js; else sed -i \"2i\  cssUrl: 'https://static-$ZENV_DEVID.dev$ZENV_SERVERID.sfo2.zoosk.com/20000101/css/web',\" development.js; fi;"
+ ssh node1dev.sfo2.zoosk.com "/srv/psyche-dev$ZENV_DEVID/restart.sh"
