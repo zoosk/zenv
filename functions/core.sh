@@ -38,15 +38,12 @@ function use() {
 
     # setup path to look for commands specific to repo type
     local REPO_KIND=$(svn info | egrep --only-matching 'URL: .*' | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
-echo "REPO_KIND: $REPO_KIND"
     # if old repo was set, strip its "bin" directory from the path 
     if [ "$NEED_TO_STRIP_OLD" = "true" ]; then
         export PATH=$(echo $PATH|sed -e "s@$ZENV_ROOT/bin/$OLD_REPO_KIND[:]*@@;s/:$//;")
-echo "NEEDED TO STRIP $OLD_REPO_KIND: $PATH"
     fi
     # now prepend new repo's "bin" dir to path
     export PATH=$(echo $PATH|sed -e "s|^|$ZENV_ROOT/bin/$REPO_KIND:|")
-echo "DONE: $PATH"
 
     # Make sure the workspace is initialized
     if [ -e "$ZENV_WORKSPACE_SETTINGS" ]; then
