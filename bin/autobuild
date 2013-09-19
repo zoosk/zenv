@@ -14,7 +14,7 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'You must run this program from within ZEnv.'
     exit 1
 elif [ -z "$ZENV_CURRENT_WORK" ]; then
-    echo 'You must set a workspace before building it.'
+    echoerr 'You must set a workspace before building it.'
     exit 1
 fi
 
@@ -23,9 +23,15 @@ cd "$ZENV_CURRENT_WORK"
 REPO_TYPE=$(svn info | egrep --only-matching 'URL: .*' | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
 
 
+# Fail if the user doesn't have the mac developer tools installed
+if [ "$(which clang)" == '' ]; then
+    echoerr 'You must have the Xcode command line tools installed to run the automatic builder.'
+    echoerr 'http://docwiki.embarcadero.com/RADStudio/XE4/en/Installing_the_Xcode_Command_Line_Tools_on_a_Mac'
+    exit 1
+fi
 # Automatically install MacFSEvents when you try to run this without it
 if [ "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
-    echo 'You need to install MacFSEvents to use the automatic builder. If prompted, please type your sudo password below to install it.'
+    echoerr 'You need to install MacFSEvents to use the automatic builder. If prompted, please type your sudo password below to install it.'
     sudo easy_install macfsevents || exit 1
     echo -e "---------------------------------------------------------\n"
 fi

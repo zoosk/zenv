@@ -15,7 +15,7 @@ if [ -z "$ZENV_INITIALIZED" ]; then
 fi
 
 if [ "$1" == '' ]; then
-    echo $USAGE
+    echoerr $USAGE
     exit 1
 fi
 

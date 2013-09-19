@@ -18,7 +18,7 @@ fi
 if [ "$1" == '' ]; then
     find "$ZENV_WORKSPACE" -maxdepth 5 -name "$ZENV_WORKSPACE_SETTINGS" | xargs -n 1 dirname | xargs basename
 elif [ ! -e "${ZENV_WORKSPACE}/$1" -a "$(echo "$1" | egrep '^/'; echo $?)" == '1' ]; then
-    echo "$1: Workspace not found"
+    echoerr "$1: Workspace not found"
     exit 1
 else
     if [ "$(echo "$1" | egrep '^/'; echo $?)" == '1' ]; then
@@ -29,7 +29,7 @@ else
     source "${ZENV_WORKSPACE_SETTINGS}"
 
     if [ ! -e .svn ]; then
-        echo "There is no SVN checkout in $PWD"
+        echoerr "There is no SVN checkout in $PWD"
         exit 1
     fi
 

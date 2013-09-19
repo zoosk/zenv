@@ -86,7 +86,7 @@ fi
 
 # Detect what kind of workspace we're in by using SVN
 if [ ! -e '.svn' ]; then
-    echo "This folder doesn't seem to be an SVN checkout of anything."
+    echoerr "This folder doesn't seem to be an SVN checkout of anything."
     exit 1
 fi
 REPO_KIND=$(svn info | egrep --only-matching 'URL: .*' | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')

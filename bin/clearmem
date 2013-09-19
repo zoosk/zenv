@@ -14,7 +14,7 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'You must run this program from within ZEnv.'
     exit 1
 elif [ -z "$ZENV_CURRENT_WORK" ]; then
-    echo 'You must set a workspace before clearing its memcached.'
+    echoerr 'You must set a workspace before clearing its memcached.'
     exit 1
 fi
 

@@ -10,12 +10,12 @@
 #
 function buildgeneric() {
     if [ -z "$ZENV_CURRENT_WORK" ]; then
-        echo 'There is no workspace currently set.'
+        echoerr 'There is no workspace currently set.'
         return 1
     fi
     local BUILD_DIR="$1"
     if [ ! -d "$BUILD_DIR" ]; then
-        echo "Cannot build in ${1}: directory does not exist"
+        echoerr "Cannot build in ${1}: directory does not exist"
         return 1
     fi
     shift  # $* is now the arguments to pass to the build command

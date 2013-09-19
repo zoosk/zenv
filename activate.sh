@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 if [ "$ZENV_INITIALIZED" == 1 ]; then
-    echo 'You are already using ZEnv.'
+    echoerr 'You are already using ZEnv.'
     exit 1
 fi
 

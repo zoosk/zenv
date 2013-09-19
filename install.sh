@@ -68,7 +68,7 @@ if [ "$TEMP" != '' ]; then
     fi
 fi
 
-if [ "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
+if [ "$(which clang)" != '' -a "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
     read -p 'You need to have MacFSEvents installed if you want to use the automatic builder. Would you like to install it now [y/n] (y)? ' TEMP
     if [ "$TEMP" != 'n' ]; then
         if [ "$(which pip)" == '' ]; then

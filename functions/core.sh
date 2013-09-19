@@ -10,7 +10,7 @@ function use() {
     # If nothing is passed, return the current workspace
     if [ -z "$1" ]; then
         if [ -z "$ZENV_CURRENT_WORK" ]; then
-            echo 'There is no workspace currently set.'
+            echoerr 'There is no workspace currently set.'
         else
             echo "The current workspace is ${ZENV_CURRENT_WORK}"
         fi
@@ -20,7 +20,7 @@ function use() {
     # Make sure the new workspace exists
     local NEW_WORK="${ZENV_WORKSPACE}/$1"
     if [ ! -d "$NEW_WORK" ]; then
-        echo "$NEW_WORK is not a valid workspace."
+        echoerr "$NEW_WORK is not a valid workspace."
         return 1
     fi
 
@@ -29,7 +29,7 @@ function use() {
     if [ -n "$ZENV_CURRENT_WORK" ]; then
         local NEED_TO_STRIP_OLD="true"
     fi
-    local OLD_REPO_KIND="$(inspect $ZENV_CURRENT_WORK repo_type)"
+    local OLD_REPO_KIND="$(inspect $ZENV_CURRENT_WORK repo_type 2>/dev/null)"
 
     # Get in there!
     export ZENV_CURRENT_WORK="$NEW_WORK"
@@ -66,3 +66,12 @@ function deactivate() {
     exit 0
 }
 export -f deactivate
+
+
+##
+# A version of echo that prints to stderr by default.
+#
+function echoerr() {
+    echo "$@" 1>&2
+}
+export -f echoerr
