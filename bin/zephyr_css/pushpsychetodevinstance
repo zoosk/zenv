@@ -12,9 +12,11 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
+echo "Working. This may take 30-90 seconds"
 tar -cz * >psyche-dev.tgz
 scp psyche-dev.tgz node1dev.sfo2.zoosk.com:/srv/psyche-dev$ZENV_DEVID/current/psyche-dev.tgz
 ssh node1dev.sfo2.zoosk.com "tar -xf /srv/psyche-dev$ZENV_DEVID/current/psyche-dev.tgz -C /srv/psyche-dev$ZENV_DEVID/current/"
 cd "$ZENV_CURRENT_WORK"
 scp build/staticversion.js node1dev.sfo2.zoosk.com:/srv/psyche-dev$ZENV_DEVID/current/config/staticversion.js
 ssh node1dev.sfo2.zoosk.com "/srv/psyche-dev$ZENV_DEVID/restart.sh"
+echo "Done!"
