@@ -20,10 +20,11 @@ fi
 
 
 if [ "$1" == '' ]; then
-    ARGS="mem search cookie"
+    CMD="php ${ZENV_SERVERDIR}/current/web/test/data/memcached_flush.php 2>/dev/null"
 else
     ARGS=$*
+    # Create memcache clear commands linked by semicolons
+    CMD=$(for i in $ARGS; do echo $i | sed "s|\(.*\)|sudo /etc/init.d/memcached-\1-dev${ZENV_DEVID} restart;|"; done)
 fi
-# Create memcache clear commands linked by semicolons
-CMD=$(for i in $ARGS; do echo $i | sed "s|\(.*\)|sudo /etc/init.d/memcached-\1-dev${ZENV_DEVID} restart;|"; done)
+
 ssh -t "$ZENV_DEVSERVER" "$CMD"
