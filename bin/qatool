@@ -1,0 +1,114 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ -z "$1" -o "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Automatically install clean or patched code on your dev instance.
+Usage (set up): ${PROGNAME} init
+Usage (install fresh code): ${PROGNAME} install [zoosk|touch] [trunk|rc]
+Usage (install a patch): ${PROGNAME} patch [zoosk|touch] [trunk|rc] <patch_file> [<patch_file>]
+
+EXAMPLES:
+Install a fresh copy of the latest built zoosk trunk code: $PROGNAME install zoosk trunk
+Install a copy of the latest zoosk code with a patch applied to core: $PROGNAME patch zoosk trunk <patch_file>
+Install a developer copy of touch rc: $PROGNAME install touch rc
+Install a patched version of touch: $PROGNAME patch touch rc <patch_file>
+Install two patches at once, one for zoosk and one for touch: $PROGNAME patch touch rc <touch_patch_file> <zoosk_patch_file>
+"
+    exit 1
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+fi
+
+SETTINGS_FILE="${HOME}/.qatool"
+
+# Make sure everything is initialized
+if [ ! -e "$SETTINGS_FILE" -a "$1" != 'init' ]; then
+    echo "You must set up your directories before running this tool. Please run $(basename $0) init"
+    exit 1
+fi
+
+
+
+function zooskbuild() {
+    use "$1" || exit 1
+    svn revert -R . || exit 1
+    svn up || exit 1
+    if [ "$2" != '' ]; then
+        patch -p0 < "$2" || exit 1
+    fi
+    # TODO: Add database clearing to the below ssh command and reinstalling to the following build commands
+    ssh -t "$ZENV_DEVSERVER" "rm -rf ${ZENV_SERVERDIR}/current/*" 2>/dev/null || exit 1
+    build install-tools install-schwartz install-web install-web-test build-thrift-php-interface || exit 1
+    buildweb install-test-500 || exit 1
+}
+
+function touchbuild() {
+    use "$1" || exit 1
+    svn revert -R . || exit 1
+    svn up || exit 1
+    if [ "$2" != '' ]; then
+        patch -p0 < "$2" || exit 1
+    fi
+    build clean debugAll || exit 1
+}
+
+case "$1" in
+    'init' )
+        read -p 'Drag the folder containing your Zoosk trunk checkout onto this window and hit return: ' ZOOSK_TRUNK
+        read -p 'Drag the folder containing your Zoosk RC checkout onto this window and hit return: ' ZOOSK_RC
+        read -p 'Drag the folder containing your Touch trunk checkout onto this window and hit return: ' TOUCH_TRUNK
+        read -p 'Drag the folder containing your Touch RC checkout onto this window and hit return: ' TOUCH_RC
+
+        echo "ZOOSK_TRUNK=\"${ZOOSK_TRUNK}\"
+ZOOSK_RC=\"${ZOOSK_RC}\"
+TOUCH_TRUNK=\"${TOUCH_TRUNK}\"
+TOUCH_RC=\"${TOUCH_RC}\"
+" > "$SETTINGS_FILE"
+        ;;
+
+
+    'install' | 'patch' )
+        source "$SETTINGS_FILE"
+        case "$2" in
+            'zoosk' )
+                case "$3" in
+                    'trunk' )
+                        zooskbuild "$ZOOSK_TRUNK" "$4"
+                        ;;
+                    'rc' )
+                        zooskbuild "$ZOOSK_RC" "$4"
+                        ;;
+                    * )
+                        echo "You must specify 'trunk' or 'rc' to install"
+                        exit 1
+                        ;;
+                esac
+                ;;
+            'touch' )
+                case "$3" in
+                    'trunk' )
+                        zooskbuild "$ZOOSK_TRUNK" "$5"
+                        touchbuild "$TOUCH_TRUNK" "$4"
+                        ;;
+                    'rc' )
+                        zooskbuild "$ZOOSK_RC" "$5"
+                        touchbuild "$TOUCH_RC" "$4"
+                        ;;
+                    * )
+                        echo "You must specify 'trunk' or 'rc' to install"
+                        exit 1
+                        ;;
+                esac
+                ;;
+            * )
+                echo "You must specify 'zoosk' or 'touch' to install"
+                exit 1
+                ;;
+        esac
+        ;;
+esac

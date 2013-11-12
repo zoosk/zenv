@@ -28,7 +28,7 @@ fi
 if [ "$1" == '' ]; then
     # Just list the logs
     echo "${UNDERLINE}Last Update${TXTRESET}      ${UNDERLINE}Log Title${TXTRESET}"
-    CMD="ls -lt /var/log/apache2 | grep dev${ZENV_DEVID} | head | awk '{print \$6, \$7, \$8}' | sed 's/_web4dev_dev30_/ /' | sed 's/\.log.*//'"
+    CMD="ls -lt /var/log/apache2 | grep dev${ZENV_DEVID} | head | awk '{print \$6, \$7, \$8}' | sed 's/_web${ZENV_SERVERID}dev_dev${ZENV_DEVID}_/ /' | sed 's/\.log.*//'"
 elif [ "$1" == 'syslog' ]; then
     # Tail syslog
     CMD="tail -f /var/log/syslog"
@@ -38,6 +38,6 @@ else
     if [ "$2" != "" ]; then
         LOGNAME="$2"
     fi
-    CMD="tail -f /var/log/apache2/${1}_web4dev_dev${ZENV_DEVID}_${LOGNAME}.log_$(date '+%Y-%m-%d')"
+    CMD="tail -f /var/log/apache2/${1}_web${ZENV_SERVERID}dev_dev${ZENV_DEVID}_${LOGNAME}.log_$(date '+%Y-%m-%d')"
 fi
 ssh "$ZENV_DEVSERVER" $CMD

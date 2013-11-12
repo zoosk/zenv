@@ -59,7 +59,7 @@ buildstatic     Build static files.
 deactivate      Exit ZEnv.
 
 ${BOLD}The current utilities are:${TXTRESET}
-$(ls -1 "${ZENV_ROOT}/bin")
+$(find "${ZENV_ROOT}/bin" ! -type d -depth 1 | xargs basename | egrep -v '^\.')
 
 For help on individual commands or utils, type '${BOLD}zhelp <command>${TXTRESET}'. You can also pass -h or --help to utilities.
 To see a list of available aliases, type '${BOLD}zhelp alias${TXTRESET}'."

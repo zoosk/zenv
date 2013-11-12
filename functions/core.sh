@@ -18,7 +18,11 @@ function use() {
     fi
 
     # Make sure the new workspace exists
-    local NEW_WORK="${ZENV_WORKSPACE}/$1"
+    if [ "$(echo "$1" | sed 's/\(.\).*/\1/')" == '/' ]; then
+        local NEW_WORK="$1"
+    else
+        local NEW_WORK="${ZENV_WORKSPACE}/$1"
+    fi
     if [ ! -d "$NEW_WORK" ]; then
         echoerr "$NEW_WORK is not a valid workspace."
         return 1
