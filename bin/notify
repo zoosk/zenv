@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+fi
+
+BIN_FILE="${ZENV_ROOT}"/utils/terminal-notifier.app/Contents/MacOS/terminal-notifier
+if [ -n "$1" -a "$(echo "$1" | sed 's/\(.\).*/\1/')" != '-' ]; then
+    # This is not an option, just display the message
+    $BIN_FILE -message "$1"
+else
+    $BIN_FILE "$@"
+fi

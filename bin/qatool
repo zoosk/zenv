@@ -45,6 +45,7 @@ function zooskbuild() {
     ssh -t "$ZENV_DEVSERVER" "rm -rf ${ZENV_SERVERDIR}/current/*" 2>/dev/null || exit 1
     build install-tools install-schwartz install-web install-web-test build-thrift-php-interface || exit 1
     buildweb install-test-500 || exit 1
+    clearmem || exit 1
 }
 
 function touchbuild() {
@@ -110,5 +111,6 @@ TOUCH_RC=\"${TOUCH_RC}\"
                 exit 1
                 ;;
         esac
+        notify 'Build complete!'
         ;;
 esac
