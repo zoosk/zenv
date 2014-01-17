@@ -38,7 +38,7 @@ function zooskbuild() {
     use "$1" || exit 1
     svn revert -R . || exit 1
     svn up || exit 1
-    if [ "$2" != '' ]; then
+    if [ "$2" != '' -a -f "$2" ]; then
         patch -p0 < "$2" || exit 1
     fi
     # TODO: Add database clearing to the below ssh command and reinstalling to the following build commands
@@ -52,11 +52,13 @@ function touchbuild() {
     use "$1" || exit 1
     svn revert -R . || exit 1
     svn up || exit 1
-    if [ "$2" != '' ]; then
+    if [ "$2" != '' -a -f "$2" ]; then
         patch -p0 < "$2" || exit 1
     fi
     build clean debugAll || exit 1
 }
+
+MY_PWD="$PWD"
 
 case "$1" in
     'init' )
@@ -79,10 +81,10 @@ TOUCH_RC=\"${TOUCH_RC}\"
             'zoosk' )
                 case "$3" in
                     'trunk' )
-                        zooskbuild "$ZOOSK_TRUNK" "$4"
+                        zooskbuild "$ZOOSK_TRUNK" "${MY_PWD}/$4"
                         ;;
                     'rc' )
-                        zooskbuild "$ZOOSK_RC" "$4"
+                        zooskbuild "$ZOOSK_RC" "${MY_PWD}/$4"
                         ;;
                     * )
                         echo "You must specify 'trunk' or 'rc' to install"
@@ -93,12 +95,12 @@ TOUCH_RC=\"${TOUCH_RC}\"
             'touch' )
                 case "$3" in
                     'trunk' )
-                        zooskbuild "$ZOOSK_TRUNK" "$5"
-                        touchbuild "$TOUCH_TRUNK" "$4"
+                        zooskbuild "$ZOOSK_TRUNK" "${MY_PWD}/$5"
+                        touchbuild "$TOUCH_TRUNK" "${MY_PWD}/$4"
                         ;;
                     'rc' )
-                        zooskbuild "$ZOOSK_RC" "$5"
-                        touchbuild "$TOUCH_RC" "$4"
+                        zooskbuild "$ZOOSK_RC" "${MY_PWD}/$5"
+                        touchbuild "$TOUCH_RC" "${MY_PWD}/$4"
                         ;;
                     * )
                         echo "You must specify 'trunk' or 'rc' to install"
