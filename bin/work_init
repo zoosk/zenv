@@ -129,6 +129,26 @@ while [ $DONE -eq 0 ]; do
             fi
             DONE=1
             ;;
+
+        'cupid_js' )
+            ZENV_BUILDPROPS="${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties"
+            read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
+            if [ "$TEMP" != '' ]; then
+                ZENV_BUILDPROPS="$TEMP"
+            fi
+            ZENV_BUILD_COMMAND="./cupid -Pproperties_file=\${ZENV_BUILDPROPS}"
+            DONE=1
+            ;;
+
+        'vulcan' )
+            ENV_BUILDPROPS="${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties"
+            read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
+            if [ "$TEMP" != '' ]; then
+                ZENV_BUILDPROPS="$TEMP"
+            fi
+            ZENV_BUILD_COMMAND="./vulcan -Pproperties_file=\${ZENV_BUILDPROPS}"
+            DONE=1
+            ;;
             
         * )
             echo "Couldn't determine the checkout type. Please enter it manually."
