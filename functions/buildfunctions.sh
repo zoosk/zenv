@@ -22,7 +22,11 @@ function buildgeneric() {
     cd $BUILD_DIR
     (eval $ZENV_BUILD_COMMAND $*)
     local RC=$?
-    (eval $ZENV_COMPLETE_COMMAND)
+    if [ $RC -eq 0 ]; then
+        (eval $ZENV_COMPLETE_COMMAND)
+    else
+        (eval $ZENV_FAILED_COMMAND)
+    fi
     cd - 1>/dev/null
     return $RC
 }

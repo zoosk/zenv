@@ -41,7 +41,7 @@ function use() {
     cd "$ZENV_CURRENT_WORK"
 
     # setup path to look for commands specific to repo type
-    local REPO_KIND=$(svn info | egrep --only-matching 'URL: .*' | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
+    local REPO_KIND=$(inspect "$PWD" repo_type)
     # if old repo was set, strip its "bin" directory from the path 
     if [ "$NEED_TO_STRIP_OLD" = "true" ]; then
         export PATH=$(echo $PATH|sed -e "s@$ZENV_ROOT/bin/$OLD_REPO_KIND[:]*@@;s/:$//;")

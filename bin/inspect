@@ -26,16 +26,18 @@ else
     else
         cd "$1"
     fi
-    source "${ZENV_WORKSPACE_SETTINGS}"
 
-    if [ ! -e .svn ]; then
-        echoerr "There is no SVN checkout in $PWD"
+    if [ -e .svn ]; then
+        URL=$(svn info | egrep --only-matching 'URL: .*')
+        REPO_KIND=$(echo "$URL" | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
+        BRANCH=$(echo "$URL" | egrep --only-matching 'URL: .*' | sed 's|.*/||')
+    elif [ -e .git ]; then
+        REPO_KIND=$(git remote -v | egrep -m 1 '\(fetch\)$' | sed -E 's|.*/([^/]+)\.git .*|\1|')
+        BRANCH=$(git branch | egrep '^\*' | awk '{print $2}')
+    else
+        echoerr "There is no checkout in $PWD"
         exit 1
     fi
-
-    URL=$(svn info | egrep --only-matching 'URL: .*')
-    REPO_KIND=$(echo "$URL" | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
-    BRANCH=$(echo "$URL" | egrep --only-matching 'URL: .*' | sed 's|.*/||')
 
     case "$2" in
         'repo_type' )
@@ -45,21 +47,27 @@ else
             echo "$BRANCH"
             ;;
         'dev_server' )
+            source "${ZENV_WORKSPACE_SETTINGS}"
             echo "$ZENV_DEVSERVER"
             ;;
         'db_ip' )
+            source "${ZENV_WORKSPACE_SETTINGS}"
             echo "$ZENV_DBIP"
             ;;
         'server_dir' )
+            source "${ZENV_WORKSPACE_SETTINGS}"
             echo "$ZENV_SERVERDIR"
             ;;
         'props_file' )
+            source "${ZENV_WORKSPACE_SETTINGS}"
             echo "$ZENV_BUILDPROPS"
             ;;
         'build_cmd' )
+            source "${ZENV_WORKSPACE_SETTINGS}"
             echo "$ZENV_BUILD_COMMAND"
             ;;
         * )
+            source "${ZENV_WORKSPACE_SETTINGS}"
             echo "Workspace: ${PWD}
 Repo type: ${REPO_KIND}
 Branch: ${BRANCH}

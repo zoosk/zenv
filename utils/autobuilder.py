@@ -55,7 +55,7 @@ server_path = os.environ['ZENV_SERVERDIR']
 
 
 def is_excluded_path(path):
-    return '.svn' in path or '.idea' in path or '/sass-cache' in path
+    return '.svn' in path or '.idea' in path or '/sass-cache' in path or '.git' in path
 
 def is_excluded_filename(name):
     """ Check if a file should be excluded from builds. """

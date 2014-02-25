@@ -96,8 +96,11 @@ export ZENV_DEVID=${ZENV_DEVID}
 # The ID of your dev instance.
 export ZENV_SERVERID=${ZENV_SERVERID}
 
-# An optional command that will run after builds complete. For example, 'osascript -e \"beep 3\"'
-export ZENV_COMPLETE_COMMAND=
+# The command that will run after builds complete successfully.
+export ZENV_COMPLETE_COMMAND='notify -title \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -message \"Build complete!\" >/dev/null'
+
+# The command that will run if a build fails.
+export ZENV_FAILED_COMMAND='notify -title \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -message \"Build failed!\" >/dev/null'
 
 ############################## Anything below this line SHOULD NOT BE EDITED!!! ##############################
 
@@ -116,7 +119,7 @@ source "$ZENV_SETTINGS"
 if [ "$(egrep '^alias zenv=.*activate.sh$' ~/.bash_login)" == '' ]; then
     echo "alias zenv=${ZENV_ROOT}/activate.sh" >> ~/.bash_login
 else
-    sed -i '' "s/alias zenv=.*/alias zenv=${ZENV_ROOT}/activate.sh/" ~/.bash_login
+    sed -i '' "s|alias zenv=.*|alias zenv=${ZENV_ROOT}/activate.sh|" ~/.bash_login
 fi
 
 # Attempt to make ZEnv start by default

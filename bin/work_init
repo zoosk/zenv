@@ -84,12 +84,12 @@ if [ "$TEMP" == 'y' ]; then
 fi
 
 
-# Detect what kind of workspace we're in by using SVN
-if [ ! -e '.svn' ]; then
-    echoerr "This folder doesn't seem to be an SVN checkout of anything."
+# Detect what kind of workspace we're in
+REPO_KIND=$(inspect "$PWD" repo_type 2>/dev/null)
+if [ "$REPO_KIND" == '' ]; then
+    echoerr "This folder doesn't seem to be a checkout of anything."
     exit 1
 fi
-REPO_KIND=$(svn info | egrep --only-matching 'URL: .*' | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
 
 # Add the correct build command based on the detected repo type
 DONE=0
@@ -152,7 +152,7 @@ while [ $DONE -eq 0 ]; do
             
         * )
             echo "Couldn't determine the checkout type. Please enter it manually."
-            echo 'The type should be the name of the svn directory, e.g. zoosk or touch_js.'
+            echo 'The type should be the name of the svn or git directory, e.g. zoosk or touch_js.'
             read -p '> ' REPO_KIND
     esac
 done
