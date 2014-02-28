@@ -46,4 +46,4 @@ alias install-web='(buildweb install-web-www)'
 alias install-payments='(build install-and-build-payment-service)'
 
 # Install test data
-alias install-test='(buildweb install-test-500)'
+alias install-test='(buildweb install-test)'
