@@ -59,8 +59,15 @@ buildstatic     Build static files.
 deactivate      Exit ZEnv.
 
 ${BOLD}The current utilities are:${TXTRESET}
-$(find "${ZENV_ROOT}/bin" ! -type d -depth 1 | xargs basename | egrep -v '^\.')
-
+$(find "${ZENV_ROOT}/bin" ! -type d -depth 1 | xargs basename | egrep -v '^\.')"
+        REPO_TYPE=$(inspect "$ZENV_CURRENT_WORK" repo_type 2>/dev/null)
+        if [ "$REPO_TYPE" != '' ]; then
+            WORKSPACE_CMDS=$(ls "${ZENV_ROOT}/bin/${REPO_TYPE}")
+            if [ "$WORKSPACE_CMDS" != '' ]; then
+                echo "$WORKSPACE_CMDS"
+            fi
+        fi
+        echo "
 For help on individual commands or utils, type '${BOLD}zhelp <command>${TXTRESET}'. You can also pass -h or --help to utilities.
 To see a list of available aliases, type '${BOLD}zhelp alias${TXTRESET}'."
         ;;
