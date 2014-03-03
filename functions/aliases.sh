@@ -8,7 +8,7 @@ alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH i
 
 ##########################  BATCH BUILD ALIASES  ##########################
 # Install everything
-alias install-all='(install-most && install-test)'
+alias install-all='(install-most && install-test-500)'
 
 # Reinstall everything
 alias reinstall-all='(delete-all && install-all)'
@@ -47,3 +47,6 @@ alias install-payments='(build install-and-build-payment-service)'
 
 # Install test data
 alias install-test='(buildweb install-test)'
+
+# Install test 500
+alias install-test-500='(buildweb install-test-500)'
