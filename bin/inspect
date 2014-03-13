@@ -32,7 +32,7 @@ else
         REPO_KIND=$(echo "$URL" | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
         BRANCH=$(echo "$URL" | egrep --only-matching 'URL: .*' | sed 's|.*/||')
     elif [ -e .git ]; then
-        REPO_KIND=$(git remote -v | egrep -m 1 '\(fetch\)$' | sed -E 's|.*/([^/]+)\.git .*|\1|')
+        REPO_KIND=$(git remote -v | egrep -m 1 '\(fetch\)$' | sed -E 's|.*/([^/]+)(\.git)* .*\(fetch\)|\1|')
         BRANCH=$(git branch | egrep '^\*' | awk '{print $2}')
     else
         echoerr "There is no checkout in $PWD"
