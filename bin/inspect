@@ -28,7 +28,7 @@ else
     fi
 
     if [ -e .svn ]; then
-        URL=$(svn info | egrep --only-matching 'URL: .*')
+        URL=$(svn info | egrep --only-matching '^URL: .*')
         REPO_KIND=$(echo "$URL" | sed 's|.*s\.zoosk\.com/\([^/]*\)/.*|\1|')
         BRANCH=$(echo "$URL" | egrep --only-matching 'URL: .*' | sed 's|.*/||')
     elif [ -e .git ]; then
