@@ -1,0 +1,30 @@
+#! /usr/bin/env bash
+
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Update your checkout of ZEnv to the latest version."
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo "You must run this program from within ZEnv."
+    exit 1
+fi
+
+UPDATE_TEXT=$(cd "${ZENV_ROOT}"; svn up)
+
+if [ "$(echo "${UPDATE_TEXT}" | grep install.sh)" != '' ]; then
+    sed -i '' "s|source '${ZENV_SETTINGS}'||" ~/.bash_login
+    rm -f "$ZENV_SETTINGS"
+    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    echo 'The ZEnv install process has been updated!'
+    echo 'You will need to reinstall ZEnv for changes to take effect.'
+    echo 'To do this, restart your terminal and then run:'
+    echo "cd ${ZENV_ROOT}; ./install.sh"
+elif [ "$(echo "${UPDATE_TEXT}" | grep '/functions/')" != '' ]; then
+    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+    echo 'The ZEnv core has been updated!'
+    echo 'You will need to restart your terminal for changes to take effect.'
+else
+    echo "$UPDATE_TEXT"
+fi

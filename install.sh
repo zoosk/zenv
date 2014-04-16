@@ -79,6 +79,8 @@ if [ "$(which clang)" != '' -a "$(python -c 'import fsevents' 2>/dev/null; echo 
     fi
 fi
 
+echo 'Installing...'
+
 # Generate the setup file
 echo "#! /usr/bin/env bash
 # The path to the ZEnv directory.
@@ -122,12 +124,15 @@ else
     sed -i '' "s|alias zenv=.*|alias zenv=${ZENV_ROOT}/activate.sh|" ~/.bash_login
 fi
 
+# Remove all the old work init files just in case something has changed
+find ~/dev/workspace -name work.properties -maxdepth 5 | xargs grep -l ZENV | xargs rm
+
 # Attempt to make ZEnv start by default
 if [ "$(egrep 'source .*\\.zenvrc' ~/.bash_login)" == '' ]; then
-    read -p 'Would you like to set ZEnv as your default shell [y/n] (n)? ' TEMP
-    if [ "$TEMP" == 'y' ]; then
+    read -p 'Would you like to set ZEnv as your default shell [y/n] (y)? ' TEMP
+    if [ "$TEMP" != 'n' ]; then
         echo "source '${ZENV_SETTINGS}'
-if [ -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then 
+if [ -z \"\$ZENV_CURRENT_WORK\" -a -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then 
     use \$(python -c \"from os import path; print path.relpath('\${PWD}', '\${ZENV_WORKSPACE}')\")
 fi
 " >> ~/.bash_login

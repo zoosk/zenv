@@ -1,0 +1,25 @@
+#! /usr/bin/env bash
+
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Run a worker on your dev instance."
+    echo "Usage: ${PROGNAME} worker_name"
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo "You must run this program from within ZEnv."
+    exit 1
+fi
+
+WORKERS_DIR="${ZENV_SERVERDIR}/current/web/services/jobworkers"
+
+if [ "$1" == '' ]; then
+    echo 'The possible workers are:'
+    ls "${WORKERS_DIR}"
+    echo ''
+    echo 'To run a worker, pass its name as the first argument to this program.'
+    exit 0
+fi
+
+ssh "$ZENV_DEVSERVER" "cd ${WORKERS_DIR} && php ${1}"
