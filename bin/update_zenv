@@ -21,10 +21,12 @@ if [ "$(echo "${UPDATE_TEXT}" | grep install.sh)" != '' ]; then
     echo 'You will need to reinstall ZEnv for changes to take effect.'
     echo 'To do this, restart your terminal and then run:'
     echo "cd ${ZENV_ROOT}; ./install.sh"
+
 elif [ "$(echo "${UPDATE_TEXT}" | grep '/functions/')" != '' ]; then
     echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     echo 'The ZEnv core has been updated!'
     echo 'You will need to restart your terminal for changes to take effect.'
+    
 else
     echo "$UPDATE_TEXT"
 fi

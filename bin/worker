@@ -3,12 +3,16 @@
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
     echo "${PROGNAME}: Run a worker on your dev instance."
-    echo "Usage: ${PROGNAME} worker_name"
+    echo "Usage (show available workers): ${PROGNAME}"
+    echo "Usage (run a worker): ${PROGNAME} worker_name"
     exit 1
 fi
 
 if [ -z "$ZENV_INITIALIZED" ]; then
     echo "You must run this program from within ZEnv."
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo 'You must use a workspace before you can run its workers.'
     exit 1
 fi
 
