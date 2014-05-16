@@ -3,9 +3,9 @@
 # Usage information
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
-    echo "${PROGNAME}: Gather information about workspaces."
-    echo "Usage (find initialized workspaces): ${PROGNAME}"
-    echo "Usage (get information about a workspace): ${PROGNAME} workspace_name [key]"
+    echo "${PROGNAME}: Gather information about checkouts."
+    echo "Usage (find initialized checkouts): ${PROGNAME}"
+    echo "Usage (get information about a checkout): ${PROGNAME} workspace_name [key]"
     echo '    where key is one of repo_type, branch, dev_server, db_ip, server_dir, props_file, or build_cmd'
     exit 1
 fi

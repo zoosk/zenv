@@ -1,0 +1,71 @@
+#! /usr/bin/env bash
+
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    echo 'use: Change the current checkout.'
+    echo 'Usage (print current checkout): use'
+    echo 'Usage (change current checkout): use <checkout>'
+    echo 'Directory names should be relative paths from your workspace root to the folder.'
+    echo 'For example, "use touch" or "use cupid/rc-123".'
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+fi
+
+##
+# Change the current workspace to be the one specified in $1
+#
+
+# If nothing is passed, return the current workspace
+if [ -z "$1" ]; then
+    if [ -z "$ZENV_CURRENT_WORK" ]; then
+        echoerr 'There is no workspace currently set.'
+    else
+        echo "The current workspace is ${ZENV_CURRENT_WORK}"
+    fi
+    return 2>/dev/null || exit 0
+fi
+
+# Make sure the new workspace exists
+if [ "$(echo "$1" | sed 's/\(.\).*/\1/')" == '/' ]; then
+    NEW_WORK="$1"
+else
+    NEW_WORK="${ZENV_WORKSPACE}/$1"
+fi
+if [ ! -d "$NEW_WORK" ]; then
+    echoerr "$NEW_WORK is not a valid workspace."
+    return 2>/dev/null || exit 1
+fi
+
+# Save old repo type we are changing from
+NEED_TO_STRIP_OLD="false"
+if [ -n "$ZENV_CURRENT_WORK" ]; then
+    NEED_TO_STRIP_OLD="true"
+fi
+OLD_REPO_KIND="$(inspect $ZENV_CURRENT_WORK repo_type 2>/dev/null)"
+
+# Get in there!
+export ZENV_CURRENT_WORK="$NEW_WORK"
+export WORK="$NEW_WORK"  # Backwards compatibility
+cd $ZENV_CURRENT_WORK
+
+# setup path to look for commands specific to repo type
+REPO_KIND=$(inspect "$PWD" repo_type)
+# if old repo was set, strip its "bin" directory from the path 
+if [ "$NEED_TO_STRIP_OLD" = "true" ]; then
+    export PATH=$(echo $PATH|sed -e "s@$ZENV_ROOT/bin/$OLD_REPO_KIND[:]*@@;s/:$//;")
+fi
+# now prepend new repo's "bin" dir to path
+export PATH=$(echo $PATH|sed -e "s|^|$ZENV_ROOT/bin/$REPO_KIND:|")
+
+# Make sure the workspace is initialized
+if [ -e "$ZENV_WORKSPACE_SETTINGS" ]; then
+    source "$ZENV_WORKSPACE_SETTINGS"
+else
+    echo 'This workspace must be initialized before you use it.'
+    work_init
+    source "$ZENV_WORKSPACE_SETTINGS"
+fi
+echo "Workspace changed to ${ZENV_CURRENT_WORK}"

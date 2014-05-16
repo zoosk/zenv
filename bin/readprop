@@ -13,13 +13,13 @@ def readprops(*property_names):
     def expand_vars(string):
         return re.sub('\$\{([^}]+)\}', '%(\\1)s', string) % values
 
-    with open(os.environ['ZENV_BUILDPROPS'], 'r') as fp:
-        settings_string = fp.read()
-
-    # Special case for zoosk core, which has two properties files
-    if os.path.exists('zooskdev.properties'):
-        with open('zooskdev.properties', 'r') as fp:
+    settings_string =''
+    if os.environ['ZENV_BUILDPROPS_COMMON'] != '':
+        with open(os.environ['ZENV_BUILDPROPS_COMMON'], 'r') as fp:
             settings_string += fp.read()
+
+    with open(os.environ['ZENV_BUILDPROPS'], 'r') as fp:
+        settings_string += fp.read()
 
     settings = settings_string.split("\n")
     for line in settings:
@@ -32,13 +32,9 @@ def readprops(*property_names):
         else:
             values[name] = split[1].strip()
 
-        # Check to see if we're done
-        if name in required_settings:
-            required_settings.remove(name)
-            if len(required_settings) == 0:
-                break
-
     for prop in property_names:
+        if prop not in values:
+            continue
         # Expand variables
         old = values[prop]
         while True:
@@ -60,18 +56,22 @@ if __name__ == '__main__':
     if 'ZENV_INITIALIZED' not in os.environ:
         print 'This program only works from within ZEnv.'
         exit(1)
-    elif 'ZENV_CURRENT_WORK' not in os.environ:
-        print 'You must select a workspace before using this program.'
-        exit(1)
 
     if len(argv) == 1 or '--help' in argv:
         progname = basename(argv[0])
         print '%s: Read one or more build properties from the settings for the current workspace.' % progname
         print 'Usage: %s <property_name>...' % progname
         exit(0)
+    elif 'ZENV_CURRENT_WORK' not in os.environ:
+        print 'You must select a workspace before using this program.'
+        exit(1)
 
     os.chdir(os.environ['ZENV_CURRENT_WORK'])
     props = readprops(*argv[1:])
+    exit_code = 1
     for arg in argv[1:]:
-        print props[arg]
+        if arg in props:
+            exit_code = 0
+            print props[arg]
 
+    exit(exit_code)

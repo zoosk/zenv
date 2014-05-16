@@ -1,0 +1,88 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Check your system's ability to install Zoosk."
+    echo "Usage: ${PROGNAME}"
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+fi
+
+if [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo "${RED}${BOLD}FAILED!${TXTRESET} You are not using a checkout, so you can't build anything."
+    exit 1
+fi
+
+function versioncompare() {
+    PROGRAM="$1"
+    MY_VERSION="$2"
+    REQUIRED_VERSION="$3"
+    printf "Checking version of ${PROGRAM}..."
+    if [ "$(php -r "echo version_compare('${MY_VERSION}', '${REQUIRED_VERSION}');")" == '-1' ]; then
+        echo "${RED}${BOLD}FAILED!${TXTRESET} Your version of ${PROGRAM} is ${MY_VERSION}, but ${REQUIRED_VERSION} is required."
+        exit 1
+    fi
+    echo "${MY_VERSION}"
+}
+
+function checkinstalled() {
+    printf "Checking for ${1}..."
+    WHERE="$(which $1)"
+    if [ "$WHERE" == '' ]; then
+        echo "${RED}${BOLD}FAILED!${TXTRESET} $1 is not installed\!"
+        exit 1
+    fi
+    echo "installed in ${WHERE}"
+}
+
+echo 'Checking if your system can install Zoosk...'
+
+checkinstalled php
+PHP_VERSION=$(php -v | /usr/bin/head -1 | awk '{print $2}')
+versioncompare php $PHP_VERSION '5.5.11'
+
+checkinstalled mysql
+
+printf "Checking geodata folder..."
+if [ ! -e "$ZENV_LOCAL_DEPLOY_DIR"/geodbdata -o "$(test -O "$ZENV_LOCAL_DEPLOY_DIR"/geodbdata; echo $?)" != '0' ]; then
+    echo "${RED}${BOLD}FAILED!${TXTRESET} ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata is not writable! Please create it or change its owner to you."
+    exit 1
+fi
+echo 'Okay'
+
+printf "Checking if your dev VM is reachable..."
+ping -c 1 "$ZENV_DEVSERVER" > /dev/null 2>1
+if [ "$?" != '0' ]; then
+    echo "${RED}${BOLD}FAILED!${TXTRESET} A ping to $ZENV_DEVSERVER failed. Please make sure it is online."
+    exit 1
+fi
+echo 'Success'
+
+checkinstalled xcode-select
+
+checkinstalled clang
+checkinstalled gcc
+
+checkinstalled phing
+PHING_VERSION="$(phing -v | awk '{print $2}')"
+versioncompare phing $PHING_VERSION '2.7.0'
+
+printf "Checking for access to MySQL..."
+if [ "$(echo 'show databases;' | mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass) mysql >/dev/null 2>1; echo $?)" != '0' ]; then
+    echo "${RED}${BOLD}FAILED!${TXTRESET} Cannot log into MySQL as root. Please talk to TechOps."
+    exit 1
+fi
+echo 'Success'
+
+checkinstalled mvn
+
+checkinstalled git
+
+checkinstalled thrift
+
+echo "${GREEN}${BOLD}SUCCESS!${TXTRESET}"

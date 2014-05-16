@@ -47,7 +47,7 @@ EXCLUDED_FILE_NAMES = set([
 
 
 if 'ZENV_CURRENT_WORK' not in os.environ:
-    print 'You must use a workspace before you start robuild.'
+    print 'You must use a workspace before you start autobuild.'
     exit(1)
 
 local_path = os.environ['ZENV_CURRENT_WORK']

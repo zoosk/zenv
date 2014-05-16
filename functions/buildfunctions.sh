@@ -22,11 +22,20 @@ function buildgeneric() {
     cd $BUILD_DIR
     (eval $ZENV_BUILD_COMMAND $*)
     local RC=$?
+    
+    # Rsync the result if: 1) build succeeded, 2) build wasn't run with -l or empty parameter.
+    if [ "$RC" -eq 0 ]; then
+        if [ "${1:0:1}" != "-" -a ! -z "$1" ]; then
+            synccode
+        fi
+    fi
+
     if [ $RC -eq 0 ]; then
         (eval $ZENV_COMPLETE_COMMAND)
     else
         (eval $ZENV_FAILED_COMMAND)
     fi
+    
     cd - 1>/dev/null
     return $RC
 }
@@ -44,7 +53,11 @@ export -f build
 # Build a target at the web/ level
 #
 function buildweb() {
-    buildgeneric "$ZENV_CURRENT_WORK/web" $*
+    if [ -e "$ZENV_CURRENT_WORK/web" ]; then
+        buildgeneric "$ZENV_CURRENT_WORK/web" $*
+    else
+        echoerr 'This checkout does not have a web folder to build.'
+    fi
 }
 export -f buildweb
 alias build-web=buildweb
@@ -53,7 +66,11 @@ alias build-web=buildweb
 # Build a static target
 #
 function buildstatic() {
-    buildgeneric "${ZENV_CURRENT_WORK}/web/static" $*
+    if [ -e "${ZENV_CURRENT_WORK}/web/static" ]; then
+        buildgeneric "${ZENV_CURRENT_WORK}/web/static" $*
+    else
+        echoerr 'THis checkout does not have a static folder to build.'
+    fi
 }
 export -f buildstatic
 alias build-static=buildstatic

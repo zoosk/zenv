@@ -1,7 +1,12 @@
 #! /usr/bin/env bash
 
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
-    ARG=""
+    echo "Yo dawg, we heard you needed help so we put a help message in your help program so you can get help while you're being helped!"
+    echo 'zhelp: Display help information about ZEnv utilities.'
+    echo 'Usage (display all available utilities): zhelp'
+    echo 'Usage (help for a single utility): zhelp <utility_name>'
+    echo 'Usage (display available aliases): zhelp alias'
+    exit 0
 else
     ARG="$1"
 fi
@@ -11,13 +16,13 @@ fi
 #
 case "$ARG" in
     'use' )
-        echo 'use: Change the current workspace.'
-        echo 'Usage (print current workspace): use'
-        echo 'Usage (change current workspace): use <workspace>'
+        echo 'use: Change the current checkout.'
+        echo 'Usage (print current checkout): use'
+        echo 'Usage (change current checkout): use <checkout>'
         ;;
     
     'build' | 'buildweb' | 'buildstatic' )
-        echo 'build, buildweb, buildstatic: Build files in the current workspace.'
+        echo 'build, buildweb, buildstatic: Build files in the current checkout.'
         echo 'Usage: build <command args>...'
         echo 'Arguments will be passed to the build process.'
         ;;
@@ -41,18 +46,18 @@ case "$ARG" in
             -e "s/^\(#.*[^#]\)$/${BOLD}\1${TXTRESET}/" \
             -e "s/^alias \([^=]*\)=.*/\1/" \
              "${ZENV_ROOT}/functions/aliases.sh"
-        ;;
 
-    '-l' | '--list-utils' )
-        echo 'The utilities that work inside ZEnv are:'
-        ls -1 "${ZENV_ROOT}/bin"
+        # Print out the git aliases
         echo ''
-        echo "For help on individual commands or utils, type 'zhelp <command>'."
+        echo "${BOLD}${UNDERLINE}########################## Git aliases (usable with git) ##########################${TXTRESET}"
+        grep -A 1 '#' "${ZENV_ROOT}/utils/gitconfig.cfg" | sed -e '/^[^ \t].*/d' \
+            -e "s/^ *#\(.*\)/${BOLD}#\1${TXTRESET}/" \
+            -e 's/^    \([^ ]*\).*/git \1/'
         ;;
 
     '' )
         echo "${BOLD}The current built-in commands are:${TXTRESET}
-use             Change the current workspace.
+use             Change the current checkout.
 build           Build something at the root level.
 buildweb        Build something at the web/ level.
 buildstatic     Build static files.
@@ -60,11 +65,13 @@ deactivate      Exit ZEnv.
 
 ${BOLD}The current utilities are:${TXTRESET}
 $(find "${ZENV_ROOT}/bin" ! -type d -depth 1 | xargs basename | egrep -v '^\.')"
-        REPO_TYPE=$(inspect "$ZENV_CURRENT_WORK" repo_type 2>/dev/null)
-        if [ "$REPO_TYPE" != '' ]; then
-            WORKSPACE_CMDS=$(ls "${ZENV_ROOT}/bin/${REPO_TYPE}")
-            if [ "$WORKSPACE_CMDS" != '' ]; then
-                echo "$WORKSPACE_CMDS"
+        if [ -n "$ZENV_CURRENT_WORK" ]; then
+            REPO_TYPE=$(inspect "$ZENV_CURRENT_WORK" repo_type 2>/dev/null)
+            if [ "$REPO_TYPE" != '' ]; then
+                WORKSPACE_CMDS=$(ls "${ZENV_ROOT}/bin/${REPO_TYPE}")
+                if [ "$WORKSPACE_CMDS" != '' ]; then
+                    echo "$WORKSPACE_CMDS"
+                fi
             fi
         fi
         echo "
@@ -73,8 +80,13 @@ To see a list of available aliases, type '${BOLD}zhelp alias${TXTRESET}'."
         ;;
 
     * )
+        if [ -n "$ZENV_CURRENT_WORK" ]; then
+            REPO_TYPE=$(inspect "$ZENV_CURRENT_WORK" repo_type 2>/dev/null)
+        fi
         if [ -e "${ZENV_ROOT}/bin/$1" ]; then
             "${ZENV_ROOT}/bin/$1" --help
+        elif [ -e "${ZENV_ROOT}/bin/${REPO_TYPE}/$1" ]; then
+            "${ZENV_ROOT}/bin/${REPO_TYPE}/$1" --help
         else
             echo "${1}: Command not found. Help with aliases is not available."
         fi

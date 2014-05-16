@@ -21,7 +21,22 @@ export WHITE="$(tput setaf 7)"
 export TXTRESET="$(tput sgr0)"
 
 # The fancy colored prompt that appears.
-export PS1="(\[${BOLD}${GREEN}\]Z\[${BLUE}\]Env\[${TXTRESET}\]) \\W\\\$ "
+export PS1="(\[${BOLD}${GREEN}\]Z\[${BLUE}\]Env\[${TXTRESET}\]) ${PS1}"
 
 # Color the output of grep when it's printing to stdout
 export GREP_OPTIONS='--color=auto'
+
+# If you like colored dir listings enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+fi
+
+# Attempt to use the extra git config
+GIT_CONFIG="${ZENV_ROOT}/utils/gitconfig.cfg"
+if [ "$(which git)" != '' -a "$(git config --get include.path 2>/dev/null | grep "$GIT_CONFIG")" == '' ]; then
+    git config --global include.path "$GIT_CONFIG"
+fi
+
+# Fix XAMPP's overwriting of the head function so that scripts don't crash
+alias head=/usr/bin/head

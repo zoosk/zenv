@@ -12,7 +12,7 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     echo "You must run this program from within ZEnv."
     exit 1
 elif [ -z "$ZENV_CURRENT_WORK" ]; then
-    echo 'You must use a workspace before you can run its workers.'
+    echo 'You must use a checkout before you can run its workers.'
     exit 1
 fi
 

@@ -3,7 +3,7 @@
 # Usage information
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
-    echo "${PROGNAME}: Initialize a workspace in the current directory."
+    echo "${PROGNAME}: Initialize a checkout in the current directory."
     echo "Usage: ${PROGNAME}"
     exit 1
 fi
@@ -19,68 +19,79 @@ fi
 function update_properties() {
 
     if [ -e "$ZENV_BUILDPROPS" ]; then
-        read -p 'Would you like me to fill in some values in your properties file [y/n] (n)? ' TEMP
-        if [ "$TEMP" == 'y' ]; then
-            if [ $ZENV_DEVID -lt 10 ]; then
-                NUMBERPAD='0'
-            else
-                NUMBERPAD=''
-            fi
-            # TODO: Change .* to $ to only replace empty settings
-            sed -e "s/^devid=\$/devid=${ZENV_DEVID}/" \
-                -e "s/^dbprefix=\$/dbprefix=${NUMBERPAD}\${devid}/" \
-                -e "s/^memcache_port=\$/memcache_port=$(($ZENV_DEVID % 10))/" \
-                -e "s/^dev_hostip=\$/dev_hostip=$(host ${ZENV_DEVSERVER} | awk '{print $4}')/" \
-                -e "s/^dev_hostname=\$/dev_hostname=${ZENV_DEVSERVER}/" \
-                -e "s/^dev_serverid=\$/dev_serverid=${ZENV_SERVERID}/" \
-                -e "s/^dev_dbhostip=\$/dev_dbhostip=${ZENV_DBIP}/" \
-                -e "s/^dev_aws_secret_access_key=\$/dev_aws_secret_access_key=C7eDlLbtQ8fiIXseo69g3aeOXZf7QzsyxnpMTQWy/" \
-                -e "s/^dev_offerpal_api_secret=\$/dev_offerpal_api_secret=1830806557011586/" \
-                -e "s/^dev_rootdbpass=\$/dev_rootdbpass=nwN9vrsbzl@vdc4f/" \
-                -e "s/^dev_saftpay_api_secret=\$/dev_saftpay_api_secret=347ae91d1bac4d4a88760ca1d875b9cf/" \
-                -e "s/^dev_iovation_dra_password=\$/dev_iovation_dra_password=86TNJS89S/" \
-                -e "s/^dev_recatpcha_api_secret=\$/dev_recatpcha_api_secret=6Ld0CAQAAAAAALe6IDgE8F0skZAhNVg81EGO7Mni/" \
-                -e "s/^dev_syniverseftpusername=\$/dev_syniverseftpusername=pickuser/" \
-                -e "s/^dev_syniverseftppassword=\$/dev_syniverseftppassword=S\&F#T9P/" \
-                -e "s/^dev_test_email=\$/dev_test_email=$(whoami)@zoosk.com/" \
-                -e "s/^dev_tigasebuildno=\$/dev_tigasebuildno=0.0.0.0/" \
-                -e "s/^dev_chatbuildno=\$/dev_chatbuildno=0.0.0.\${devid}/" \
-                -e "s/^dev_chat_port=\$/dev_chat_port=6${NUMBERPAD}$(($ZENV_DEVID % 10))0/" \
-                -e "s/^dev_bosh_port=\$/dev_bosh_port=6${NUMBERPAD}$(($ZENV_DEVID % 10))2/" \
-                -e "s/^dev_bosh_ssl_port=\$/dev_bosh_ssl_port=6${NUMBERPAD}$(($ZENV_DEVID % 10))3/" \
-                -i '' "$ZENV_BUILDPROPS"
+	    if [ $ZENV_DEVID -lt 10 ]; then
+    		NUMBERPAD='0'
+	    else
+    		NUMBERPAD=''
+	    fi
+            
+        if [ "$(grep devid_padded= "$ZENV_BUILDPROPS")" == '' ]; then
+            sed -e 's/^devid=.*/devid='${ZENV_DEVID}'\
+devid_padded='${ZENV_DEVID_PADDED}'/' \
+            -i '' "$ZENV_BUILDPROPS"
         fi
+
+	    sed -e "s/^devid=.*/devid=${ZENV_DEVID}/" \
+		-e "s/^dbprefix=.*/dbprefix=${NUMBERPAD}\${devid}/" \
+		-e "s/^memcache_port=.*/memcache_port=$(($ZENV_DEVID % 10))/" \
+		-e "s/^dev_hostip=.*/dev_hostip=$(host ${ZENV_DEVSERVER} | awk '{print $4}')/" \
+		-e "s/^dev_hostname=.*/dev_hostname=${ZENV_DEVSERVER}/" \
+		-e "s/^dev_dbhostip=.*/dev_dbhostip=${ZENV_DBIP}/" \
+		-e "s/^dev_aws_secret_access_key=\$/dev_aws_secret_access_key=C7eDlLbtQ8fiIXseo69g3aeOXZf7QzsyxnpMTQWy/" \
+		-e "s/^dev_offerpal_api_secret=\$/dev_offerpal_api_secret=1830806557011586/" \
+		-e "s/^dev_rootdbpass=\$/dev_rootdbpass=nwN9vrsbzl@vdc4f/" \
+		-e "s/^dev_saftpay_api_secret=\$/dev_saftpay_api_secret=347ae91d1bac4d4a88760ca1d875b9cf/" \
+		-e "s/^dev_iovation_dra_password=\$/dev_iovation_dra_password=86TNJS89S/" \
+		-e "s/^dev_recatpcha_api_secret=\$/dev_recatpcha_api_secret=6Ld0CAQAAAAAALe6IDgE8F0skZAhNVg81EGO7Mni/" \
+		-e "s/^dev_syniverseftpusername=\$/dev_syniverseftpusername=pickuser/" \
+		-e "s/^dev_syniverseftppassword=\$/dev_syniverseftppassword=S\&F#T9P/" \
+		-e "s/^dev_test_email=\$/dev_test_email=$(whoami)@zoosk.com/" \
+		-e "s/^dev_tigasebuildno=\$/dev_tigasebuildno=0.0.0.0/" \
+		-e "s/^dev_chatbuildno=\$/dev_chatbuildno=0.0.0.\${devid}/" \
+        -e "s/^devid_padded=.*/devid_padded=${ZENV_DEVID_PADDED}/" \
+        -e "s/^dev_serverid=.*/dev_serverid=/" \
+        -e "s/^dev_chat_port=.*/dev_chat_port=5280/" \
+        -e "s/^dev_bosh_port=.*/dev_bosh_port=5280/" \
+        -e "s/^dev_bosh_ssl_port=.*/dev_bosh_ssl_port=5281/" \
+        -i '' "$ZENV_BUILDPROPS"
     fi
 }
 
 
 echo "Please answer some questions to set up ${PWD} as a workspace."
 
-ZENV_DEVSERVER="web$(($ZENV_DEVID / 10 + 1))dev.sfo2.zoosk.com"
-read -p "Enter the name of the server that will serve this workspace (${ZENV_DEVSERVER}): " TEMP
+ZENV_CURRENT_WORK=${PWD}
+
+ZENV_DEVID="$DEVID"  # Pick this up from the old build system
+read -p "Enter the dev ID associated with this checkout (${ZENV_DEVID}): " TEMP
 if [ "$TEMP" != '' ]; then
-    ZENV_DEVSERVER="$TEMP"
+    ZENV_DEVID=$TEMP
+fi
+if [ ! "$ZENV_DEVID" -eq "$ZENV_DEVID" ]; then
+    echo 'You must enter a number for your dev id.'
+    exit 1
 fi
 
-ZENV_DBIP='192.168.130.104'  # Default because it's my db host and I'm on web4dev
-read -p "Enter the IP address of the database used for the dev server (${ZENV_DBIP}): " TEMP
-if [ "$TEMP" != '' ]; then
-    ZENV_DBIP="$TEMP"
-fi
+# Compute paths based on your dev ID
+ZENV_DEVID_PADDED="$(printf "%03d" $(echo ${ZENV_DEVID}))"
+ZENV_DEVSERVER="sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com"
+ZENV_DBIP="$(dig +short ${ZENV_DEVSERVER})"
+ZENV_SERVERDIR="${ZENV_LOCAL_DEPLOY_DIR}/dev${ZENV_DEVID}"
+ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}"
 
-ZENV_SERVERDIR="/srv/dev${ZENV_DEVID}"
-read -p "Enter the path to the mounted folder that corresponds to the dev server (${ZENV_SERVERDIR}): " TEMP
-if [ "$TEMP" != '' ]; then
-    ZENV_SERVERDIR="$TEMP"
-fi
+# Create your target dirs if they do not already exist
+DIRS="dev${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service dev${ZENV_DEVID}-wordpress"
+for d in ${DIRS}; do
+    mkdir -p ${ZENV_LOCAL_DEPLOY_DIR}/${d}
+done
 
-read -p 'Many commands require a connection to your dev instance. Would you like to set up an SSH key to log in without a password [y/n] (n)?' TEMP
+read -p 'Many commands require a connection to your dev instance. Would you like to set up an SSH key to log in without a password [y/n] (n)? ' TEMP
 if [ "$TEMP" == 'y' ]; then
     if [ ! -e ~/.ssh/id_rsa ]; then
         ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa
     fi
-    echo 'If prompted, please enter your password to log into your dev instance.'
-    ssh "$ZENV_DEVSERVER" "mkdir -p .ssh; echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys"
+    echo 'If prompted, please enter your password to log into your dev instance (for the last time).'
+    ssh "${ZENV_LDAP_USERNAME}@$ZENV_DEVSERVER" "mkdir -p .ssh; echo '$(cat ~/.ssh/id_rsa.pub)' >> ~/.ssh/authorized_keys"
 fi
 
 
@@ -91,90 +102,118 @@ if [ "$REPO_KIND" == '' ]; then
     exit 1
 fi
 
+# Common build properties files.
+ZENV_BUILDPROPS="${ZENV_WORKSPACE}/vmdev${ZENV_DEVID_PADDED}.properties"
+read -p "Enter the path to your developer-specific vmdev properties file (${ZENV_BUILDPROPS}): " TEMP
+if [ "$TEMP" != '' ]; then
+    ZENV_BUILDPROPS="$TEMP"
+fi
+
+
 # Add the correct build command based on the detected repo type
 DONE=0
 while [ $DONE -eq 0 ]; do
     case "$REPO_KIND" in 
-        'zoosk' )
-            ZENV_BUILDPROPS="${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties"
-            read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
-            if [ "$TEMP" != '' ]; then
-                ZENV_BUILDPROPS="$TEMP"
-            fi
-            ZENV_BUILD_COMMAND="phing -logger phing.listener.DefaultLogger -Dpf1=\${ZENV_BUILDPROPS} -Dpf2=\${ZENV_CURRENT_WORK}/zooskdev.properties"
-            update_properties
-            DONE=1
-            ;;
-
-        'touch_js' )
-            ZENV_BUILDPROPS="${PWD}/dev${ZENV_DEVID}.properties"
-            read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
-            if [ "$TEMP" != '' ]; then
-                ZENV_BUILDPROPS="$TEMP"
-            fi
-            ZENV_BUILD_COMMAND="./gradlew -Pproperties_file=\${ZENV_BUILDPROPS}"
-            DONE=1
-            ;;
-
-        'zephyr_css' )
-            ZENV_BUILD_COMMAND="./zephyr"
-            if [ "$(which compass)" == '' ]; then
-                TEMP='y'
-                read -p "It doesn't look like you have compass installed. Would you like to install it now [y/n] (y)? " TEMP
-                if [ "$TEMP" != 'n' ]; then
-                    echo 'Installing...'
-                    sudo gem install --version 0.11.7 compass
-                    sudo gem install --version 0.9 compass-susy-plugin
+	'zoosk' )
+        if [ ! -e "$ZENV_BUILDPROPS" ]; then
+            read -p "It doesn't look like you have a developer-specific vmdev properties file. Would you like to make one [y/n] (y)? " TEMP
+            if [ "$TEMP" != 'n' ]; then
+                read -p "Do you have an old-style non-VM properties file that you used for dev instances [y/n] (n)? " TEMP
+                if [ "$TEMP" == 'y' ]; then
+                    ZENV_OLD_DEVNN_PROPS_FILE=${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties
+                    read -p "Where is your existing dev${ZENV_DEVID}.properties (${ZENV_OLD_DEVNN_PROPS_FILE})? " TEMP
+                    if [ "$TEMP" != '' ]; then
+                        ZENV_OLD_DEVNN_PROPS_FILE="$TEMP"
+                    fi
+                    cp ${ZENV_OLD_DEVNN_PROPS_FILE} $ZENV_BUILDPROPS
+                else
+                    # Use the default one that's checked into core
+                    cp dev.properties "$ZENV_BUILDPROPS"
                 fi
+                
+                sed -e "s/^devid=.*/devid=${ZENV_DEVID}/" \
+                    -e "s/^devid_padded=.*/devid_padded=${ZENV_DEVID_PADDED}/" \
+                    -e "s/^dev_serverid=.*/dev_serverid=/" \
+                    -e "s/^dev_chat_port=.*/dev_chat_port=5280/" \
+                    -e "s/^dev_bosh_port=.*/dev_bosh_port=5280/" \
+                    -e "s/^dev_bosh_ssl_port=.*/dev_bosh_ssl_port=5281/" \
+                    -i '' "$ZENV_BUILDPROPS"
             fi
-            DONE=1
-            ;;
+        fi
 
-        'cupid_js' )
-            ZENV_BUILDPROPS="${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties"
-            read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
-            if [ "$TEMP" != '' ]; then
-                ZENV_BUILDPROPS="$TEMP"
-            fi
-            ZENV_BUILD_COMMAND="./cupid -Pproperties_file=\${ZENV_BUILDPROPS}"
-            DONE=1
-            ;;
+        ZENV_BUILDPROPS_COMMON="${ZENV_CURRENT_WORK}/vmdev.properties"
+	    ZENV_BUILD_COMMAND="phing -logger phing.listener.DefaultLogger -Dpf1=\${ZENV_BUILDPROPS} -Dpf2=\${ZENV_BUILDPROPS_COMMON}"
+        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service dev${ZENV_DEVID}-wordpress"
+	    update_properties
+	    DONE=1
+	    ;;
 
-        'vulcan' )
-            ENV_BUILDPROPS="${ZENV_WORKSPACE}/dev${ZENV_DEVID}.properties"
-            read -p "Enter the path to your dev properties file (${ZENV_BUILDPROPS}): " TEMP
-            if [ "$TEMP" != '' ]; then
-                ZENV_BUILDPROPS="$TEMP"
+	'touch_js' )
+	    ZENV_BUILD_COMMAND="./gradlew -Pproperties_file=\${ZENV_BUILDPROPS}"
+        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}/current/web/www/touch/html"
+	    DONE=1
+	    ;;
+
+	'zephyr_css' )
+	    ZENV_BUILD_COMMAND="./zephyr"
+	    if [ "$(which compass)" == '' ]; then
+            TEMP='y'
+            read -p "It doesn't look like you have compass installed. Would you like to install it now [y/n] (y)? " TEMP
+            if [ "$TEMP" != 'n' ]; then
+                echo 'Installing...'
+                sudo gem install --version 0.11.7 compass
+                sudo gem install --version 0.9 compass-susy-plugin
             fi
-            ZENV_BUILD_COMMAND="./vulcan -Pproperties_file=\${ZENV_BUILDPROPS}"
-            DONE=1
-            ;;
-            
-        * )
-            echo "Couldn't determine the checkout type. Please enter it manually."
-            echo 'The type should be the name of the svn or git directory, e.g. zoosk or touch_js.'
-            read -p '> ' REPO_KIND
+	    fi
+	    DONE=1
+	    ;;
+
+	'cupid_js' )
+	    ZENV_BUILD_COMMAND="./cupid -Pproperties_file=\${ZENV_BUILDPROPS}"
+	    DONE=1
+	    ;;
+
+	'vulcan' )
+	    ZENV_BUILD_COMMAND="./vulcan -Pproperties_file=\${ZENV_BUILDPROPS}"
+	    DONE=1
+	    ;;
+	    
+	* )
+	    echo "Couldn't determine the checkout type. Please enter it manually."
+	    echo 'The type should be the name of the svn or git directory, e.g. zoosk or touch_js.'
+	    read -p '> ' REPO_KIND
     esac
 done
 
 
 # Generate the setup file
 echo "#! /usr/bin/env bash
+# Your dev id
+export ZENV_DEVID=${ZENV_DEVID}
+
+# Three-digit, zero-padded DEVID
+export ZENV_DEVID_PADDED=${ZENV_DEVID_PADDED}
+
 # The hostname of your dev server.
 export ZENV_DEVSERVER=${ZENV_DEVSERVER}
 
 # The IP address of your database.
-export ZENV_DBIP=${ZENV_DBIP}
+export ZENV_DBIP=\$(dig +short \${ZENV_DEVSERVER})
 
 # The directory on your local machine containing the built files.
 export ZENV_SERVERDIR=${ZENV_SERVERDIR}
 
-# The properties file used to build this workspace.
+# The general properties file used to build this workspace.
+export ZENV_BUILDPROPS_COMMON=${ZENV_BUILDPROPS_COMMON}
+
+# Your dev-specific properties file used to build this workspace.
 export ZENV_BUILDPROPS=${ZENV_BUILDPROPS}
 
 # The command that will be used to build your code. Arguments are appended.
 export ZENV_BUILD_COMMAND=\"${ZENV_BUILD_COMMAND}\"
 
+# The directories that should be synced when deploying via rsync.
+export ZENV_RSYNC_DIRECTORIES=\"${ZENV_RSYNC_DIRECTORIES}\"
 " > "$ZENV_WORKSPACE_SETTINGS"
 
 

@@ -31,7 +31,7 @@ fi
 # Automatically install MacFSEvents when you try to run this without it
 if [ "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
     echoerr 'You need to install MacFSEvents to use the automatic builder. If prompted, please type your sudo password below to install it.'
-    sudo easy_install macfsevents || exit 1
+    sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future easy_install macfsevents || exit 1
     echo -e "---------------------------------------------------------\n"
 fi
 
