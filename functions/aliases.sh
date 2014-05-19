@@ -11,7 +11,7 @@ alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH i
 alias initial-setup='(checksystem && build install && build install-and-build-photo-service && build install-geoip-data && build install-geolookup-data && build install-and-build-utility-service && build install-test-500)'
 
 # Install everything
-alias install-all='(install-most && install-test-500)'
+alias install-all='(install-most && install-test && install-test-500)'
 
 # Reinstall everything
 alias reinstall-all='(delete-all && install-all)'
