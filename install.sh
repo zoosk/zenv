@@ -143,6 +143,7 @@ fi
 find ~/dev/workspace -name work.properties -maxdepth 5 | xargs grep -l ZENV | xargs rm
 
 # Attempt to make ZEnv start by default
+touch ~/.bash_login
 if [ "$(egrep 'source .*\.zenvrc' ~/.bash_login)" == '' ]; then
     read -p 'Would you like to set ZEnv as your default shell [y/n] (y)? ' TEMP
     if [ "$TEMP" != 'n' ]; then
