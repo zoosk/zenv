@@ -17,7 +17,7 @@ alias install-all='(install-most && install-test && install-test-500)'
 alias reinstall-all='(delete-all && install-all)'
 
 # Install everything except test data
-alias install-most='(build install-tools install-schwartz install-web install-web-test build-thrift-php-interface)'
+alias install-most='(build install-tools install-schwartz install-web install-web-test build-thrift-php-interface && buildweb refresh-live-mission-control-data-from-production)'
 
 # Get rid of all the work files (done using ssh for speed)
 alias delete-all="(ssh -t \"\$ZENV_LDAP_USERNAME@\$ZENV_DEVSERVER\" \"rm -rf \${ZENV_SERVERDIR}/current/*\" 2>/dev/null)"
