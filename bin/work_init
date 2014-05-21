@@ -156,6 +156,7 @@ while [ $DONE -eq 0 ]; do
 
 	'zephyr_css' )
 	    ZENV_BUILD_COMMAND="./zephyr"
+            ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}/current/web/www/static/20000101"
 	    if [ "$(which compass)" == '' ]; then
             TEMP='y'
             read -p "It doesn't look like you have compass installed. Would you like to install it now [y/n] (y)? " TEMP
