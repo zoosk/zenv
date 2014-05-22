@@ -31,7 +31,6 @@ if [ "$1" != '' ]; then
 else
     DIRS="${ZENV_RSYNC_DIRECTORIES}"
 fi
-
 for d in ${DIRS}; do
     if [ "$(echo "$d" | egrep '^/srv/')" != '' ]; then
         # For usability, automatically remove /srv/ from the beginning of args
@@ -39,10 +38,7 @@ for d in ${DIRS}; do
     fi
     if [ -e ${ZENV_LOCAL_DEPLOY_DIR}/${d} ]; then
         echo "Rsync ${ZENV_LOCAL_DEPLOY_DIR}/${d} to ${ZENV_DEVSERVER}:/srv/${d}/ at $(date)"
-        rsync -az --delete $ph --exclude="shared/media" \
-            --exclude="shared/working" \
-            --exclude="shared/photoworking" \
-            --exclude="shared/certs" \
+        rsync -az --delete $ph --exclude="shared/" \
             ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
     fi
 done
