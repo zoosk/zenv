@@ -42,6 +42,7 @@ for d in ${DIRS}; do
         rsync -az --delete $ph --exclude="shared/media" \
             --exclude="shared/working" \
             --exclude="shared/photoworking" \
+            --exclude="shared/certs" \
             ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
     fi
 done
