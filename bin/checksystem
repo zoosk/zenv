@@ -48,6 +48,15 @@ versioncompare php $PHP_VERSION '5.5.11'
 
 checkinstalled mysql
 
+printf "Checking if ${ZENV_LOCAL_DEPLOY_DIR} is writable..."
+touch "$ZENV_LOCAL_DEPLOY_DIR"/zenv_touched 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "${RED}${BOLD}FAILED!${TXTRESET} ${ZENV_LOCAL_DEPLOY_DIR} is not writable. Please create it or change its owner to you."
+    exit 1
+fi
+echo 'Success'
+rm -f "$ZENV_LOCAL_DEPLOY_DIR"/zenv_touched 2>/dev/null
+
 printf "Checking geodata folder..."
 if [ ! -e "$ZENV_LOCAL_DEPLOY_DIR"/geodbdata -o "$(test -O "$ZENV_LOCAL_DEPLOY_DIR"/geodbdata; echo $?)" != '0' ]; then
     echo "${RED}${BOLD}FAILED!${TXTRESET} ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata is not writable! Please create it or change its owner to you."
