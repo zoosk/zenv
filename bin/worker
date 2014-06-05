@@ -26,4 +26,31 @@ if [ "$1" == '' ]; then
     exit 0
 fi
 
-ssh "$ZENV_DEVSERVER" "cd ${WORKERS_DIR} && php ${1}"
+# Some workers shut down after a period of inactivity. We want to stop this, so
+# the rest of this program is an async version of this:
+# bool done = 0;
+# while (true) {
+#     if (!done) {
+#         // Run the SSH command
+#     }
+# }
+
+INT=
+# This will set the done flag on interrupt
+finish() {
+    INT=1
+}
+trap finish SIGINT
+
+runWorker() {
+    # This will run the worker and fire SIGUSR1 when it completes
+    if [ -z "$INT" ]; then
+        ssh "$ZENV_DEVSERVER" "cd ${WORKERS_DIR} && php ${1}"
+        kill -USR1 $$
+    fi
+}
+# Run the worker again when it fires its done signal
+trap runWorker SIGUSR1
+
+# Start the loop
+runWorker
