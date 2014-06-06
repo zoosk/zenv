@@ -14,7 +14,8 @@ fi
 UPDATE_TEXT=$(cd "${ZENV_ROOT}"; svn up)
 
 if [ "$(echo "${UPDATE_TEXT}" | grep install.sh)" != '' ]; then
-    sed -i '' "s|source '${ZENV_SETTINGS}'||" ~/.bash_login
+    sed -i '' "/### BEGIN ZENV INIT/,/### END ZENV INIT/d" ~/.bash_login
+    sed -i '' '/^alias zenv/d' ~/.bash_login
     rm -f "$ZENV_SETTINGS"
     echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     echo 'The ZEnv install process has been updated!'

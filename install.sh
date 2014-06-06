@@ -70,20 +70,19 @@ if [ ! -e "${ZENV_LOCAL_DEPLOY_DIR}" ]; then
     sudo chown -R "$USER" "${ZENV_LOCAL_DEPLOY_DIR}"
 fi
 
+checkWritable() {
+    touch "$1"/zenv_touched 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "Your ${1} directory is not writable. If prompted, please enter your password below to fix this."
+        USER="$(whoami)"
+        sudo mkdir -p "$1"
+        sudo chown -R "$USER" "$1"
+    fi
+    rm -f "$1"/zenv_touched 2>/dev/null
+}
+checkWritable "$ZENV_LOCAL_DEPLOY_DIR"
+checkWritable "$ZENV_LOCAL_DEPLOY_DIR"/geodbdata
 # Make sure the deploy dir is writable
-touch "$ZENV_LOCAL_DEPLOY_DIR"/zenv_touched 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "Your ${ZENV_LOCAL_DEPLOY_DIR} directory is not writable. If prompted, please enter your password below to fix this."
-    USER="$(whoami)"
-    sudo chown -R "$USER" "$ZENV_LOCAL_DEPLOY_DIR"
-fi
-rm -f "$ZENV_LOCAL_DEPLOY_DIR"/zenv_touched 2>/dev/null
-
-if [ ! -e ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata ]; then
-    mkdir ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata
-    read -p "Dir ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata does not exist. Rsync geodbdata now [y/n] (y)?"
-    rsync -az --progress ${ZENV_LDAP_USERNAME}@db1qa.sfo2.zoosk.com:/mnt/geodbdata/ ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata/    
-fi
 
 echo 'Installing...'
 
@@ -140,17 +139,19 @@ else
 fi
 
 # Remove all the old work init files just in case something has changed
-find ~/dev/workspace -name work.properties -maxdepth 5 | xargs grep -l ZENV | xargs rm
+find "$ZENV_WORKSPACE" -name work.properties -maxdepth 5 | xargs grep -l ZENV | xargs rm
 
 # Attempt to make ZEnv start by default
 touch ~/.bash_login
 if [ "$(egrep 'source .*\.zenvrc' ~/.bash_login)" == '' ]; then
     read -p 'Would you like to set ZEnv as your default shell [y/n] (y)? ' TEMP
     if [ "$TEMP" != 'n' ]; then
-	echo "source '${ZENV_SETTINGS}'
+	echo "### BEGIN ZENV INIT
+source '${ZENV_SETTINGS}'
 if [ -z \"\$ZENV_CURRENT_WORK\" -a -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then 
     use \$(python -c \"from os import path; print path.relpath('\${PWD}', '\${ZENV_WORKSPACE}')\")
 fi
+### END ZENV INIT
 " >> ~/.bash_login
     else
 	echo 'You can start ZEnv at any time by typing "zenv".'

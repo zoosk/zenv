@@ -8,7 +8,7 @@ alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH i
 
 ##########################  BATCH BUILD ALIASES  ##########################
 # Install not just everything, but everything-everything. Good for new hires and for first time users of their Dev VM
-alias initial-setup='(checksystem && build install && build install-and-build-photo-service && build install-geoip-data && build install-geolookup-data && build install-and-build-utility-service && build install-test-500)'
+alias initial-setup='(checksystem && build install && build install-and-build-photo-service && install-geodata && build install-and-build-utility-service && build install-test-500)'
 
 # Install everything
 alias install-all='(install-most && install-test && install-test-500)'
@@ -18,6 +18,9 @@ alias reinstall-all='(delete-all && install-all)'
 
 # Install everything except test data
 alias install-most='(build install-tools install-schwartz install-web install-web-test build-thrift-php-interface && buildweb refresh-live-mission-control-data-from-production)'
+
+# Install all geodata
+alias install-geodata='(rsync-geodbdata && build install-geoip-data && build install-geolookup-data)'
 
 # Get rid of all the work files (done using ssh for speed)
 alias delete-all="(ssh -t \"\$ZENV_LDAP_USERNAME@\$ZENV_DEVSERVER\" \"rm -rf \${ZENV_SERVERDIR}/current/*\" 2>/dev/null)"
