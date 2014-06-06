@@ -171,11 +171,13 @@ while [ $DONE -eq 0 ]; do
 
 	'cupid_js' )
 	    ZENV_BUILD_COMMAND="./cupid -Pproperties_file=\${ZENV_BUILDPROPS}"
+        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}"
 	    DONE=1
 	    ;;
 
 	'vulcan' )
 	    ZENV_BUILD_COMMAND="./vulcan -Pproperties_file=\${ZENV_BUILDPROPS}"
+        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}"
 	    DONE=1
 	    ;;
 
