@@ -184,6 +184,12 @@ while [ $DONE -eq 0 ]; do
         ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}-themis/current"
         DONE=1
         ;;
+
+    'payment-service' )
+        ZENV_BUILD_COMMAND="phing \${PHING_OPTIONS} -Dprops=${ZENV_BUILDPROPS} -Denv=dev"
+        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}_payment-service/current"
+        DONE=1
+        ;;
 	    
 	* )
 	    echo "Couldn't determine the checkout type. Please enter it manually."
