@@ -192,6 +192,12 @@ while [ $DONE -eq 0 ]; do
         ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}_payment-service/current"
         DONE=1
         ;;
+
+    'catalog-service' )
+        ZENV_BUILD_COMMAND="cp -R . /srv/dev${ZENV_DEVID}_catalog-service/current && synccode"
+        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}_catalog-service/current"
+        DONE=1
+        ;;
 	    
 	* )
 	    echo "Couldn't determine the checkout type. Please enter it manually."

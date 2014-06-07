@@ -58,6 +58,17 @@ case "$REPO_TYPE" in
         }
         trap quit EXIT
         ;;
+        
+    'catalog-service' )
+        python "${ZENV_ROOT}/utils/autobuilder.py" &
+        WORKER_PID=$!
+        echo 'These directories are now being watched for changes:'
+        find "$ZENV_CURRENT_WORK" -name autobuild_settings | xargs -n 1 dirname
+        function quit() {
+            kill "$WORKER_PID"
+        }
+        trap quit EXIT
+        ;;
 
     'touch_js' )
         # The Zephyr build needs to use the SASS watcher to resolve dependencies, so we need to create its
