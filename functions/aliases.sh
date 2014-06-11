@@ -26,12 +26,24 @@ alias install-api='(buildweb install-web-api)'
 alias install-inc='(buildweb install-web-include)'
 # Install the web CSS
 alias install-css='(buildstatic install-css)'
+# Install the web JS
+alias install-js='(buildstatic install-js)'
+
 # Install the tools code
 alias install-tools='(build upgrade-tools)'
 # Install touch
 alias install-touch='(buildweb install-web-touch)'
 # Install web
 alias install-web='(buildweb install-web-www)'
+# Install admin layer
+alias install-admin='(buildweb install-web-admin)'
+
+# Install the web autoloader classes
+alias install-autoloaders='(buildweb install-autoloaders)'
+
+# Install the mission control
+alias install-mission-control='(buildweb refresh-live-mission-control-data-from-production)'
+
 # Install the payment service
 alias install-payments='(build install-and-build-payment-service)'
 # Install test data
