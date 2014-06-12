@@ -48,7 +48,8 @@ class CatalogRake
   def self.set_current_link(branch)
     current_sym = self.current_path
     branch_path = self.branch_path(branch)
-    self.run_cmd "ln -s #{branch_path}/ #{current_sym}"
+    deploy_path = self.catalog_deploy_path
+    self.run_cmd "rm #{current_sym}; ln -s #{branch_path}/ #{current_sym}; synccode #{deploy_path}"
   end
 
   def self.branch_exists?(branch)
@@ -91,8 +92,8 @@ class CatalogRake
 
         puts "Building catalog-service project and installing databases."
 
-        # invoke full catalog-service install
-        output = self.run_cmd "cd #{branch_path}; phing -Dprops=#{self.props_file_path} -Denv=#{environment} install; synccode #{CATALOG_DEPLOY_TARGET}"
+        # invoke full catalog-service install, -Dvm=1 notifies build.xml pick vm.properties file instead of dev.properties file
+        output = self.run_cmd "cd #{branch_path}; phing -Dprops=#{self.props_file_path} -Denv=#{environment} -Dvm=1 install"
         
         self.print_cmd_output output
   end
@@ -189,11 +190,12 @@ task :use, :branch do |t, args|
 
     # Fresh checkout
     CatalogRake.svn_checkout branch 
-    
-    CatalogRake.set_current_link branch
 
     CatalogRake.build_branch branch
 
+    # copy all files under {deploy_dir} into current directory and then synccode
+    CatalogRake.set_current_link branch
+    
     sec = Time.now.tv_sec - timestamp
     puts "Done. [#{sec}] sec"
 end
@@ -211,13 +213,13 @@ end
 #   puts "Done."
 #end
 
-desc 'Installs catalograke alias to .bash_aliases so that catalograke.rake can be invoked throughout shell.'
-task :install_alias do |t, args|
-    timestamp   = Time.now.tv_sec
-    CatalogRake.install_alias
-    sec = Time.now.tv_sec - timestamp
-    puts "Done. [#{sec}] sec"
-end
+#desc 'Installs catalograke alias to .bash_aliases so that catalograke.rake can be invoked throughout shell.'
+#task :install_alias do |t, args|
+#    timestamp   = Time.now.tv_sec
+#    CatalogRake.install_alias
+#    sec = Time.now.tv_sec - timestamp
+#    puts "Done. [#{sec}] sec"
+#end
 
 task :default do
     puts ""
