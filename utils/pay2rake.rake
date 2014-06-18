@@ -48,7 +48,8 @@ class PayRake
   def self.set_current_link(branch)
   	current_sym = self.current_path
   	branch_path = self.branch_path(branch)
-  	self.run_cmd "ln -s #{branch_path}/ #{current_sym}"
+        deploy_path = self.payment_deploy_path
+        self.run_cmd "rm #{current_sym}; ln -s #{branch_path}/ #{current_sym}; synccode #{deploy_path}"
   end
 
   def self.branch_exists?(branch)
@@ -91,41 +92,12 @@ class PayRake
 
 		puts "Building payment-service project and installing databases."
 
-		# invoke full payment-service install
-		output = self.run_cmd "cd #{branch_path}; phing -Dprops=#{self.props_file_path} -Denv=#{environment} install; synccode #{PAY_DEPLOY_TARGET}"
-		
-		self.print_cmd_output output
+	        # invoke full catalog-service install, -Dvm=1 notifies build.xml pick vm.properties file instead of dev.properties file
+                output = self.run_cmd "cd #{branch_path}; phing -Dprops=#{self.props_file_path} -Denv=#{environment} -Dvm=1 install"	
+	
+        	self.print_cmd_output output
   end
 
-  def self.install_alias
-  	user_home_dir = File.expand_path('~')
-		bash_aliases	= File.join(user_home_dir, '/.bash_aliases')
-
-		if !File.exists?(bash_aliases)
-			puts "Failure - cannot find file to update [#{bash_aliases}]"
-			return
-		end
-
-		str = "alias pay2rake='rake -f #{__FILE__} '"
-
-		contents = File.read(bash_aliases)
-
-		if contents.include?(str)
-			puts "Success - pay2rake alias already exists in file [#{bash_aliases}]"
-			return
-		end
-
-		# write alias to file
-		File.open(bash_aliases, 'a') do |f|
-			f.write(str)
-		end
-
-		puts "Success - pay2rake alias written to file [#{bash_aliases}]"
-		puts "Remember to execute your .bash_alias file so that your new alias works in the current shell (new shells should work fine). To do so run the following command:"
-		puts ""
-		puts ". #{bash_aliases}"
-		puts ""
-  end
 
   def self.version
   	"1.0"
@@ -190,12 +162,9 @@ task :use, :branch do |t, args|
 	# Fresh checout
 	PayRake.svn_checkout branch 
 	
-
-	PayRake.set_current_link branch
-
 	PayRake.build_branch branch
-
-
+	
+        PayRake.set_current_link branch
 
 	sec = Time.now.tv_sec - timestamp
 	puts "Done. [#{sec}] sec"
@@ -213,20 +182,4 @@ end
 
 #	puts "Done."
 #end
-
-desc 'Installs payrake alias to .bash_aliases so that payrake.rake can be invoked throughout shell.'
-task :install_alias do |t, args|
-	timestamp   = Time.now.tv_sec
-	PayRake.install_alias
-	sec = Time.now.tv_sec - timestamp
-	puts "Done. [#{sec}] sec"
-end
-
-task :default do
-	puts ""
-	puts "PayRake Version[#{PayRake.version}]"
-	puts ""
-	# setting up the default so that the task targets are listed by default (rather than specifying payrake -T)
-  system("rake -f #{__FILE__} -sT") # s is for silent option, T lists the tasks
-end
 

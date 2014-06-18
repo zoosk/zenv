@@ -21,7 +21,7 @@ if [ ! -e "$PAYMENT_PROPS" ]; then
 fi
 
 # Set up the SSH tunnel so we can check out
-ssh jump.sea.zoosk.com -L 9443:svn2prod:443 -L 9543:svn2prod:1443 -Nf || exit 1
+ssh bastion.sea.zoosk.com -L 9443:svn2prod:443 -L 9543:svn2prod:1443 -Nf || exit 1
 
 # Normally we'd use & to background the process and look at $!, but ssh needs to block until it gets a connection
 TUNNEL_PID=$(ps -U $(whoami) | grep 'ssh bastion.sea.zoosk.com' | grep ' -L 9443:svn2prod:443 -L 9543:svn2prod:1443 -Nf' | awk '{print $1}')
