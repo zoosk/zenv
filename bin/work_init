@@ -189,7 +189,7 @@ while [ $DONE -eq 0 ]; do
 
     'payment-service' )
         ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}_payment-service/current"
-        ZENV_BUILD_COMMAND="rsync -rt --exclude=.svn --exclude=.idea ${ZENV_CURRENT_WORK}/ ${ZENV_LOCAL_DEPLOY_DIR}/${ZENV_RSYNC_DIRECTORIES}/; cd ${ZENV_LOCAL_DEPLOY_DIR}/${ZENV_RSYNC_DIRECTORIES}; phing \${PHING_OPTIONS} -Dprops=${ZENV_BUILDPROPS} -Denv=dev"
+        ZENV_BUILD_COMMAND="rsync -rt --exclude=.svn --exclude=.idea ${ZENV_CURRENT_WORK}/ ${ZENV_LOCAL_DEPLOY_DIR}/${ZENV_RSYNC_DIRECTORIES}/ && cd ${ZENV_LOCAL_DEPLOY_DIR}/${ZENV_RSYNC_DIRECTORIES} && phing \${PHING_OPTIONS} -Dprops=${ZENV_BUILDPROPS} -Denv=dev"
         DONE=1
         ;;
 
