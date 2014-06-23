@@ -16,9 +16,7 @@ fi
 
 # If there isn't a properties file, create it
 PAYMENT_PROPS="/srv/dev${ZENV_DEVID}_payment-service/dev${ZENV_DEVID}.properties"
-if [ ! -e "$PAYMENT_PROPS" ]; then
-    printf "dev_id=${ZENV_DEVID}\ndevid_padded=${ZENV_DEVID_PADDED}\ndev_hostname=${ZENV_DEVSERVER}\ndev_serverid=\ndev_dbhostip=${ZENV_DBIP}\ndev_dbprefix=$(readprop dbprefix)\ndev_amazon_api_secret=$(readprop amazon_api_secret)\n\n" > "$PAYMENT_PROPS"
-fi
+printf "dev_id=${ZENV_DEVID}\ndevid_padded=${ZENV_DEVID_PADDED}\ndev_hostname=${ZENV_DEVSERVER}\ndev_serverid=\ndev_dbhostip=${ZENV_DBIP}\ndev_dbprefix=$(readprop dbprefix)\ndev_amazon_api_secret=$(readprop amazon_api_secret)\n\n" > "$PAYMENT_PROPS"
 
 # Set up the SSH tunnel so we can check out
 ssh bastion.sea.zoosk.com -L 9443:svn2prod:443 -L 9543:svn2prod:1443 -Nf || exit 1
