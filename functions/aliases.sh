@@ -42,7 +42,7 @@ alias install-admin='(buildweb install-web-admin)'
 alias install-autoloaders='(buildweb install-autoloaders)'
 
 # Install the mission control
-alias install-mission-control='(buildweb refresh-live-mission-control-data-from-production)'
+alias install-mission-control='(buildweb install-config refresh-live-mission-control-data-from-production)'
 
 # Install the payment service
 alias install-payments='(build install-and-build-payment-service)'
