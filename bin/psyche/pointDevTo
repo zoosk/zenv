@@ -8,8 +8,12 @@ if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
     exit 1
 fi
 
-if [ "$1" == 'local' ] && [ "$#" != "2" ]; then
-   echo "You must supply ip address for local"
+LOCALIP=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
+LOCALIPCOUNT=$(echo "$LOCALIP" |wc -l |xargs) # pipe to xargs to remove whitespace
+
+if [ "$1" == 'local' -a "$LOCALIPCOUNT" != '1' -a "$#" != '2' ]; then
+   echo "You must supply an ip address for local:"
+   ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'
    exit 1
 fi
 
@@ -21,9 +25,14 @@ fi
 TARGETVALUE='127.0.0.1'
 
 if [ "$1" == 'local' ]; then
-    TARGETVALUE="$2"
+    if [ "$#" == "2" ]; then
+        TARGETVALUE="$2"
+    else
+        TARGETVALUE="$LOCALIP"
+    fi
 fi
 echo "Changing apache rewrite to: $TARGETVALUE"
 
 CMD="sudo sed -i 's|http://[-a-zA-Z0-9\.]*:3000|http://$TARGETVALUE:3000|g' /etc/httpd/sites-available/dev-www-zoosk.conf; sudo /etc/init.d/httpd restart"
-ssh -t "$ZENV_LDAP_USERNAME@$ZENV_DEVSERVER" $CMD
+echo "$CMD"
+#ssh -t "$ZENV_LDAP_USERNAME@$ZENV_DEVSERVER" $CMD
