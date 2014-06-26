@@ -34,5 +34,4 @@ fi
 echo "Changing apache rewrite to: $TARGETVALUE"
 
 CMD="sudo sed -i 's|http://[-a-zA-Z0-9\.]*:3000|http://$TARGETVALUE:3000|g' /etc/httpd/sites-available/dev-www-zoosk.conf; sudo /etc/init.d/httpd restart"
-echo "$CMD"
-#ssh -t "$ZENV_LDAP_USERNAME@$ZENV_DEVSERVER" $CMD
+ssh -t "$ZENV_LDAP_USERNAME@$ZENV_DEVSERVER" $CMD
