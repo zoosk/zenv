@@ -13,20 +13,26 @@ fi
 
 UPDATE_TEXT=$(cd "${ZENV_ROOT}"; git pull)
 
+
+TOPLINE="${RED}${BOLD}OMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMG${TXTRESET}"
+BORDER="${RED}${BOLD}OMG${TXTRESET}"
+
 if [ "$(echo "${UPDATE_TEXT}" | grep install.sh)" != '' ]; then
     sed -i '' "/### BEGIN ZENV INIT/,/### END ZENV INIT/d" ~/.bash_login
     sed -i '' '/^alias zenv/d' ~/.bash_login
     rm -f "$ZENV_SETTINGS"
-    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-    echo 'The ZEnv install process has been updated!'
-    echo 'You will need to reinstall ZEnv for changes to take effect.'
-    echo 'To do this, restart your terminal and then run:'
-    echo "cd ${ZENV_ROOT}; ./install.sh"
+    echo $TOPLINE
+    echo "$BORDER The ZEnv install process has been updated!                          $BORDER"
+    echo "$BORDER You will need to reinstall ZEnv for changes to take effect.         $BORDER"
+    echo "$BORDER To do this, restart your terminal and then run:                     $BORDER"
+    printf "$BORDER %-67s ${BORDER}\n" "cd ${ZENV_ROOT}; ./install.sh"
+    echo $TOPLINE
 
 elif [ "$(echo "${UPDATE_TEXT}" | grep 'functions/')" != '' ]; then
-    echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-    echo 'The ZEnv core has been updated!'
-    echo 'You will need to restart your terminal for changes to take effect.'
+    echo $TOPLINE
+    echo "$BORDER The ZEnv core has been updated!                                     $BORDER"
+    echo "$BORDER You will need to restart your terminal for changes to take effect.  $BORDER"
+    echo $TOPLINE
     
 else
     echo "$UPDATE_TEXT"
