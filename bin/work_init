@@ -181,6 +181,13 @@ while [ $DONE -eq 0 ]; do
 	    DONE=1
 	    ;;
 
+	'psyche' )
+	    # copy files to /dev/psyche dir, restart psyche on dev, then deploy will work
+	    ZENV_BUILD_COMMAND='echo psyche build to server not supported yet'
+	    ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}-psyche"
+	    DONE=1
+	    ;;
+
     'themis' )
         ZENV_BUILD_COMMAND="./themis"
         ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}-themis/current"
