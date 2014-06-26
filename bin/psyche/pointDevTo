@@ -1,0 +1,29 @@
+#! /usr/bin/env bash -e
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Change where your dev instance is pointing to for Psyche (itself or your local machine)"
+    echo "Usage: ${PROGNAME} (dev|local <ipaddr>)"
+    exit 1
+fi
+
+if [ "$1" == 'local' ] && [ "$#" != "2" ]; then
+   echo "You must supply ip address for local"
+   exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+fi
+
+TARGETVALUE='127.0.0.1'
+
+if [ "$1" == 'local' ]; then
+    TARGETVALUE="$2"
+fi
+echo "Changing apache rewrite to: $TARGETVALUE"
+
+CMD="sudo sed -i 's|http://[-a-zA-Z0-9\.]*:3000|http://$TARGETVALUE:3000|g' /etc/httpd/sites-available/dev-www-zoosk.conf; sudo /etc/init.d/httpd restart"
+ssh -t "$ZENV_LDAP_USERNAME@$ZENV_DEVSERVER" $CMD
