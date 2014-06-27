@@ -1,0 +1,159 @@
+#! /usr/bin/env bash
+
+# path for zbranch config file
+CONFIG=${ZENV_ROOT}/utils/zbranch.cfg
+
+function usage() {
+    PROGNAME=$(basename $0)
+    echo ""
+    echo "===== ZBRANCH ====="
+    echo "Automatic git checkout system for multiple repositories."
+    echo ""
+    echo "AVAILABLE COMMANDS"
+    echo "------------------"
+    echo "${PROGNAME} add [repo-name]"
+    echo "${PROGNAME} delete [repo-name]"
+    echo "${PROGNAME} checkout [branch-name]"
+    echo "${PROGNAME} show"
+    echo "${PROGNAME} help"
+    echo ""
+    exit 1
+}
+
+# function to add new repo to zbranch system
+function add() {
+    if [ "$1" == '' ]
+    then
+        usage
+    else
+        # if the repo is already in the config file
+        if grep -q "$1" "$CONFIG"
+        then
+            echo "Already in the path. Aborting..."
+            exit 0
+        else
+            path="${ZENV_WORKSPACE}/$1"
+            cd $path
+            if [ "$?" != "0" ]
+            then
+                echo "There is no such repo. Aborting..."
+                exit 1
+            fi
+
+            read -p "Do you want to add $1 to zbranch [y/n] (y)?" A
+            if [ "$A" = "y" -o "$A" = "" ]
+            then
+                echo "$1" >> "$CONFIG"
+                echo "Successfully added $1 to zbranch."
+            else
+                echo "Aborting..."
+                exit
+            fi
+        fi
+    fi
+}
+
+# function to remove a repo from current zbranch system
+function delete() {
+    if [ "$1" = "" ]; then
+        usage
+        exit 1
+    fi
+
+    line=$(egrep "^$1\$" "${CONFIG}")
+    if [ "$line" = "" ]
+    then
+        echo "This repo is not controlled by zbranch or does not exist."
+    else
+        read -p "Do you want to remove $1 from zbranch [y/n] (y)" A
+        if [ "$A" = "y" -o "$A" = "" ]
+        then
+            path=$(echo $1 | sed 's|/|\\/|g')
+            sed -i -e "/^$path$/d" "${CONFIG}"
+            echo "Successfully removed $1 repo from zbranch."
+        else
+            echo "Aborting..."
+        fi
+    fi
+}
+
+# function that lists all repos that are managed by zbranch
+function show() {
+    echo ""
+    echo "Here are repos that are controlled by zbranch."
+    echo "----------------------------------------------"
+    repos=$(cat ${CONFIG})
+    for i in $repos
+    do
+        cd ${ZENV_WORKSPACE}/$i
+        if [ "$?" != "0" ]
+        then
+            echo "There is no $i repo on your workspace."
+        else
+            branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
+            if [ "$branch" != "" ]
+            then
+                echo "- $i: $branch"
+            else
+                echo "- $i: Not a git repository"
+            fi
+
+        fi
+    done
+}
+
+# function that checks out all managed repos to a specificed branch
+function checkout() {
+    if [ "$1" = "" ]; then
+        usage
+        exit 1
+    fi
+    repos=$(cat ${CONFIG})
+    echo ""
+    failCount=0
+    for i in $repos
+    do
+        echo "Checking out branch $1 on $i..."
+        echo "-------------------------"
+        cd ${ZENV_WORKSPACE}/$i && git checkout "$1"
+        if [ "$?" != "0" ]
+        then
+            echo "${RED}Failed to checkout branch $1 on $i${TXTRESET}"
+            ((failCount++))
+        else
+            echo "Switched to $1 on $i"
+        fi
+        echo "========================="
+        echo ""
+    done
+    if [ "$failCount" != 0 ]; then
+        echo "${RED}********* ERROR ON CHECKOUT ************"
+        echo "$failCount repos failed to checkout branch $1."
+    fi
+}
+
+# Usage information when users request for help or supply no parameters
+if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
+    usage
+fi
+
+# create config file if the developer uses zbranch for the first time.
+touch ${ZENV_ROOT}/utils/zbranch.cfg
+
+case "$1" in
+    "add" )
+        add $2
+        ;;
+    "show" )
+        show
+        ;;
+    "delete" )
+        delete $2
+        ;;
+    "checkout" )
+        checkout $2
+        ;;
+    * )
+        usage
+        ;;
+esac
