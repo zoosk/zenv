@@ -5,7 +5,7 @@ alias devbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH 
 alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH into its database."; else mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass); fi'
 ##########################  BATCH BUILD ALIASES  ##########################
 # Install not just everything, but everything-everything. Good for new hires and for first time users of their Dev VM
-alias initial-setup='(checksystem && build install && build install-and-build-photo-service && install-geodata && build install-and-build-utility-service && build install-test-500)'
+alias initial-setup='(checksystem && build install && build install-and-build-photo-service && build install-photov3-db && install-geodata && build install-and-build-utility-service && build install-test-500)'
 # Install everything
 alias install-all='(install-most && install-test && install-test-500)'
 # Reinstall everything
