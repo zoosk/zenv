@@ -50,7 +50,7 @@ devid_padded='${ZENV_DEVID_PADDED}'/' \
 		-e "s/^dev_chatbuildno=\$/dev_chatbuildno=0.0.0.\${devid}/" \
         -e "s/^devid_padded=.*/devid_padded=${ZENV_DEVID_PADDED}/" \
         -e "s/^dev_serverid=.*/dev_serverid=/" \
-        -e "s/^dev_chat_port=.*/dev_chat_port=5280/" \
+        -e "s/^dev_chat_port=.*/dev_chat_port=5222/" \
         -e "s/^dev_bosh_port=.*/dev_bosh_port=5280/" \
         -e "s/^dev_bosh_ssl_port=.*/dev_bosh_ssl_port=5281/" \
         -i '' "$ZENV_BUILDPROPS"
@@ -134,7 +134,7 @@ while [ $DONE -eq 0 ]; do
                 sed -e "s/^devid=.*/devid=${ZENV_DEVID}/" \
                     -e "s/^devid_padded=.*/devid_padded=${ZENV_DEVID_PADDED}/" \
                     -e "s/^dev_serverid=.*/dev_serverid=/" \
-                    -e "s/^dev_chat_port=.*/dev_chat_port=5280/" \
+                    -e "s/^dev_chat_port=.*/dev_chat_port=5222/" \
                     -e "s/^dev_bosh_port=.*/dev_bosh_port=5280/" \
                     -e "s/^dev_bosh_ssl_port=.*/dev_bosh_ssl_port=5281/" \
                     -i '' "$ZENV_BUILDPROPS"
