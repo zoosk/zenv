@@ -43,6 +43,8 @@ for d in ${DIRS}; do
                                --exclude="shared/photoworking" \
                                --exclude="shared/certs" \
                                --exclude="shared/log" \
+                               --exclude="shared/environment.json" \
+                               --exclude="shared/server.json" \
             ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
     fi
 done
