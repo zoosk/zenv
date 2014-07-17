@@ -12,7 +12,7 @@ _tabcomp_use() {
 }
 complete -F _tabcomp_use zenv_use
 complete -F _tabcomp_use use
-
+complete -F _tabcomp_use zbranch
 
 ## worker
 _tabcomp_worker() {

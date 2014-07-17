@@ -1,9 +1,38 @@
 #! /usr/bin/env bash
 
-# path for zbranch config file
-CONFIG=${ZENV_ROOT}/utils/zbranch.cfg
-
+####################################
+# usage function for all commands. #
+####################################
 function usage() {
+    case "$1" in
+        "add" )
+            add_usage
+            ;;
+        "delete" )
+            delete_usage
+            ;;
+        "show" )
+            show_usage
+            ;;
+        "checkout" )
+            checkout_usage
+            ;;
+        "profile" )
+            profile_usage
+            ;;
+        "delete-profile" )
+            delete_profile_usage
+            ;;
+        "snapshot" )
+            snapshot_usage
+            ;;
+        * )
+            general_usage
+            ;;
+    esac
+}
+
+function general_usage() {
     PROGNAME=$(basename $0)
     echo ""
     echo "===== ZBRANCH ====="
@@ -11,104 +40,307 @@ function usage() {
     echo ""
     echo "AVAILABLE COMMANDS"
     echo "------------------"
-    echo "${PROGNAME} add [repo-name]"
-    echo "${PROGNAME} delete [repo-name]"
-    echo "${PROGNAME} checkout [branch-name]"
-    echo "${PROGNAME} show"
-    echo "${PROGNAME} help"
+    echo "${PROGNAME} add <repo-name> [profile-name] [branch-name]"
+    echo "${PROGNAME} delete <repo-name> [profile-name] [branch-name]"
+    echo "${PROGNAME} show [profile-name]"
+    echo "${PROGNAME} checkout <branch-name>"
+    echo "${PROGNAME} profile <profile-name>"
+    echo "${PROGNAME} delete-profile <profile-name>"
+    echo "${PROGNAME} snapshot [profile-name]"
+    echo "${PROGNAME} help [command-name]"
     echo ""
-    exit 1
+    exit
 }
 
-# function to add new repo to zbranch system
+function add_usage() {
+    echo ""
+    echo "===== ZBRANCH ADD ====="
+    echo "ZBRANCH ADD adds a specific repo to a zbranch default profile or any custom profile."
+    echo ""
+    echo "format: zbranch add [repo-name] [profile-name (optional)] [branch-name (optional)]"
+    echo ""
+    echo "ex) zbranch add zoosk-core"
+    echo "ex) zbranch add zoosk-core core-develop develop"
+    exit
+}
+
+function delete_usage() {
+    echo ""
+    echo "===== ZBRANCH DELETE ====="
+    echo "ZBRANCH DELETE deletes a specific repo from a zbranch default profile or custom profile."
+    echo ""
+    echo "format: zbranch delete [repo-name] [profile-name (optional)] [branch-name (optional)]"
+    echo ""
+    echo "ex) zbranch delete zoosk-core"
+    echo "ex) zbranch delete zoosk-core core-develop develop"
+    exit
+}
+
+function show_usage() {
+    echo ""
+    echo "===== ZBRANCH SHOW ====="
+    echo "ZBRANCH SHOW lists all profiles and repos that are controlled by zbranch system."
+    echo ""
+    echo "format: zbranch show [profile-name (optional)]"
+    echo ""
+    echo "ex) zbranch show"
+    echo "ex) zbranch show core-master"
+    exit
+}
+
+function checkout_usage() {
+    echo ""
+    echo "===== ZBRANCH CHECKOUT ====="
+    echo "ZBRANCH CHECKOUT checks out repos in the default group to a branch provided."
+    echo ""
+    echo "ex) zbranch checkout develop"
+    echo "ex) zbranch checkout master"
+    exit
+}
+
+function profile_usage() {
+    echo ""
+    echo "===== ZBRANCH PROFILE ====="
+    echo "ZBRANCH PROFILE checks out repos to specific branches according to a saved profile."
+    echo ""
+    echo "format: zbranch snapshot "
+    echo ""
+    echo "ex) zbranch profile [profile-name]"
+    echo "ex) zbranch profile core-master"
+    exit
+}
+
+function delete_profile_usage() {
+    echo ""
+    echo "===== ZBRANCH DELETE PROFILE ====="
+    echo "ZBRANCH DELETE PROFILE deletes a custom profile."
+    echo ""
+    echo "format: zbranch delete-profile [profile-name]"
+    echo ""
+    echo "ex) zbranch delete-profile core-master"
+}
+
+function snapshot_usage() {
+    echo ""
+    echo "===== ZBRANCH SNAPSHOT ====="
+    echo "ZBRANCH SNAPSHOT takes a snapshot of current branches for zbranch repos and create a custom profile."
+    echo ""
+    echo "format: zbranch snapshot [repo-name1 (optional)] [repo-name2 (optional)] ..."
+    echo ""
+    echo "ex) zbranch snapshot"
+    echo "ex) zbranch snapshot zoosk touch cupid"
+    exit
+}
+
+
+# function for adding a repo to a default profile, or adding repo, branch pair to a custom profile.
 function add() {
     if [ "$1" == '' ]
     then
-        usage
+        add_usage
     else
-        # if the repo is already in the config file
-        if grep -q "$1" "$CONFIG"
+        if [ "$2" == '' -o "$3" == '' ]
         then
-            echo "Already in the path. Aborting..."
-            exit 0
-        else
-            path="${ZENV_WORKSPACE}/$1"
-            cd $path
-            if [ "$?" != "0" ]
+            # profile name not specified. using the default profile.
+            CONFIG=${ZENV_ROOT}/utils/zbranch/default
+            ! [ -f $CONFIG ] && touch $CONFIG
+            # if the repo is already in the config file
+            if grep -q "$1" "$CONFIG"
             then
-                echo "There is no such repo. Aborting..."
-                exit 1
-            fi
-
-            read -p "Do you want to add $1 to zbranch [y/n] (y)?" A
-            if [ "$A" = "y" -o "$A" = "" ]
-            then
-                echo "$1" >> "$CONFIG"
-                echo "Successfully added $1 to zbranch."
+                echo "Already in the path. Aborting..."
+                exit 0
             else
-                echo "Aborting..."
-                exit
+                path="${ZENV_WORKSPACE}/$1"
+                cd $path
+                if [ "$?" != "0" ]
+                then
+                    # if there is no such repo..
+                    echo "There is no such repo. Aborting..."
+                    exit 1
+                fi
+
+                read -p "Do you want to add $1 to zbranch [y/n] (y)?" A
+                if [ "$A" = "y" -o "$A" = "" ]
+                then
+                    echo "$1" >> "$CONFIG"
+                    echo "Successfully added $1 to zbranch."
+                else
+                    echo "Aborting..."
+                    exit
+                fi
+            fi
+        else
+            # using the specified custom profile.
+            CONFIG=${ZENV_ROOT}/utils/zbranch/profiles/$2
+            ! [ -f $CONFIG ] && touch $CONFIG
+            # if the repo is already in the config file
+            if grep -q "$1" "$CONFIG"
+            then
+                echo "Already in the path. Aborting..."
+                exit 0
+            else
+                path="${ZENV_WORKSPACE}/$1"
+                cd $path
+                if [ "$?" != "0" ]
+                then
+                    echo "There is no such repo. Aborting..."
+                    exit 1
+                fi
+
+                read -p "Do you want to add $1:$3 to zbranch profile \"$2\" [y/n] (y)?" A
+                if [ "$A" = "y" -o "$A" = "" ]
+                then
+                    echo "$1,$3" >> "$CONFIG"
+                    echo "Successfully added $1:$3 to zbranch to profile \"$2\"."
+                else
+                    echo "Aborting..."
+                    exit
+                fi
             fi
         fi
     fi
 }
 
-# function to remove a repo from current zbranch system
+# function for deleting a repo from default profile, or repo, branch pair from a custom profile.
 function delete() {
-    if [ "$1" = "" ]; then
-        usage
-        exit 1
+    if [ "$1" == '' ]
+    then
+        delete_usage
+        exit
     fi
 
-    line=$(egrep "^$1\$" "${CONFIG}")
+    # if optional paramters (profile-name and branch-name) are not provided
+    if [ "$2" = "" -o "$3" = "" ]; then
+        # delete from default profile
+        line=$(egrep "^$1\$" "${ZENV_ROOT}/utils/zbranch/default")
+        if [ "$line" = "" ]
+        then
+            echo "This repo is not controlled by zbranch or does not exist."
+        else
+            read -p "Do you want to remove $1 from zbranch [y/n] (y)?" A
+            if [ "$A" = "y" -o "$A" = "" ]
+            then
+                path=$(echo $1 | sed 's|/|\\/|g')
+                echo $(sed -e "/^$path$/d" "${ZENV_ROOT}/utils/zbranch/default") > ${ZENV_ROOT}/utils/zbranch/default
+                echo "Successfully removed $1 repo from zbranch."
+            else
+                echo "Aborting..."
+            fi
+        fi
+        exit
+    fi
+    pair="$1,$3"
+    line=$(egrep "^$pair\$" "${ZENV_ROOT}/utils/zbranch/profiles/$2")
     if [ "$line" = "" ]
     then
-        echo "This repo is not controlled by zbranch or does not exist."
+        echo "This repo does not exist in the custom profile $2."
     else
-        read -p "Do you want to remove $1 from zbranch [y/n] (y)" A
+        read -p "Do you want to remove $1 from zbranch profile $2 [y/n] (y)?" A
         if [ "$A" = "y" -o "$A" = "" ]
         then
-            path=$(echo $1 | sed 's|/|\\/|g')
-            sed -i -e "/^$path$/d" "${CONFIG}"
-            echo "Successfully removed $1 repo from zbranch."
+            path=$(echo $pair | sed 's|/|\\/|g')
+            if [ -f "${ZENV_ROOT}/utils/zbranch/profiles/$2" ]; then
+                echo $path
+                echo $(sed -e "/^$path$/d" "${ZENV_ROOT}/utils/zbranch/profiles/$2") > ${ZENV_ROOT}/utils/zbranch/profiles/$2
+                echo "Successfully removed $1 repo from profile $2."
+                exit
+            fi
+            echo "No such profile exists. Aborting..."
+            exit 1
         else
             echo "Aborting..."
         fi
     fi
 }
 
-# function that lists all repos that are managed by zbranch
+# function for listing repos for all profiles, or repo, branch pairs for an indiviudal custom profile.
 function show() {
-    echo ""
-    echo "Here are repos that are controlled by zbranch."
-    echo "----------------------------------------------"
-    repos=$(cat ${CONFIG})
-    for i in $repos
-    do
-        cd ${ZENV_WORKSPACE}/$i
-        if [ "$?" != "0" ]
-        then
-            echo "There is no $i repo on your workspace."
-        else
-            branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
-            if [ "$branch" != "" ]
+    if [ "$1" != "" ]
+    then
+        # listing a specific custom profile.
+        repos="$(cat ${ZENV_ROOT}/utils/zbranch/profiles/$1)"
+        echo ""
+        echo "Showing profile $1"
+        echo "----------------------------------------------"
+        for repo in $repos
+        do
+            IFS=',' read -a arr <<< "$repo"
+            cd ${ZENV_WORKSPACE}/${arr[0]}
+            if [ "$?" != "0" ]
             then
-                echo "- $i: $branch"
+                echo "There is no $i repo on your workspace."
             else
-                echo "- $i: Not a git repository"
+                branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
+                if [ "$branch" != "" ]
+                then
+                    echo ${arr[0]}:${arr[1]} - $branch
+                else
+                    echo ${arr[0]}:${arr[1]} - Not a git repo
+                fi
+
             fi
 
+        done
+        echo "----------------------------------------------"
+        return
+    fi
+
+    # showing all profiles
+    echo ""
+    default=$(cat ${ZENV_ROOT}/utils/zbranch/default)
+    echo "DEFAULT PROFILE (You can only checkout to same branches among these repos.)"
+
+    for r in $default
+    do
+        cd ${ZENV_WORKSPACE}/$r
+        branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
+        if [ "$branch" != "" ]
+        then
+            echo - $r:$branch
+        else
+            echo - $r - Not a git repo
         fi
     done
+    echo ""
+    echo ""
+    echo "CUSTOM PROFILES"
+    echo ""
+    profiles=$(ls ${ZENV_ROOT}/utils/zbranch/profiles)
+    for i in $profiles
+    do
+        echo "- $i"
+        # echo "----------------------------------------------"
+        # repos="$(cat ${ZENV_ROOT}/utils/zbranch/profiles/$i)"
+        # for repo in $repos
+        # do
+        #     IFS=',' read -a arr <<< "$repo"
+        #     cd ${ZENV_WORKSPACE}/${arr[0]}
+        #     if [ "$?" != "0" ]
+        #     then
+        #         echo "There is no $i repo on your workspace."
+        #     else
+        #         branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
+        #         if [ "$branch" != "" ]
+        #         then
+        #             echo ${arr[0]}:${arr[1]} - $branch
+        #         else
+        #             echo ${arr[0]}:${arr[1]} - Not a git repo
+        #         fi
+
+        #     fi
+
+        # done
+    done
+    echo ""
 }
 
-# function that checks out all managed repos to a specificed branch
+# function for checking out to a specified branch for all repos in default profile.
 function checkout() {
     if [ "$1" = "" ]; then
-        usage
+        checkout_usage
         exit 1
     fi
-    repos=$(cat ${CONFIG})
+    repos=$(cat ${ZENV_ROOT}/utils/zbranch/default)
     echo ""
     failCount=0
     for i in $repos
@@ -132,26 +364,119 @@ function checkout() {
     fi
 }
 
+# function for checking out branches according to a specified custom profile.
+function profile() {
+    if [ "$1" = "" ]; then
+        profile_usage
+        exit 1
+    fi
+    repos=$(cat ${ZENV_ROOT}/utils/zbranch/profiles/$1)
+    echo ""
+    failCount=0
+    for repo in $repos
+    do
+        IFS=',' read -a arr <<< "$repo"
+        echo "Checking out branch ${arr[1]} on ${arr[0]}..."
+        echo "-------------------------"
+        cd ${ZENV_WORKSPACE}/${arr[0]} && git checkout "${arr[1]}"
+        if [ "$?" != "0" ]
+        then
+            echo "${RED}Failed to checkout branch $1 on $i${TXTRESET}"
+            ((failCount++))
+        else
+            echo "Switched to ${arr[1]} on ${arr[0]}"
+        fi
+        echo "========================="
+        echo ""
+    done
+    if [ "$failCount" != 0 ]; then
+        echo "${RED}********* ERROR ON CHECKOUT ************"
+        echo "$failCount repos failed to checkout branch $1."
+    fi
+}
+
+function delete_profile() {
+    rm ${ZENV_ROOT}/utils/zbranch/profiles/$1
+    [ "$?" != 0 ] && echo "There is no such profile." && exit 1
+    echo "Successfully deleted a profile callsed $1."
+}
+
+# function for creating a custom profile based on current branches. Repos are derived from the default profile.
+function snapshot() {
+    read -p "What should be the name of the new custom profile? " name
+    if [ "$name" = "" ]
+    then
+        echo "Profile name cannot be empty."
+        exit 1
+    fi
+
+    if [ "$2" = "" ]
+    then
+        ! [ -f ${ZENV_ROOT}/utils/zbranch/profiles/$name ] && touch ${ZENV_ROOT}/utils/zbranch/profiles/$name
+        repos=$(cat ${ZENV_ROOT}/utils/zbranch/default)
+        for repo in $repos
+        do
+            cd ${ZENV_WORKSPACE}/$repo
+            branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
+            if [ "$branch" != "" ]
+            then
+                echo $repo,$branch >> ${ZENV_ROOT}/utils/zbranch/profiles/$name
+            else
+                echo $repo - Not a git repo
+            fi
+        done
+        show $name
+        echo "Successfully created a custom profile called $name."
+        exit
+    fi
+
+    repos="${@:2}"
+    for repo in $repos
+    do
+        cd ${ZENV_WORKSPACE}/$repo
+        branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
+        if [ "$branch" != "" ]
+        then
+            echo $repo,$branch >> ${ZENV_ROOT}/utils/zbranch/profiles/$name
+        else
+            echo $repo - Not a git repo
+        fi
+    done
+    echo "Successfully created a custom profile called $name."
+}
+
 # Usage information when users request for help or supply no parameters
 if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
     usage
 fi
 
-# create config file if the developer uses zbranch for the first time.
-touch ${ZENV_ROOT}/utils/zbranch.cfg
-
+mkdir -p ${ZENV_ROOT}/utils/zbranch
+mkdir -p ${ZENV_ROOT}/utils/zbranch/profiles
+! [ -f ${ZENV_ROOT}/utils/zbranch/default ] && touch ${ZENV_ROOT}/utils/zbranch/default
 case "$1" in
     "add" )
-        add $2
-        ;;
-    "show" )
-        show
+        add $2 $3 $4
         ;;
     "delete" )
-        delete $2
+        delete $2 $3 $4
+        ;;
+    "show" )
+        show $2
         ;;
     "checkout" )
         checkout $2
+        ;;
+    "profile" )
+        profile $2
+        ;;
+    "delete-profile" )
+        delete_profile $2
+        ;;
+    "snapshot" )
+        snapshot "$@"
+        ;;
+    "help" )
+        usage $2
         ;;
     * )
         usage

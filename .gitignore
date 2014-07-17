@@ -3,5 +3,4 @@
 .DS_Store
 *~
 #*
-utils/zbranch.cfg
-utils/zbranch.cfg-e
+utils/zbranch/*
