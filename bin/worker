@@ -42,10 +42,12 @@ finish() {
 }
 trap finish SIGINT
 
+WORKER="$1"
+
 runWorker() {
     # This will run the worker and fire SIGUSR1 when it completes
     if [ -z "$INT" ]; then
-        ssh "$ZENV_DEVSERVER" "cd ${WORKERS_DIR} && php ${1}"
+        ssh "$ZENV_DEVSERVER" "cd ${WORKERS_DIR} && php ${WORKER}"
         kill -USR1 $$
     fi
 }
