@@ -26,3 +26,49 @@ _tabcomp_worker() {
     fi
 }
 complete -F _tabcomp_worker worker
+
+## webscript
+_tabcomp_webscript() {
+    local cur scripts dirbase
+    if [ "$ZENV_SERVERDIR" != '' ]; then
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        dirbase="${ZENV_SERVERDIR}/current/web/scripts"
+        if [[ $cur == */* ]]; then
+            local files=("${dirbase}/$2"*)
+            [[ -e ${files[0]} ]] && COMPREPLY=( "${files[@]##${dirbase}/}" )
+            for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
+                [ -d "${dirbase}/${COMPREPLY[$i]}" ] && COMPREPLY[$i]=${COMPREPLY[$i]}/
+            done
+        else
+            scripts=$(/bin/ls -F ${dirbase})
+            COMPREPLY=( $(compgen -W "${scripts}" -- ${cur}) )
+        fi
+
+    else
+        COMPREPLY=( $(compgen '' -- ${cur}) )
+    fi
+}
+complete -o nospace -F _tabcomp_webscript webscript
+
+## webscript
+_tabcomp_testscript() {
+    local cur scripts dirbase
+    if [ "$ZENV_SERVERDIR" != '' ]; then
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        dirbase="${ZENV_SERVERDIR}/current/web/test"
+        if [[ $cur == */* ]]; then
+            local files=("${dirbase}/$2"*)
+            [[ -e ${files[0]} ]] && COMPREPLY=( "${files[@]##${dirbase}/}" )
+            for ((i=0; i < ${#COMPREPLY[@]}; i++)); do
+                [ -d "${dirbase}/${COMPREPLY[$i]}" ] && COMPREPLY[$i]=${COMPREPLY[$i]}/
+            done
+        else
+            scripts=$(/bin/ls -F ${dirbase})
+            COMPREPLY=( $(compgen -W "${scripts}" -- ${cur}) )
+        fi
+
+    else
+        COMPREPLY=( $(compgen '' -- ${cur}) )
+    fi
+}
+complete -o nospace -F _tabcomp_testscript testscript
