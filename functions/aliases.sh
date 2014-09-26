@@ -5,9 +5,9 @@ alias devbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH 
 alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH into its database."; else mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass); fi'
 ##########################  BATCH BUILD ALIASES  ##########################
 # Install not just everything, but everything-everything. Good for new hires and for first time users of their Dev VM
-alias initial-setup='(checksystem && build install && build install-and-build-photo-service && build install-photov3-db && install-geodata && build install-test-500)'
+alias initial-setup='(checksystem && build install && build install-and-build-photo-service && build install-photov3-db && install-geodata && build install-test2k)'
 # Install everything
-alias install-all='(install-most && install-test && install-test-500)'
+alias install-all='(install-most && install-test && install-test2k)'
 # Reinstall everything
 alias reinstall-all='(delete-all && install-all)'
 # Install everything except test data
@@ -50,5 +50,8 @@ alias install-payments='(build install-and-build-payment-service)'
 alias install-test='(buildweb install-test)'
 # Install test 500
 alias install-test-500='(buildweb install-test-500)'
+# Install test 2k
+alias install-test2k='(buildweb install-test2k-prod)'
+
 # Rsync geodbdata (required for install-geolookup-data)
 alias rsync-geodbdata="mkdir -p ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata && rsync -az --progress ${ZENV_LDAP_USERNAME}@db1qa.sfo2.zoosk.com:/mnt/geodbdata/ ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata/"
