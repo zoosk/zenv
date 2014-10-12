@@ -10,7 +10,7 @@ if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
     echo "Usage: ${PROGNAME} list"
     echo
     echo "Usage: ${PROGNAME} backup|restore <db_backup_name> [--show-output]"
-    echo "   Backing up: SQL dump is placed in a directory with a time stamp: <zoosk_core_dir>/web/test/data/testdata/custom_<db_backup_name>_<date_stamp>/*"
+    echo "   Backing up: SQL dump is placed in a directory with a time stamp: <zoosk_core_dir>/web/test/data/testdata/bkup_<db_backup_name>_<date_stamp>/*"
     echo "   Restoring: provide the exact name of the SQL dump dir."
 
     exit 1
@@ -48,7 +48,7 @@ if [ $DB_BACKUP_ACTION == 'backup' -o $DB_BACKUP_ACTION == 'restore' ]; then
     fi;
 
     if [ "$DB_BACKUP_ACTION" == 'backup' ]; then
-        DB_DATASET=custom_${DB_BACKUP_NAME}_$(date '+%Y%m%d_%H%M%S')
+        DB_DATASET=bkup_${DB_BACKUP_NAME}_$(date '+%Y%m%d_%H%M%S')
     else
         DB_DATASET=${DB_BACKUP_NAME}
     fi
