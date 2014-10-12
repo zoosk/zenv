@@ -2,15 +2,15 @@
 
 PROGNAME=$(basename $0)
 DB_BACKUP_PARENT_DIR=web/test/data/testdata
-DB_BACKUP_PARENT_DIR_DATASETS=${DB_BACKUP_PARENT_DIR}/datasets
+DB_BACKUP_DATASETS_DIR=datasets
 
 if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
     echo "${PROGNAME}: Back up/restore all DBs in your dev instance, and list the current DB backups."
     echo
     echo "Usage: ${PROGNAME} list"
     echo
-    echo "Usage: ${PROGNAME} backup|restore <db_backup_name> [--show-output]"
-    echo "   Backing up: SQL dump is placed in a directory with a time stamp: <zoosk_core_dir>/web/test/data/testdata/bkup_<db_backup_name>_<date_stamp>/*"
+    echo "Usage: ${PROGNAME} backup|restore <backup_name> [--show-output]"
+    echo "   Backing up: SQL dump is placed in a directory with a time stamp: <zoosk_core_dir>/web/test/data/testdata/bkup_<backup_name>_<date_stamp>/*"
     echo "   Restoring: provide the exact name of the SQL dump dir."
 
     exit 1
@@ -63,7 +63,8 @@ if [ $DB_BACKUP_ACTION == 'backup' -o $DB_BACKUP_ACTION == 'restore' ]; then
 
 elif [ $DB_BACKUP_ACTION == 'list' ]; then
 
-    ls -lt datasets/
+    echo `pwd`/${DB_BACKUP_DATASETS_DIR};
+    ls -lt ${DB_BACKUP_DATASETS_DIR}/
 
 else
     echo "Not a recognized command '$DB_BACKUP_ACTION'"
