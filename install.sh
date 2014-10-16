@@ -135,11 +135,15 @@ touch ~/.bash_login
 if [ "$(egrep '^alias zenv=.*activate.sh$' ~/.bash_login)" == '' ]; then
     echo "alias zenv=${ZENV_ROOT}/activate.sh" >> ~/.bash_login
 else
-    sed -i '' "s|alias zenv=.*|alias zenv=${ZENV_ROOT}/activate.sh|" ~/.bash_login
+    sed -i "s?alias zenv=.*?alias zenv=${ZENV_ROOT}/activate.sh?" ~/.bash_login
 fi
 
 # Remove all the old work init files just in case something has changed
-find "$ZENV_WORKSPACE" -name work.properties -maxdepth 5 | xargs grep -l ZENV | xargs rm
+WORKPROPERTIES_LIST=$(\
+  find "${ZENV_WORKSPACE}" -maxdepth 5 -type f -name 'work.properties' \
+  | xargs grep -l ZENV\
+)
+if [ "${WORKPROP_LIST}" != "" ]; then rm "{WORKPROP_LIST}"; fi
 
 # Attempt to make ZEnv start by default
 touch ~/.bash_login

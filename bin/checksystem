@@ -22,12 +22,33 @@ function versioncompare() {
     PROGRAM="$1"
     MY_VERSION="$2"
     REQUIRED_VERSION="$3"
+
+    REQ_LIST=($(echo "${REQUIRED_VERSION}" |sed -e 's?[\.-]? ?g'));
+    MY_LIST=($(echo "${MY_VERSION}" | sed -e 's?[\.-]? ?g'));
+
+    REQ_COUNT="${#REQ_LIST[@]}";
+    IDX=0;
+    
     printf "Checking version of ${PROGRAM}..."
-    if [ "$(php -r "echo version_compare('${MY_VERSION}', '${REQUIRED_VERSION}');")" == '-1' ]; then
-        echo "${RED}${BOLD}FAILED!${TXTRESET} Your version of ${PROGRAM} is ${MY_VERSION}, but ${REQUIRED_VERSION} is required."
-        exit 1
-    fi
-    echo "${MY_VERSION}"
+    while [ "${IDX}" -lt "${REQ_COUNT}" ]; do
+      RV="${REQ_LIST[IDX]}";
+      MV="${MY_LIST[IDX]}";
+      # echo "${RV} ${MV}";
+      if [ "${RV}" != "${MV}" ]; then
+        echo "${RED}${BOLD}FAILED!${TXTRESET} Your version of ${PROGRAM} is "
+        echo "${MY_VERSION}, but ${REQUIRED_VERSION} is required."
+        exit 1;
+      fi
+      let IDX++;
+    done
+    echo ${MY_VERSION}
+
+#   printf "Checking version of ${PROGRAM}..."
+#   if [ "$(php -r "echo version_compare('${MY_VERSION}', '${REQUIRED_VERSION}');")" == '-1' ]; then
+#       echo "${RED}${BOLD}FAILED!${TXTRESET} Your version of ${PROGRAM} is ${MY_VERSION}, but ${REQUIRED_VERSION} is required."
+#       exit 1
+#   fi
+#   echo "${MY_VERSION}"
 }
 
 function checkinstalled() {
@@ -44,7 +65,7 @@ echo 'Checking if your system can install Zoosk...'
 
 checkinstalled php
 PHP_VERSION=$(php -v | /usr/bin/head -1 | awk '{print $2}')
-versioncompare php $PHP_VERSION '5.5.11'
+versioncompare php $PHP_VERSION '5.5' # .11
 
 checkinstalled mysql
 

@@ -64,7 +64,7 @@ buildstatic     Build static files.
 deactivate      Exit ZEnv.
 
 ${BOLD}The current utilities are:${TXTRESET}
-$(find "${ZENV_ROOT}/bin" ! -type d -depth 1 | xargs basename | egrep -v '^\.')"
+$(find "${ZENV_ROOT}/bin" -maxdepth 1 -type f | xargs -n 1 basename | egrep -v '^\.')"
         if [ -n "$ZENV_CURRENT_WORK" ]; then
             REPO_TYPE=$(inspect "$ZENV_CURRENT_WORK" repo_type 2>/dev/null)
             if [ "$REPO_TYPE" != '' ]; then
