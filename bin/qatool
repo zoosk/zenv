@@ -32,8 +32,6 @@ if [ ! -e "$SETTINGS_FILE" -a "$1" != 'init' ]; then
     exit 1
 fi
 
-
-
 function zooskbuild() {
     use "$1" || exit 1
     svn revert -R . || exit 1
@@ -113,6 +111,6 @@ TOUCH_RC=\"${TOUCH_RC}\"
                 exit 1
                 ;;
         esac
-        notify 'Build complete!'
+        notify -t 'Build complete!' -m 'Have fun, but be careful kids.'
         ;;
 esac

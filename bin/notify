@@ -6,10 +6,45 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     exit 1
 fi
 
-BIN_FILE="${ZENV_ROOT}"/utils/terminal-notifier.app/Contents/MacOS/terminal-notifier
-if [ -n "$1" -a "$(echo "$1" | sed 's/\(.\).*/\1/')" != '-' ]; then
-    # This is not an option, just display the message
-    $BIN_FILE -message "$1"
-else
-    $BIN_FILE "$@"
+NTITLE='';
+NMSG='';
+NTIME=2;
+
+while getopts "t:m:" arg; do
+  case $arg in
+    t)
+      NTITLE="${OPTARG}"
+      ;;
+    m)
+      NMSG="${OPTARG}"
+      ;;
+  esac
+done
+
+
+if [ -z "${NTITLE}" ] && [ -z "${NMSG}" ]; then
+  NMSG="{$1}";
+  if [ -z "${NMSG}" ]; then exit 0; fi
 fi
+
+NOTIFY_DE="${XDG_CURRENT_DESKTOP}";
+
+echo "NTITLE: ${NTITLE} | NMSG: ${NMSG} | NOTIFY_DE: ${NOTIFY_DE}"
+case "${NOTIFY_DE}" in
+  '')
+    BIN_FILE="${ZENV_ROOT}/utils/terminal-notifier.app/Contents/MacOS/terminal-notifier"
+    if [ ! -z "${BIN_FILE}" ]; then
+      $BIN_FILE -title "${NTITLE}" -message "${NMSG}";
+    fi
+    ;;
+  Unity)
+    if [ ! -z $(which notify-send) ]; then
+      notify_send "${NTITLE}" "${NMSG}" -t "${NTIME}";
+    fi
+    ;;
+  KDE)
+    if [ ! -z $(which kdialog) ]; then
+      kdialog --title "${NTITLE}" --passivepopup "${NMSG}" "${NTIME}";
+    fi
+    ;;
+esac

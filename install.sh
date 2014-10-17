@@ -51,15 +51,10 @@ if [ ! -e "$ZENV_WORKSPACE" ]; then
 fi
 
 # Give the option to install MacFSEvents, as the autobuilder requires it
-if [ "$(which clang)" != '' -a "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
-    read -p 'You need to have MacFSEvents installed if you want to use the automatic builder. Would you like to install it now [y/n] (y)? ' TEMP
-    if [ "$TEMP" != 'n' ]; then
-        if [ "$(which pip)" == '' ]; then
-            sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future easy_install macfsevents
-        else
-            sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future pip install macfsevents
-        fi
-    fi
+if [ "$(which clang)" != '' -a "$(python -c 'import watchdog' 2>/dev/null; echo $?)" == '1' ]; then
+    read -p 'You need to have watchdog installed if you want to use the '
+      'automatic builder. Please install it now.'
+    exit 1;
 fi
 
 ZENV_LOCAL_DEPLOY_DIR="/srv"
@@ -90,8 +85,9 @@ echo 'Installing...'
 echo "#! /usr/bin/env bash
 
 ######
-## This is the global ZEnv settings file. If you want to change your global configuration without
-## reinstalling everything, just modify the values in this file and then start a new terminal.
+## This is the global ZEnv settings file. If you want to change your global 
+## configuration withoutreinstalling everything, just modify the values in 
+## this file and then start a new terminal.
 ######
 
 # The path to the ZEnv directory.
@@ -104,10 +100,10 @@ export ZENV_SETTINGS=${ZENV_SETTINGS}
 export ZENV_WORKSPACE=${ZENV_WORKSPACE}
 
 # The command that will run after builds complete successfully.
-export ZENV_COMPLETE_COMMAND='notify -title \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -message \"Build complete!\" >/dev/null'
+export ZENV_COMPLETE_COMMAND='notify -t \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -m \"Build complete!\" >/dev/null'
 
 # The command that will run if a build fails.
-export ZENV_FAILED_COMMAND='notify -title \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -message \"Build failed!\" >/dev/null'
+export ZENV_FAILED_COMMAND='notify -t \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -m \"Build failed!\" >/dev/null'
 
 # Your LDAP username, that is, what you use to login to your Dev server
 export ZENV_LDAP_USERNAME=\"${ZENV_LDAP_USERNAME}\"
@@ -116,7 +112,7 @@ export ZENV_LDAP_USERNAME=\"${ZENV_LDAP_USERNAME}\"
 export ZENV_LOCAL_DEPLOY_DIR=\"${ZENV_LOCAL_DEPLOY_DIR}\"
 
 
-############################## Anything below this line SHOULD NOT BE EDITED!!! ##############################
+###### Anything below this line SHOULD NOT BE EDITED!!! #######
 
 export PATH=\"\${ZENV_ROOT}/bin:\$PATH\"
 for i in \$(find \${ZENV_ROOT}/functions -name '*.sh'); do

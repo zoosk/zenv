@@ -93,14 +93,14 @@ if [ "$?" != '0' ]; then
 fi
 echo 'Success'
 
-checkinstalled xcode-select
+# checkinstalled xcode-select
 
 checkinstalled clang
 checkinstalled gcc
 
 checkinstalled phing
 PHING_VERSION="$(phing -v | awk '{print $2}')"
-versioncompare phing $PHING_VERSION '2.7.0'
+versioncompare phing $PHING_VERSION '2.8' # was '2.7.0'
 
 printf "Checking for access to MySQL..."
 if [ "$(echo 'show databases;' | mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass) mysql >/dev/null 2>1; echo $?)" != '0' ]; then

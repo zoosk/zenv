@@ -205,14 +205,13 @@ def callback(event):
 
 
 observer = Observer()
+observer.schedule( callback, local_path, recursive=True)
 observer.start()
-stream = Stream(callback, local_path, file_events=True)
-observer.schedule(stream)
 
-def interrupt_handler(signal, frame):
-    observer.unschedule(stream)
+try:
+    while True:
+        time.sleep(1)
+except keyboardInterupt
+
     observer.stop()
-    print 'Thank you, come again.'
-
-signal.signal(signal.SIGINT, interrupt_handler)
-signal.pause()
+observer.join()

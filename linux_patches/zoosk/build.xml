@@ -1,0 +1,742 @@
+<project name="zoosk" default="all" >
+	<!-- set the properties here-->
+	<property name="propfile_exists" value="0" override="true" />
+	<property name="propfile_exists1" value="0" override="true" />
+	<property name="propfile_exists2" value="0" override="true" />
+
+	<if><isset property="psyche-for-ccuser"/>
+	  <then>
+		<property name="psyche_deploy_server" value="node1dev.sfo2.zoosk.com"/>
+	  </then>
+	</if>
+
+	<available file="${properties_file}" property="propfile_exists" value="1"/>
+	<if>
+		<equals arg1="${propfile_exists}" arg2="1" />
+		<then>
+			<property file="${properties_file}" override="true" />
+		</then>
+	</if>
+  	<available file="${pf1}" property="propfile_exists1" value="1"/>
+    <if>
+        <equals arg1="${propfile_exists1}" arg2="1" />
+        <then>
+             <property file="${pf1}" override="true" />
+        </then>
+    </if>
+    
+  	<available file="${pf2}" property="propfile_exists2" value="1"/>
+    <if>
+        <equals arg1="${propfile_exists2}" arg2="1" />
+        <then>
+             <property file="${pf2}" override="true" />
+        </then>
+    </if>
+	<target name="all" description="Show Build Options">
+		<echo msg="Select 'install', 'install-static-web', 'install-tools', 'install-schwartz', 'install-web-test', 'clean-web', 'install-test-10000xn' targets"/>
+		<echo msg="'upgrade-web', 'upgrade-tools', 'install-web-update', 'upgrade-service-workload', 'upgrade-web-workload', 'install-db-web'" />
+		<echo msg="'install-zoosk-comm-template', 'install-commauth-zoosk', 'install-scripts', 'install-geoip-data', 'generate-payment-service-client', 'install-and-build-payment-service'" />
+		<echo msg="'install-and-build-catalog-service'" />
+	</target>
+
+	<target 
+		name="install" description="Installs the entire zoosk project.  This will Install Fresh databases and installs the code."
+		depends="install-tools, install-web, install-web-update, install-psyche, install-themis, install-schwartz, install-db-chat, install-db-money, install-finance-code, generate-payment-service-client, install-branch-version">
+		<!-- TODO: This should only depend on "install-db, install-code" -->
+	</target>
+	
+	<target 
+		name="upgrade" 
+		description="Upgrades the entire zoosk project.  This will run databases migrations and install Stored Procs and installs the code."
+		depends="upgrade-db,install-code">
+	</target>
+	
+	<target 
+		name="install-code" 
+		description="Installs Code the entire zoosk project."
+		depends="install-code-server, install-static-code">
+	</target>
+	
+	<target 
+		name="upgrade-db"
+		description="Upgrades the databases.  Runs migrations and installs stored procedures"
+		depends="upgrade-db-web">
+	</target>
+		
+	<target 
+		name="install-db"
+		description="Upgrades the databases.  Runs migrations and installs stored procedures"
+		depends="install-schwartz, install-db-web, install-db-money">
+	</target>
+	
+	<target 
+		name="install-code-server"
+		description="Installs code for the server (no statics)"
+		depends="install-tools, install-finance-code, install-web-server-code, install-web-update, generate-payment-service-client, install-branch-version">
+	</target>
+	
+	<target
+		name="install-static-code"
+		description="Installs static code"
+		depends="install-static-web">
+	</target>
+
+	<target name="install-tools" description="Installs the zoosk tools project">
+		<echo msg="Installing the zoosk tools project"/>
+		<phing dir="tools" phingfile="build.xml" target="install" haltonfailure="true" />
+
+		<!-- This should be removed once we create install-code for the root file -->
+		<phing dir="finance" phingfile="build.xml" target="install-code" haltonfailure="true" />
+	</target>
+
+	<target name="install-web" description="Installs the zoosk web project">
+		<echo msg="Installing the zoosk web project"/>
+		<phing dir="web" phingfile="build.xml" target="install" haltonfailure="true" />
+		<echo msg="Zoosk web project installed"/>
+	</target>
+
+	<target name="install-web-test" description="Installs the test part of the zoosk web project">
+		<echo msg="Installing the zoosk web test"/>
+		<phing dir="web" phingfile="build.xml" target="install-test" haltonfailure="true" />
+		<echo msg="Zoosk web test installed"/>
+	</target>
+
+
+    <php expression="array_shift(explode('|', '${schwartz}', 2))" returnProperty="theSchwartzMasterHost" />
+    <php expression="array_shift(explode('|', '${schwartz2}', 2))" returnProperty="schwartz2MasterHost" />
+
+	<target name="install-schwartz" description="Installs the zoosk schwartz project">
+		<phing dir="schwartz" phingfile="build.xml" target="install-schwartz-db" haltonfailure="true">
+            <property name="schwartzMasterHost" value="${theSchwartzMasterHost}" />
+			<property name="schwartzdb" value="theschwartzdb" />
+		</phing>
+
+		<phing dir="schwartz" phingfile="build.xml" target="install-schwartz-db" haltonfailure="true">
+            <property name="schwartzMasterHost" value="${schwartz2MasterHost}" />
+			<property name="schwartzdb" value="schwartz2db" />
+		</phing>
+	</target>
+
+    <target name="upgrade-schwartz-db" description="Installs the zoosk schwartz project">
+        <phing dir="schwartz" phingfile="build.xml" target="upgrade-schwartz-db" haltonfailure="true">
+            <property name="schwartzMasterHost" value="${theSchwartzMasterHost}" />
+            <property name="schwartzdb" value="theschwartzdb" />
+        </phing>
+
+        <phing dir="schwartz" phingfile="build.xml" target="upgrade-schwartz-db" haltonfailure="true">
+            <property name="schwartzMasterHost" value="${schwartz2MasterHost}" />
+            <property name="schwartzdb" value="schwartz2db" />
+        </phing>
+    </target>
+
+
+    <target name="install-affinity-data" description="Installs affinity dataset">
+    		<echo msg="Installing affinity dataset zoosk"/>
+    		<phing dir="web" phingfile="build.xml" target="install-affinity-data" haltonfailure="true" />
+    </target>
+
+    <target name="install-test-10000xn" description="Installs the zoosk web project">
+		<echo msg="Installing 10000xn users to zoosk"/>
+		<phing dir="web" phingfile="build.xml" target="install-test-10000xn" haltonfailure="true" />
+	</target>
+	
+	<target name="install-test-500" description="Installs the test500 dataset">
+		<echo msg="Installing 500 users to zoosk"/>
+		<phing dir="web" phingfile="build.xml" target="install-test-500" haltonfailure="true" />
+	</target>
+  <target name="install-test-500-prod" description="Installs the test500 dataset for prod mode">
+    <echo msg="Installing 500 users to zoosk"/>
+    <phing dir="web" phingfile="build.xml" target="install-test-500-prod" haltonfailure="true" />
+  </target>
+  <target name="install-test-empty" description="Installs empty databases to zoosk">
+    <echo msg="Installing empty databases to zoosk"/>
+    <phing dir="web" phingfile="build.xml" target="install-test-empty" haltonfailure="true" />
+  </target>
+  <target name="install-my-test-data" description="Installs a personal test data set">
+    <echo msg="Installing your test data"/>
+    <phing dir="web" phingfile="build.xml" target="install-my-test-data" haltonfailure="true" />
+  </target>
+
+  <target name="save-test-500" description="Saves test500">
+    <echo msg="Saving Test500"/>
+    <phing dir="web" phingfile="build.xml" target="save-test-500" haltonfailure="true" />
+  </target>
+  <target name="save-test-500-prod" description="Saves test500 for prod mode">
+    <echo msg="Saving Test500 for Prod Mode"/>
+    <phing dir="web" phingfile="build.xml" target="save-test-500-prod" haltonfailure="true" />
+  </target>
+  <target name="save-my-test-data" description="Saves a personal test data set">
+    <echo msg="Saving your zoosk data"/>                                    
+    <phing dir="web" phingfile="build.xml" target="save-my-test-data" haltonfailure="true" />
+  </target>
+
+  <!-- test 2k -->
+  <target name="install-test2k-fake" description="Install the Test 2k Dataset with fake affinities">
+    <echo msg="Installing 2000 users to zoosk"/>
+		<phing dir="web" phingfile="build.xml" target="install-test2k-fake" haltonfailure="true" />
+  </target>
+  <target name="save-test2k-fake" description="Save the Test 2k Dev Dataset">
+    <echo msg="Saving Test 2k"/>                                    
+    <phing dir="web" phingfile="build.xml" target="save-test2k-fake" haltonfailure="true" />
+  </target>
+	
+	<target name="truncate-all" description="Truncates all storage systems for Zoosk (including Memcached)">
+		<phing dir="web" phingfile="build.xml" target="truncate-all" haltonfailure="true" />
+	</target>
+	
+	<target name="truncate-memcached" description="Flushes Memcached systems (including search and cookie clusters) for Zoosk">
+		<phing dir="web" phingfile="build.xml" target="truncate-memcached" haltonfailure="true" />
+	</target>
+	
+	<target name="install-l10n-test" description="Installs the zoosk web project">
+		<echo msg="Installing 10000xn users to zoosk"/>
+		<phing dir="web" phingfile="build.xml" target="install-l10n-test" haltonfailure="true" />
+	</target>
+
+	<target name="upgrade-web" description="Upgrades the zoosk web project">
+		<echo msg="Upgrading the zoosk web project"/>
+		<phing dir="web" phingfile="build.xml" target="upgrade" haltonfailure="true" />
+	</target>
+
+	<target name="upgrade-tools" description="Upgrades the zoosk tools project">
+		<echo msg="Upgrading the zoosk tools project"/>
+		<phing dir="tools" phingfile="build.xml" target="upgrade" haltonfailure="true" />
+	</target>
+	
+	<target name="install-codeahead-web" description="Installs codeaheads for the zoosk web project">
+		<echo msg="Installing codeaheads for zoosk web project"/>
+		<phing dir="web" phingfile="build.xml" target="install-codeahead-zoosk" haltonfailure="true" />
+	</target>
+
+
+	<target name="install-static-web" description="Installs static for the zoosk web project">
+		<echo msg="Installing static files for zoosk web project"/>
+		<phing dir="web" phingfile="build.xml" target="install-static-zoosk" haltonfailure="true" />
+	</target>
+	
+	<target name="install-scripts" description="Installs the scripts for the zoosk web project">
+		<echo msg="Installing script files for zoosk web project"/>
+		<phing dir="web" phingfile="build.xml" target="install-scripts" haltonfailure="true" />
+	</target>
+	
+	<target name="install-db-web" description="Installs the databases for the zoosk web project">
+		<echo msg="Installing zoosk web database"/>
+		<phing dir="web" phingfile="build.xml" target="install-db-zoosk" haltonfailure="true" />
+	</target>
+
+	<target name="upgrade-db-web" description="Upgrades the databases for the zoosk web project">
+		<echo msg="Upgrading the zoosk web database"/>
+		<phing dir="web" phingfile="build.xml" target="upgrade-db-zoosk" haltonfailure="true" />
+	</target>
+
+	<target name="install-db-chat" description="Installs the tigase backend databases for chat">
+		<echo msg="It is no longer necessary to install a separate database for Tigase now that the Tigase database has been merged into the Zoosk user database." />
+	</target>
+
+	<target name="install-finance-code" description="Installs the zoosk finance project code (not DB)">
+		<echo msg="Installing the zoosk finance project"/>
+		<phing dir="finance" phingfile="build.xml" target="install-code" haltonfailure="true" />
+	</target>
+
+	<target name="upgrade-web-workload" description="Installs the web workload for the zoosk web project">
+		<echo msg="Installing zoosk web workload files"/>
+		<phing dir="web" phingfile="build.xml" target="upgrade-web-workload" haltonfailure="true" />
+		<phing dir="finance" phingfile="build.xml" target="install-code" haltonfailure="true" />
+	</target>
+	
+	<target name="install-web-server-code" description="Installs the web server code">
+		<echo msg="Installing web server code"/>
+		<phing dir="web" phingfile="build.xml" target="install-server-code" haltonfailure="true" />
+		<phing dir="finance" phingfile="build.xml" target="install-code" haltonfailure="true" />
+	</target>
+
+	<target name="install-branch-version" description="Echo the current branch name to a file for QA">
+		<echo msg="Installing branch version into a file"/>
+      		<exec command="git rev-parse --abbrev-ref HEAD > ${configroot_dir}/currentBranch" />
+	</target>
+
+    <!-- Money-related targets -->
+    <target name="install-db-money" description="Installs the money database">
+        <echo msg="Installing the zoosk money database"/>
+        <phing dir="finance/data/money" phingfile="build.xml" target="install-db-money" haltonfailure="true" />
+    </target>
+
+
+	<target name="upgrade-service-workload" description="Installs the web service workload files for the zoosk web project">
+		<echo msg="Installing zoosk web service workload files"/>
+		<phing dir="web" phingfile="build.xml" target="upgrade-service-workload" haltonfailure="true" />
+	</target>
+	
+	<target name="install-web-update" description="Installs the air update directories for the zoosk web project">
+		<echo msg="Installing the air update host"/>
+		<phing dir="web" phingfile="build.xml" target="install-web-update" haltonfailure="true" />
+	</target>
+
+	<target name="install-geoip-data" description="Installing a new geoip data file">
+		<echo msg="Installing the new geoip data file"/>
+		<phing dir="tools" phingfile="build.xml" target="install-geoip-data" haltonfailure="true" />
+	</target>
+	
+	<target name="install-geolookup-data" description="Installing geolookup database">
+		<echo msg="Installing geolookup database"/>
+		<phing dir="web/data/geolookup" phingfile="build.xml" target="install-geolookup-db" haltonfailure="true" />
+	</target>
+
+    <target name="upgrade-geolookup-db" description="upgrading geolookup db">
+        <echo msg="upgrade geolookup database"/>
+        <phing dir="web/data/geolookup" phingfile="build.xml" target="upgrade-geolookup-db" haltonfailure="true" />
+    </target>
+	
+	<target name="update-pot" description="Updating PO files">
+		<echo msg="Updating PO files"/>
+		<phing dir="web" phingfile="build.xml" target="update-pot" haltonfailure="true" />
+	</target>
+	
+	<target name="clean-web" description="Clears off the zoosk web directories">
+		<echo msg="Clearing off the zoosk directories"/>
+		<phing dir="web" phingfile="build.xml" target="clean-web" haltonfailure="true" />
+		<echo msg="Cleared Zoosk web directories"/>
+	</target>
+
+	<target name="build-tigase" description="Builds the tigase chat server code">
+		<phing dir="chat-server" phingfile="build.xml" target="publish-extern-libs" haltonfailure="true" />
+		<phing dir="web" phingfile="build.xml" target="build-thrift-java-interface" haltonfailure="true" />
+		<phing dir="chat-server" phingfile="build.xml" target="build-tigase" haltonfailure="true" />
+	</target>
+	
+	<target name="build-thrift-interfaces" description="Builds the thrift interfaces for the web sub-project">
+		<phing dir="web" phingfile="build.xml" target="build-thrift-interfaces" haltonfailure="true" />
+	</target>
+
+	<target name="build-thrift-php-interface" description="Builds the thrift interfaces for the web sub-project">
+		<phing dir="web" phingfile="build.xml" target="build-thrift-php-interface" haltonfailure="true" />
+	</target>
+	
+	<target name="install-db-email" description="Installs the email database for bounce email">
+		<echo msg="Installing email databases"/>
+		<phing dir="tools/data/email" phingfile="build.xml" target="install-email-db" haltonfailure="true" />
+	</target>
+	
+	<target name="install-email-scripts" description="Installs the email bounce scripts.">
+		<echo msg="Installing email databases"/>
+		<phing dir="tools" phingfile="build.xml" target="install-email-bounce-scripts" haltonfailure="true" />
+	</target>
+	
+	<target name="install-tools-test" description="Installs the tests for tools .">
+		<echo msg="Installing tests for tools. "/>
+		<phing dir="tools" phingfile="build.xml" target="install-test" haltonfailure="true" />
+	</target>
+
+	<!-- The currently required branch of the photo service should be defined here (e.g. rc22 in the svn photo project) -->
+
+	<property name="photo-service_dev_current_branch" value="master" override="true" />
+	
+	<target name="install-and-build-photo-service" 
+			description="Installs photo service code and builds it. This uses your Zoosk dev.properties to seed values of the photo service" depends="install-photo-service">
+				
+		<echo msg="Setting photo service current symlink to ${photo-service_dev_current_branch}" />
+		<available file="${root_dir}_photo-service/current" property="current_exists" value="1"/>
+		<if>
+			<equals arg1="${current_exists}" arg2="1" />
+			<then>
+				<exec dir="${root_dir}_photo-service" command="rm -R current" checkreturn="true" />
+			</then>
+		</if>
+		<exec dir="${root_dir}_photo-service" command="ln -sf branches/${photo-service_dev_current_branch} current" checkreturn="true" />
+
+		<echo msg="Creating personalized photo service dev${devid}.properties in directory ${root_dir}_photo-service" />
+		<exec command='printf "dev_id=${devid}\ndev_hostname=${dev_hostname}\ndev_serverid=${dev_serverid}\ndev_photodb_hosts=${photo}\ndev_dbprefix=${dbprefix}\ndev_amazon_api_secret=${zoosk_s3_photo_secret}\nmogilefs_host=${mogilefs_host}\n\n" > ${root_dir}_photo-service/dev${devid}.properties' checkreturn="true" />
+
+		<echo msg="Building it with command:  phing -Denv=dev -Dprops=${root_dir}_photo-service/dev${devid}.properties"/>
+		<phing dir="${root_dir}_photo-service/branches/${photo-service_dev_current_branch}" phingfile="build.xml" target="install-photo-service" haltonfailure="true" >
+			<property name="env" value="dev"/>
+			<property name="props" value="${root_dir}_photo-service/dev${devid}.properties" />
+		</phing>
+	</target>
+	
+	<target name="install-and-build-catalog-service" description="Installs catalog service code and DB">
+	
+		<property name="catalog-service_dev_current_branch" value="trunk"
+			override="true" />
+		
+		<echo msg="Installing catalog service..."/>
+		
+		<echo msg="Testing for 777 access to directory on ${dev_hostname} server"/>
+		<touch file="${root_dir}_catalog-service/touched" />
+		<delete file="${root_dir}_catalog-service/touched" />
+
+		<echo msg="Creating branches dir, if necessary"/>
+		<available file="${root_dir}_catalog-service/branches" property="branches_exists" value="1"/>
+		<if>
+			<equals arg1="${branches_exists}" arg2="1" />
+			<then/>
+			<else>
+				<exec dir="${root_dir}_catalog-service" command="mkdir branches" checkreturn="true" />
+			</else>
+		</if>
+		
+		<echo msg="Creating /shared dir, if necessary" />
+		<available file="${root_dir}_catalog-service/shared"
+			property="catalog_shared_exists" value="1" />
+		<if>
+			<equals arg1="${catalog_shared_exists}" arg2="1" />
+			<then />
+			<else>
+				<exec dir="${root_dir}_catalog-service" command="mkdir shared"
+					checkreturn="true" />
+			</else>
+		</if>
+		
+		<if>
+	   		<available file="${root_dir}_catalog-service/branches/${catalog-service_dev_current_branch}" />
+      		<then>
+      			<echo msg="Updating (svn up, svn2tunnel must be open) ${root_dir}_catalog-service/branches/${catalog-service_dev_current_branch}" />
+      			<exec command="svn up ${root_dir}_catalog-service/branches/${catalog-service_dev_current_branch}" />
+	    	</then>
+	    	<else>
+	    		<echo msg="Target branch does not exist, checking out catalog-service code tree (svn2tunnel must be open)..this will take 3 - 5 minutes" />
+	    		
+	    		<if>
+	    			<equals arg1="${catalog-service_dev_current_branch}" arg2="trunk" />
+	    			<then>
+	    				<exec command="svn co https://127.0.0.1:9443/catalog-service/${catalog-service_dev_current_branch} ${root_dir}_catalog-service/branches/${catalog-service_dev_current_branch}" checkreturn="true" passthru="true" />
+	    			</then>
+	    			<else>
+	    				<exec command="svn co https://127.0.0.1:9443/catalog-service/branches/${catalog-service_dev_current_branch} ${root_dir}_catalog-service/branches/${catalog-service_dev_current_branch}" checkreturn="true" passthru="true" />
+	    			</else>
+	    		</if>
+	    	</else>
+    	</if>
+		
+		<available file="${root_dir}_catalog-service/current"
+			property="catalog_current_exists" value="1" />
+		<if>
+			<equals arg1="${catalog_current_exists}" arg2="1" />
+			<then>
+				<exec dir="${root_dir}_catalog-service" command="rm current"
+					checkreturn="true" />
+			</then>
+		</if>
+		<exec dir="${root_dir}_catalog-service" command="ln -sf branches/${catalog-service_dev_current_branch} current"
+			checkreturn="true" />
+
+		<echo
+			msg="Creating personalized catalog service dev${devid}.properties in directory ${root_dir}_catalog-service" />
+
+		<exec
+			command='printf "dev_id=${devid}\ndevid_padded=${devid_padded}\ndev_hostname=${dev_hostname}\ndev_serverid=${dev_serverid}\ndev_dbhostip=${dev_dbhostip}\ndev_dbprefix=${dbprefix}\n\n" > ${root_dir}_catalog-service/dev${devid}.properties'
+			checkreturn="true" />
+			
+		<echo msg="building catalog service code" />
+		<phing
+			dir="${root_dir}_catalog-service/current"
+			phingfile="build.xml" target="install" haltonfailure="true">
+			<property name="env" value="dev" />
+			<property name="props"
+				value="${root_dir}_catalog-service/dev${devid}.properties" />
+		</phing>		
+	
+	</target>
+
+	<target name="install-photo-service" description="Installs photo service code">
+		<echo msg="Installing photo service..."/>
+
+		<echo msg="Testing for 777 access to directory on ${dev_hostname} server"/>
+        <mkdir dir="${root_dir}_photo-service" />
+		<touch file="${root_dir}_photo-service/touched" />
+		<delete file="${root_dir}_photo-service/touched" />
+
+		<echo msg="Creating branches dir, if necessary"/>
+		<available file="${root_dir}_photo-service/branches" property="branches_exists" value="1"/>
+		<if>
+			<equals arg1="${branches_exists}" arg2="1" />
+			<then/>
+			<else>
+				<exec dir="${root_dir}_photo-service" command="mkdir branches" checkreturn="true" />
+			</else>
+		</if>
+
+		<echo msg="Checking if photo dest. dir exist"/>
+		<available file="${root_dir}_photo-service/branches/${photo-service_dev_current_branch}/.git" property="photo_branches_dir" value="1"/>
+		<if>
+			<equals arg1="${photo_branches_dir}" arg2="1" />
+			<then>
+				<echo msg="Photo dest dir ${root_dir}_photo-service/branches/${photo-service_dev_current_branch} exists. Doing a git pull. If this is failing, you need to rm -rf ${root_dir}_photo-service/branches/${photo-service_dev_current_branch}. It probably still have some svn stuff in it or a corrupted git repo"/>
+				<exec command="cd ${root_dir}_photo-service/branches/${photo-service_dev_current_branch} &amp;&amp; git checkout ${photo-service_dev_current_branch} &amp;&amp; git pull" checkreturn="true" passthru="true"/>
+			</then>
+			<else>
+				<echo msg="Photo dest dir ${root_dir}_photo-service/branches/${photo-service_dev_current_branch} does not exists; cloning..."/>
+				<exec command="rm -rf ${root_dir}_photo-service/branches/${photo-service_dev_current_branch} &amp;&amp; git clone git@g.zoosk.com:platform/photo-service-v2.git ${root_dir}_photo-service/branches/${photo-service_dev_current_branch} &amp;&amp; cd ${root_dir}_photo-service/branches/${photo-service_dev_current_branch} &amp;&amp; git checkout ${photo-service_dev_current_branch} " checkreturn="true" passthru="true"/>
+			</else>
+		</if>
+
+	</target>
+
+
+    <property name="zia-php-checkout-branch" value="master" override="true" />
+    <property name="zia-php-deploy-directory" value="/srv/zia_php/" override="true"/>
+
+
+    <target name="upgrade-zia-php" description="Upgrading zia-php">
+        <exec command="cd ${root_dir}_zia-php/current ; ant build-all" passthru="true"/>
+        <exec command="cd ${root_dir}_zia-php/current ; ant deploy" passthru="true"/>
+        <exec command="synccode ${zia-php-deploy-directory}"/>
+        <!--<exec passthru="true" checkreturn="true" command="rsync -avoz ${root_dir}_zia-php/current/build/releases/ ziaphp1dev:/srv/dev11_zia-php/releases" />-->
+   	</target>
+
+    <target name="install-zia-php" description="Installing zia-php">
+        <echo msg="Checking out zia-php code from git..."/>
+
+        <echo msg="git clone git@g.zoosk.com:platform/zoosk-php-services.git ${root_dir}_zia-php/branches/${zia-php-checkout-branch}/" />
+        <exec command="git clone git@g.zoosk.com:platform/zoosk-php-services.git ${root_dir}_zia-php/branches/${zia-php-checkout-branch}/" />
+        <echo msg="pushd ${root_dir}_zia-php/branches/${zia-php-checkout-branch} &amp;&amp; git checkout ${zia-php-checkout-branch} &amp;&amp; popd" />
+        <exec checkreturn="true" command="pushd ${root_dir}_zia-php/branches/${zia-php-checkout-branch} &amp;&amp; git checkout ${zia-php-checkout-branch} &amp;&amp; popd" />
+
+      	<!--<exec command="svn co https://s.zoosk.com/internal-services/zoosk-php-services//branches/${zia-php-checkout-branch}/ ${root_dir}_zia-php/branches/${zia-php-checkout-branch}/" checkreturn="true" passthru="true"/>-->
+
+        <echo msg="Installing zia-php."/>
+        <echo msg="Setting zia-php symlink to ${zia-php-checkout-branch}" />
+      	<available file="${root_dir}_zia-php/current" property="current_exists" value="1"/>
+        <if>
+            <equals arg1="${current_exists}" arg2="1" />
+            <then>
+                <exec dir="${root_dir}_zia-php" command="rm -R current" checkreturn="true" />
+            </then>
+        </if>
+
+        <exec dir="${root_dir}_zia-php" command="ln -sf branches/${zia-php-checkout-branch} current" checkreturn="true" />
+        <echo msg="Creating personalized build.properties in directory ${root_dir}_zia-php/current/config" />
+      	<exec command='printf "deploy-path=${zia-php-deploy-directory}\n\n" > ${root_dir}_zia-php/current/config/build.properties' checkreturn="true" />
+
+        <phingcall target="upgrade-zia-php" />
+    </target>
+
+	<property name="zs-db-tool-version" value="0.1.4" override="true" />
+	<property name="zoosk-photov3-schemas-version" value="master" override="true" />
+
+	<target name="install-photov3-db" description="Installs photoV3 database">
+		<echo msg="Installing photo V3 database..."/>
+
+		<!-- Cleanup previous failed install attempts -->
+		<echo msg="Cleaning up previous installations..." />
+		<delete dir="${root_dir}_build" />
+
+		<echo msg="Testing for 777 access to directory on ${dev_hostname} server"/>
+		<mkdir dir="${root_dir}_build" />
+		<touch file="${root_dir}_build/touched" />
+		<delete file="${root_dir}_build/touched" />
+
+		<!-- Checkout the zs-db-tool -->
+		<echo msg="Checking out zs-db-tool..."/>
+		<echo msg="git clone git@g.zoosk.com:platform/zs-db-tool.git ${root_dir}_build/zs-db-tool" />
+		<exec checkreturn="true" command="git clone git@g.zoosk.com:platform/zs-db-tool.git ${root_dir}_build/zs-db-tool" passthru="true"/>
+		<exec checkreturn="true" command="pushd ${root_dir}_build/zs-db-tool &amp;&amp; git checkout tags/${zs-db-tool-version} &amp;&amp; popd" passthru="true"/>
+
+		<!-- Checkout the photo v3 db schemas -->
+		<echo msg="Checking out photo v3 schemas..."/>
+        <exec checkreturn="true" command="git clone git@g.zoosk.com:platform/schemas-photov3.git  ${root_dir}_build/photov3_schema &amp;&amp; cd  ${root_dir}_build/photov3_schema &amp;&amp; git checkout ${zoosk-photov3-schemas-version}" passthru="true" />
+
+		<!-- Run composer -->
+		<echo msg="Running composer on zs-db-tool..."/>
+		<exec checkreturn="true" command="pushd ${root_dir}_build/zs-db-tool &amp;&amp; php composer.phar install -n &amp;&amp; popd" />
+
+		<!-- Replace config tokens -->
+		<echo msg="Replacing tokens in photov3 schemas..."/>
+		<copy file="${root_dir}_build/photov3_schema/config.dev.json" tofile="${root_dir}_build/photov3_schema/config.dev.mine.json" overwrite="true">
+			<filterchain>
+				<replacetokens begintoken="###" endtoken="###">
+					<token key="DEV_ID" value="${dbprefix}" />
+					<token key="DEV_PHOTOV3_HOST" value="${dev_dbhostip}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+
+		<!-- Install the db -->
+		<echo msg="INSTALLING PHOTO V3 DATABASE" />
+		<echo msg="php upgrade-db.php -y --config=${root_dir}_build/photov3_schema/config.dev.mine.json" />
+		<exec checkreturn="true" command="pushd ${root_dir}_build/zs-db-tool/src/Zoosk/DBTools &amp;&amp; php upgrade-db.php -y --config=${root_dir}_build/photov3_schema/config.dev.mine.json &amp;&amp; popd" />
+
+		<!-- Cleanup.  Delete photo v3 schemas, but leave db-tool git repo -->
+		<echo msg="Cleaning up photo v3 database install..." />
+		<delete dir="${root_dir}_build" />
+
+		<echo msg="Done." />
+
+	</target>
+	
+	<target name="install-and-build-utility-service" >
+		<phing dir="web/services/utilityservice" phingfile="build.xml" target="install-and-build-utility-service" haltonfailure="true" />
+
+	</target>
+
+	<target name="generate-payment-service-client" description="Generates payment service thrift php files in zoosk (paymentservice/export)">
+		<property name="paysvc_dest_root" value="${service_install_phppath}/paymentservice" />
+		<mkdir dir="${paysvc_dest_root}/generated" />
+		<phing dir="web/services/paymentservice/export" phingfile="build.xml" target="build-clients" haltonfailure="true">
+	  		<property name="generated_files_dir" value="${paysvc_dest_root}/generated" />
+	  		<property name="interfaces_dir" value="${application.startdir}/web/services/paymentservice/export/interfaces" />
+		</phing>
+		<!-- Generates thrift files for local dev workspace -->
+		<phing dir="web/services/paymentservice/export" phingfile="build.xml" target="build-clients" haltonfailure="true">
+	  		<property name="generated_files_dir" value="${application.startdir}/web/services/paymentservice/generated" />
+	  		<property name="interfaces_dir" value="${application.startdir}/web/services/paymentservice/export/interfaces" />
+		</phing>
+	</target>
+	
+	<target name="install-and-build-payment-service" description="Installs and builds payment service code (for dev instances ONLY -- do not call this in production!)" depends="generate-payment-service-client">
+		<echo msg="build, install payment service code" />
+		<phing dir="web/services/paymentservice" phingfile="build.xml" target="all" haltonfailure="true" />
+	</target>
+
+    <target name="install-and-build-catalog-service-temp" description="Installs and builds catalog service code (for dev instances ONLY -- do not call this in production!)" >
+        <echo msg="build, install catalog service code" />
+        <phing dir="web/services/catalogservice" phingfile="build.xml" target="all" haltonfailure="true" />
+    </target>
+
+    <target name="install-psyche" description="Installs Psyche to your dev instance">
+        <phingcall target="clean-psyche"/>
+        <if><isset property="psyche-branch"/>
+            <then>
+                <exec
+                    command="ssh ${ldap_user_id}@${psyche_deploy_server} &quot;bash --login -c \&quot;LATEST=\$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/cupid/com/zoosk/psyche-${psyche-branch}/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{\$1=\$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/cupid/ -Dartifact=com.zoosk:psyche-${psyche-branch}:\\\$LATEST:tgz -Ddest=/srv/psyche-dev${devid}/current/psyche-${psyche-branch}.tgz &amp;&amp; tar -xzf /srv/psyche-dev${devid}/current/psyche-${psyche-branch}.tgz -C /srv/psyche-dev${devid}/current/\&quot;&quot;"
+                    checkreturn="true"
+                    passthru="true"/>
+            </then>
+            <else>
+                <exec command="git rev-parse --abbrev-ref HEAD" outputProperty="psyche.branchToBuild" />
+                <echo msg="Current branch: ${psyche.branchToBuild}" />
+
+                <if>
+                    <equals arg1="${psyche.branchToBuild}" arg2="master" />
+                    <then>
+                        <property name="psyche.nexusRepo" value="psyche" />
+                    </then>
+                    <else>
+                        <property name="psyche.nexusRepo" value="psyche-${psyche.branchToBuild}" />
+                    </else>
+                </if>
+
+                <exec command="curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/cupid/com/zoosk/${psyche.nexusRepo}/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1'" outputProperty="psyche.buildId" />
+                <if>
+                    <istrue value="${psyche.buildId}" />
+                    <then>
+                        <echo msg="Current ${psyche.branchToBuild} build: ${psyche.buildId}" />
+                        <exec
+                            command="ssh ${ldap_user_id}@${psyche_deploy_server} &quot;bash --login -c \&quot; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/cupid/ -Dartifact=com.zoosk:${psyche.nexusRepo}:${psyche.buildId}:tgz -Ddest=/srv/psyche-dev${devid}/current/${psyche.nexusRepo}.tgz &amp;&amp; tar -xzf /srv/psyche-dev${devid}/current/${psyche.nexusRepo}.tgz -C /srv/psyche-dev${devid}/current/\&quot;&quot;"
+                            checkreturn="true"
+                            passthru="true"/>
+                    </then>
+                    <else>
+                        <echo msg="No psyche branch for ${psyche.branchToBuild}. Defaulting to master." />
+                        <exec
+                            command="ssh ${ldap_user_id}@${psyche_deploy_server} &quot;bash --login -c \&quot;LATEST=\$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/cupid/com/zoosk/psyche/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{\$1=\$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/cupid/ -Dartifact=com.zoosk:psyche:\\\$LATEST:tgz -Ddest=/srv/psyche-dev${devid}/current/psyche-\\\$LATEST.tgz &amp;&amp; tar -xzf /srv/psyche-dev${devid}/current/psyche-\\\$LATEST.tgz -C /srv/psyche-dev${devid}/current/\&quot;&quot;"
+                            checkreturn="true"
+                            passthru="true"/>
+                    </else>
+                </if>
+            </else>
+        </if>
+        <phingcall target="update-psyche-config"/>
+    </target>
+
+    <target name="update-psyche-config" description="Updates psyche config on your dev instance">
+        <if><isset property="devid"/>
+            <then>
+                <property name="cupid-dev-server-url" value="" override="false"/>
+                <copy file="psycheConfigTemplate.js" tofile="build/development.js" overwrite="true">
+                    <filterchain>
+                        <expandproperties/>
+                    </filterchain>
+                </copy>
+                <exec
+                    command="scp build/development.js ${ldap_user_id}@${psyche_deploy_server}:/srv/psyche-dev${devid}/current/config/development.js"
+                    checkreturn="true"
+                    passthru="true"/>
+                <exec
+                    command="ssh -t ${ldap_user_id}@${psyche_deploy_server} &quot;/srv/psyche-dev${devid}/restart.sh&quot;"
+                    passthru="true"/>
+                <echo msg="Restated node for psyche deploy"/>
+            </then>
+            <else>
+                <if><isset property="psyche-for-ccuser"/>
+                    <then>
+                        <if><isset property="ccuser-trunk"/>
+                            <then>
+                                <exec
+                                    command="ssh ${ldap_user_id}@${psyche_deploy_server} &quot;/srv/psyche-trunk/restart.sh&quot;"
+                                    checkreturn="true"
+                                    passthru="true"/>
+                            </then>
+                            <else>
+                                <exec
+                                    command="ssh ${ldap_user_id}@${psyche_deploy_server} &quot;/srv/psyche-qa/restart.sh&quot;"
+                                    checkreturn="true"
+                                    passthru="true"/>
+                            </else>
+                        </if>
+                    </then>
+                </if>
+            </else>
+        </if>
+    </target>
+
+    <target name="clean-psyche" description="Clear out files on psyche dev instance">
+        <if><isset property="devid"/>
+            <then>
+                <exec command="ssh ${ldap_user_id}@${psyche_deploy_server} &quot;rm -rf /srv/psyche-dev${devid}/current/*&quot;"/>
+            </then>
+            <else>
+                <if><isset property="psyche-for-ccuser"/>
+                    <then>
+                        <if><isset property="ccuser-trunk"/>
+                            <then>
+                                <exec command="ssh ${ldap_user_id}@${psyche_deploy_server} &quot;rm -rf /srv/psyche-trunk/current/*&quot;"/>
+                            </then>
+                            <else>
+                                <exec command="ssh ${ldap_user_id}@${psyche_deploy_server} &quot;rm -rf /srv/psyche-qa/current/*&quot;"/>
+                            </else>
+                        </if>
+                    </then>
+                </if>
+            </else>
+        </if>
+    </target>
+
+    <target name="install-themis" description="Install Themis to dev instance">
+        <if><isset property="devid"/>
+            <then>
+                <phingcall target="clean-themis" />
+                <mkdir dir="${themisroot-dir}" />
+                <exec
+                    passthru="true"
+                    command="RET_WD=&quot;${PWD}&quot; &amp;&amp; LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase_dir}/themis-master.tgz &amp;&amp; cd &quot;${themisbase_dir}&quot; &amp;&amp; tar xzf themis-master.tgz php &amp;&amp; cp -R php/* ./ &amp;&amp; rm -r php &amp;&amp; cd &quot;${RET_WD}&quot;"
+                    checkreturn="true" />
+                <phingcall target="update-themis-config" />
+            </then>
+        </if>
+    </target>
+
+    <target name="clean-themis" description="Clean Themis from dev instance">
+        <if><isset property="devid"/>
+            <then>
+                <exec
+                    command="rm -rf ${themisroot-dir}/*"
+                    passthru="true"
+                    checkreturn="true" />
+            </then>
+        </if>
+    </target>
+
+    <target name="update-themis-config" description="Update Themis dev config on dev instance">
+        <if><isset property="devid"/>
+            <then>
+                <phing dir="web" phingfile="build.xml" target="install-config" haltonfailure="true" />
+                <copy todir="${themisroot-dir}" overwrite="true">
+                    <fileset dir="web/www/admin/themis">
+                        <include name="devconfig.php" />
+                    </fileset>
+                </copy>
+            </then>
+        </if>
+    </target>
+</project>
