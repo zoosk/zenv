@@ -1,0 +1,74 @@
+<project name="payment-service" default="all" >
+	<property name="payment-service_dev_current_branch" value="trunk"
+		override="true" />
+
+	<target name="all" description="build, install payment service code">
+		<echo msg="Testing for 777 access to directory on ${dev_hostname} server" />
+        <mkdir dir="${root_dir}_payment-service" />
+		<touch file="${root_dir}_payment-service/touched" />
+		<delete file="${root_dir}_payment-service/touched" />
+
+		<echo msg="Creating branches dir, if necessary" />
+		<available file="${root_dir}_payment-service/branches"
+			property="payment_branches_exists" value="1" />
+		<if>
+			<equals arg1="${payment_branches_exists}" arg2="1" />
+			<then />
+			<else>
+				<exec dir="${root_dir}_payment-service" command="mkdir branches"
+					checkreturn="true" />
+			</else>
+		</if>
+
+		<available file="${root_dir}_payment-service/shared"
+			property="payment_shared_exists" value="1" />
+		<if>
+			<equals arg1="${payment_shared_exists}" arg2="1" />
+			<then />
+			<else>
+				<exec dir="${root_dir}_payment-service" command="mkdir shared"
+					checkreturn="true" />
+			</else>
+		</if>
+		
+		<if>
+	   		<available file="${root_dir}_payment-service/${payment-service_dev_current_branch}" />
+      		<then>
+      			<echo msg="Updating (svn up, svn2tunnel must be open) ${root_dir}_payment-service/${payment-service_dev_current_branch}" />
+      			<exec command="svn up ${root_dir}_payment-service/${payment-service_dev_current_branch}" />
+	    	</then>
+	    	<else>
+	    		<echo msg="Target branch does not exist, checking out payment service code tree (svn2tunnel must be open)..this will take 3 - 5 minutes" />	    		
+	    		<exec command="svn co https://127.0.0.1:9443/payment-service/${payment-service_dev_current_branch} ${root_dir}_payment-service/${payment-service_dev_current_branch}" checkreturn="true" passthru="true" />
+	    	</else>
+    	</if>
+
+		<available file="${root_dir}_payment-service/current"
+			property="payment_current_exists" value="1" />
+		<if>
+			<equals arg1="${payment_current_exists}" arg2="1" />
+			<then>
+				<exec dir="${root_dir}_payment-service" command="rm current"
+					checkreturn="true" />
+			</then>
+		</if>
+		<exec dir="${root_dir}_payment-service" command="ln -sf ${payment-service_dev_current_branch} current"
+			checkreturn="true" />
+
+		<echo
+			msg="Creating personalized payment service dev${devid}.properties in directory ${root_dir}_payment-service" />
+
+		<exec
+			command='printf "dev_id=${devid}\ndevid_padded=${devid_padded}\ndev_hostname=${dev_hostname}\ndev_serverid=${dev_serverid}\ndev_dbhostip=${dev_dbhostip}\ndev_dbprefix=${dbprefix}\ndev_amazon_api_secret=${amazon_api_secret}\n\n" > ${root_dir}_payment-service/dev${devid}.properties'
+			checkreturn="true" />
+
+		<echo msg="building payment service code" />
+		<phing
+			dir="${root_dir}_payment-service/${payment-service_dev_current_branch}"
+			phingfile="build.xml" target="install" haltonfailure="true">
+			<property name="env" value="dev" />
+			<property name="props"
+				value="${root_dir}_payment-service/dev${devid}.properties" />
+		</phing>
+	</target>
+</project>

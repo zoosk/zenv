@@ -1,0 +1,2317 @@
+<?xml version="1.0"?>
+<project name="zoosk" default="all" >
+	<!-- set the properties here-->
+	<property name="propfile_exists" value="0" override="true" />
+	<property name="propfile_exists1" value="0" override="true" />
+	<property name="propfile_exists2" value="0" override="true" />
+	
+	<available file="${properties_file}" property="propfile_exists" value="1"/>
+	<if>
+		<equals arg1="${propfile_exists}" arg2="1" />
+		<then>
+			<property file="${properties_file}" override="true" />
+		</then>
+	</if>
+	<available file="${pf1}" property="propfile_exists1" value="1"/>
+	<if>
+		<equals arg1="${propfile_exists1}" arg2="1" />
+		<then>
+			<property file="${pf1}" override="true" />
+		</then>
+	</if>
+
+	<available file="${pf2}" property="propfile_exists2" value="1"/>
+	<if>
+		<equals arg1="${propfile_exists2}" arg2="1" />
+		<then>
+			<property file="${pf2}" override="true" />
+		</then>
+	</if>
+
+	<if>
+                <not><isset property="cupid_repo" /></not>
+                <then><property name="cupid_repo" value="build1qa-cupid" /></then>
+        </if>
+	<!-- cupid-dev-server-url defaults to the empty string -->
+	<property name="cupid-dev-server-url" value="" override="false"/>
+    <property name="zephyr-dev-server-url" value="" override="false"/>
+    <property name="vulcan-dev-server-url" value="" override="false"/>
+    <property name="touch-dev-server-url" value="" override="false"/>
+
+	<php function="md5" returnProperty="tmp_hash">
+	  <param value="${zooskroot_dir}"/>
+	</php>
+	
+	<target name="buildsetup" description="Sets up the phing build process">
+		<if>
+			<equals arg1="${db-environment}" arg2="prod" />
+			<then>
+				<!-- BOOKMARK:: CLUSTER COUNT --> 
+				<property name="total_user_clusters" value="18" />
+			</then>
+			<else>
+				<property name="total_user_clusters" value="2" />
+			</else>
+		</if>
+		<php expression="implode(',', range(1, ${total_user_clusters}))" returnProperty="user_clusters" />
+		
+		<property name="total_msg_clusters" value="6" />
+		<php expression="implode(',', range(1, ${total_msg_clusters}))" returnProperty="msg_clusters" />
+		
+		<property name="total_affinity_clusters" value="2" />
+		<php expression="implode(',', range(1, ${total_affinity_clusters}))" returnProperty="affinity_clusters" />
+
+		<property name="total_directory_clusters" value="2" />
+		<php expression="implode(',', range(1, ${total_directory_clusters}))" returnProperty="dir_clusters" />
+		
+		<if>
+			<equals arg1="${db-environment}" arg2="prod" />
+			<then>
+				<property name="total_game_clusters" value="18" />
+			</then>
+			<else>
+				<property name="total_game_clusters" value="2" />
+			</else>
+		</if>
+		<php expression="implode(',', range(1, ${total_game_clusters}))" returnProperty="game_clusters" />
+
+		<if>
+			<equals arg1="${db-environment}" arg2="prod" />
+			<then>
+				<property name="total_member_clusters" value="18" />
+			</then>
+			<else>
+				<property name="total_member_clusters" value="2" />
+			</else>
+		</if>
+		<php expression="implode(',', range(1, ${total_member_clusters}))" returnProperty="member_clusters" />
+
+		<if>
+			<equals arg1="${db-environment}" arg2="prod" />
+			<then>
+				<property name="total_moment_clusters" value="32" />
+			</then>
+			<else>
+				<property name="total_moment_clusters" value="2" />
+			</else>
+		</if>
+		<php expression="implode(',', range(1, ${total_moment_clusters}))" returnProperty="moment_clusters" />
+		
+	</target>
+	
+	<target name="setphpmemory" description="Sets php memory limit">
+		<echo msg ="Setting php memory "/>
+		<php expression="ini_set('memory_limit', '1024M');" returnProperty="setphpmemoryresult"/>
+		<echo msg ="Result ${setphpmemoryresult}"/>
+	</target>
+
+       <target name="refresh-live-mission-control-data-from-production">
+         <if><equals arg1="${dbprefix}" arg2="csr" />
+           <then>
+             <exec command="ssh build1qa.sfo2.zoosk.com &quot;cd /srv/web-core-stag-rc-zoosk/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
+           </then>
+           <else>
+             <exec returnProperty="sshretval" command="ssh ${dev_hostname} &quot;cd /srv/dev${devid}/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
+             <if><equals arg1="${sshretval}" arg2="0" />
+               <then>
+                 <echo msg="refresh mission control data successful"/>
+               </then>
+               <else>
+                 <echo msg="cannot run refresh mission control command on ${dev_hostname} so trying again with an FQDN"/>
+                 <exec returnProperty="sshretval" checkreturn="true" command="ssh ${dev_hostname}.sfo2.zoosk.com &quot;cd /srv/dev${devid}/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
+               </else>
+             </if>
+           </else>
+         </if>
+       </target>
+	
+	<target name="all" description="Show Build Options">
+		<echo msg="Select 'install', 'upgrade', 'install-test', 'install-web-photoupload', 'clean-web', 'install-static-zoosk', 'install-codeahead-zoosk', 'install-test-10000xn' targets"/>
+	</target>
+	
+	<target name="install"
+ 			description="Installs all of the components of the Zoosk application"
+			depends="install-db-zoosk, upgrade-web-workload, install-services">
+	</target>
+	
+	<target name="upgrade"
+			description="Upgrades all of the components of the pollection application"
+			depends="upgrade-db-zoosk, upgrade-web-workload, install-services">
+	</target>
+	
+	<target name="upgrade-web-workload"
+			description="Upgrades a web workload machine"
+			depends="install-server-code, install-static-zoosk">
+	</target>
+	
+	<target name="install-server-code"
+		description="Like upgrade-web-workload but no static files"
+		depends="install-codeahead-zoosk, install-controls-zoosk, install-web-facebook, install-web-www, install-web-woome, install-web-admin, install-web-android, install-web-iphone, install-web-ipad, install-web-store, install-web-photoupload, install-scripts, install-logger, install-web-api, install-web-syndicate, install-cupid-symbols, install-feature, install-web-email-importer, install-web-zooskplus, install-web-touch, install-services, enable-psyche, install-autoloaders">
+	</target>
+	
+	<target name="upgrade-db-workload"
+			description="Upgrades a db workload machine"
+			depends="upgrade-db-zoosk">
+	</target>
+	
+	<target name="baseline" description="Installs/Upgrades the baseline requirements" depends="install-web-include, install-global-props, install-po-files" >
+		<mkdir dir="${photoserve_path}" />
+	</target>
+
+    <target name="install-autoloaders">
+        <if>
+            <or>
+                <not><equals arg1="${disable_autoloader_autogen}" arg2="1" /></not>
+                <equals arg1="${enable_autoloader_autogen}" arg2="1" />
+            </or>
+          	<then>
+                <phingcall target="refresh-autoloaders" />
+          	</then>
+        </if>
+        <touch file="autoload_admin_codeahead.php"/>
+        <touch file="autoload_api_codeahead.php"/>
+        <touch file="autoload_codeahead.php"/>
+        <touch file="autoload_finance_include.php"/>
+        <touch file="autoload_gen_thrift.php"/>
+        <touch file="autoload_product_include.php"/>
+        <touch file="autoload_tools_include.php"/>
+        <copy todir="${zooskroot_dir}" includeemptydirs="false" >
+            <fileset dir=".">
+                <include name="autoload_*.php" />
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="refresh-autoloaders">
+       <exec passthru="true" checkreturn="true" command="echo 'BUILDING AUTOLOADERS STARTED: ' `date`" />
+        <echo msg="Building class=>path mapping for product include autoloader"/>
+       <exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include www/include autoload_product_include.php productIncludeClassMap '^www\/include' config/autoload_product_include.php > /dev/null"/>
+       <echo msg="Building class=>path mapping for tools include autoloader"/>
+       <exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include ../tools/include autoload_tools_include.php toolsIncludeClassMap '^.*\/tools' config/autoload_tools_include.php > /dev/null"/>
+	    <echo msg="Building class=>path mapping for codeaheads autoloader"/>
+		<exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include codeahead autoload_codeahead.php codeaheadClassMap '^codeahead\/' config/autoload_codeahead.php > /dev/null"/>
+        <echo msg="Building class=>path mapping for api codeaheads autoloader"/>
+        <exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include www/api/codeahead autoload_api_codeahead.php apiCodeaheadClassMap '^www\/api\/codeahead\/' config/autoload_api_codeahead.php > /dev/null"/>
+        <echo msg="Building class=>path mapping for admin codeaheads autoloader"/>
+        <exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include www/admin/codeahead autoload_admin_codeahead.php adminCodeaheadClassMap '^www\/admin\/codeahead\/' config/autoload_admin_codeahead.php > /dev/null"/>
+       <echo msg="Building class=>path mapping for thrift autoloader"/>
+       <exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include ${zooskroot_dir}/services/thrift/gen-php autoload_gen_thrift.php thriftGenClassMap '^.*\/gen-php' config/autoload_gen_thrift.php > /dev/null"/>
+       <echo msg="Building class=>path mapping for finance autoloader"/>
+       <exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include  ../finance/include autoload_finance_include.php financeIncludeClassMap '^.*include' config/autoload_finance_include.php > /dev/null"/>
+       <exec passthru="true" checkreturn="true" command="git add autoload_*.php" />
+        <copy todir="${zooskroot_dir}" includeemptydirs="false" >
+            <fileset dir=".">
+                <include name="autoload_*.php" />
+            </fileset>
+        </copy>
+       <exec passthru="true" checkreturn="true" command="echo 'BUILDING AUTOLOADERS FINISHED:' `date`" />
+       <echo msg="Finished autoloader class-map generation"/>
+   </target>
+
+	<target 
+		name="install-global-props" 
+		description="Copies globals.php, global_constants.php, and appdata.php"
+		depends="install-code-touch-files, install-config">
+		<echo msg="Installing global prop files in ${zooskroot_dir}/config"/>
+        <mkdir dir="${zooskroot_dir}" />
+        <mkdir dir="${zooskroot_dir}/config" />
+		<copy todir="${zooskroot_dir}/config" overwrite="true">
+			<fileset dir="config">
+				<include name="globals.php" />
+                <include name='global_constants.php' />
+				<include name="appdata.php" />
+			</fileset>
+		</copy>
+	</target>
+
+
+    <target
+   		name="install-config"
+   		description="Installs the build-time configuration."
+    >
+        <echo msg="Installing build-time configuration in ${configroot_dir}"/>
+
+        <php expression="array_shift(explode('|', '${wurfl}', 2))" returnProperty="wurflHost" />
+
+        <mkdir dir="${configroot_dir}" />
+        <copy todir="${configroot_dir}" overwrite="true">
+            <fileset dir="config">
+                <include name="mission_control.js" />
+            </fileset>
+	    </copy>
+        <copy todir="${configroot_dir}" overwrite="true">
+            <fileset dir="../config">
+                <include name="*php" />
+            </fileset>
+   			<filterchain>
+   				<replacetokens begintoken="##" endtoken="##">
+
+                    <!-- moved from ':install-scripts' -->
+                    <token key="STATIC_S3_BUCKET" value="${static_s3_bucket}" />
+                    <token key="STATIC_TARGET" value="${zooskstatic-target-dir}" />
+
+                    <!-- moved from ':install-test-code' -->
+                    <token key="TEST_EMAIL" value="${test_email}" />
+
+                    <!-- moved from '../build.xml:update-themis-config' -->
+                    <token key="THEMIS_ZOOSK_ADMIN_ROOT" value="${adminweb-target-dir}" />
+                    <token key="THEMIS_DB_PREFIX" value="${dbprefix}" />
+                    <token key="THEMIS_DEPLOY_ENV" value="${deploy-environment}" />
+                    <token key="THEMIS_DEV_SERVER_URL" value="" />
+                    <token key="THEMIS_STATICS_SERVER_URL" value="" />
+                    <token key="THEMIS_ZOOSK_ADMIN_URL" value="${admin_app_url_1}" />
+                    <token key="THEMIS_ZOOSK_WWW_URL" value="${www_app_url_1}" />
+
+                    <!-- copied from '../tools/build.xml:install-marketing-scripts' -->
+   					<token key="GOOGLE_ADWORD_LOGIN_EMAIL" value="${google_adword_login_email}" />
+   					<token key="GOOGLE_ADWORD_LOGIN_PASSWORD" value="${google_adword_login_password}" />
+   					<token key="GOOGLE_ADWORD_DEVELOPER_TOKEN" value="${google_adword_developer_token}" />
+   					<token key="GOOGLE_ADWORD_ENDPOINT" value="${google_adword_endpoint}" />
+   					<token key="MARKETING_SPEND_REPORT_PATH" value="${marketing_spend_report_path}" />
+
+   					<!-- environment -->
+   					<token key="DEPLOY_ENV" value="${deploy-environment}" />
+   					<token key="DB_ENV" value="${db-environment}" />
+   					<!-- directories -->
+   					<token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+   					<token key="SHARED_ROOT" value="${shared-dir}" />
+   					<token key="APP_PUBLISH_ROOT" value="${app-publish-dir}" />
+   					<token key="TOOLS_ROOT" value="${toolsroot-dir}" />
+   					<token key="FINANCE_ROOT" value="${financeroot-dir}" />
+   					<token key="GEOIP_DATA_ROOT" value="${datapublish-geoip-dir}" />
+   					<token key="PRODUCT_INC" value="${appinclude-target-dir}" />
+   					<token key="FACEBOOK_ROOT" value="${facebookweb-target-dir}" />
+   					<token key="WWW_ROOT" value="${wwwweb-target-dir}" />
+   					<token key="SYNDICATE_ROOT" value="${syndicateweb-target-dir}" />
+   					<token key="ADMIN_ROOT" value="${adminweb-target-dir}" />
+   					<token key="ANDROID_ROOT" value="${androidweb-target-dir}" />
+   					<token key="IPHONE_ROOT" value="${iphoneweb-target-dir}" />
+   					<token key="IPAD_ROOT" value="${ipadweb-target-dir}" />
+   					<token key="TOUCH_ROOT" value="${touchweb-target-dir}" />
+   					<token key="API_ROOT" value="${apiweb-target-dir}" />
+   					<token key="STORE_ROOT" value="${storeweb-target-dir}" />
+   					<token key="CERT_ROOT" value="${cert-target-dir}" />
+                    <token key="VULCAN_ROOT" value="${vulcan-target-dir}" />
+                    <token key="VULCAN_SHARED_ROOT" value="${vulcan-shared-target-dir}" />
+                    <token key="ZEPHYR_ROOT" value="${zephyr-target-dir}" />
+   					<token key="CERT_WORKING_DIR" value="${cert-working-dir}" />
+   					<token key="PHOTO_TEMP_DIR" value="${photo-temp-dir}" />
+   					<token key="PHOTO_EMAIL_DOMAIN" value="${photo-email-domain}" />
+   					<token key="EMAIL_FAILURE_PATH" value="${email_failure_path}" />
+
+   					<!-- database clusters -->
+   					<token key="DB_PREFIX" value="${dbprefix}" />
+   					<token key="DB_USERNAME" value="${dbusername}" />
+   					<token key="DB_PASSWORD" value="${dbpassword}" />
+
+                    <token key="DB_USERNAME_UTL" value="${dbusernameutl}" />
+                    <token key="DB_PASSWORD_UTL" value="${dbpasswordutl}" />
+   					<token key="UTIL_HOSTS" value="${util}" />
+                    <token key="UTIL_HOSTS2" value="${util2}" />
+
+                    <token key="DB_USERNAME_ONLINE" value="${dbusernameonline}" />
+                    <token key="DB_PASSWORD_ONLINE" value="${dbpasswordonline}" />
+   					<token key="ONLINENOW_HOSTS" value="${onlinenow}" />
+
+                    <token key="DB_USERNAME_GLB" value="${dbusernameglb}" />
+                    <token key="DB_PASSWORD_GLB" value="${dbpasswordglb}" />
+   					<token key="GLOBAL_HOSTS" value="${global}" />
+
+                    <token key="DB_USERNAME_MSG" value="${dbusernamemsg}" />
+                    <token key="DB_PASSWORD_MSG" value="${dbpasswordmsg}" />
+   					<token key="MSG_HOSTS" value="${msg}" />
+
+                    <token key="DB_USERNAME_USR" value="${dbusernameusr}" />
+                    <token key="DB_PASSWORD_USR" value="${dbpasswordusr}" />
+   					<token key="USER_HOSTS" value="${user}" />
+
+                    <token key="DB_USERNAME_AFF" value="${dbusernameaff}" />
+                    <token key="DB_PASSWORD_AFF" value="${dbpasswordaff}" />
+   					<token key="AFFINITY_HOSTS" value="${affinity}" />
+
+                    <token key="DB_USERNAME_EVT" value="${dbusernameevt}" />
+                    <token key="DB_PASSWORD_EVT" value="${dbpasswordevt}" />
+   					<token key="EVENT_HOSTS" value="${event}" />
+
+   					<token key="PHOTO_HOSTS" value="${photo}" />
+
+                    <token key="DB_USERNAME_ADMIN" value="${dbusernameadmin}" />
+                    <token key="DB_PASSWORD_ADMIN" value="${dbpasswordadmin}" />
+   					<token key="ADMIN_HOSTS" value="${admin}" />
+
+                    <token key="DB_USERNAME_EML" value="${dbusernameeml}" />
+                    <token key="DB_PASSWORD_EML" value="${dbpasswordeml}" />
+   					<token key="TOOLS_HOSTS" value="${tools}" />
+
+                    <token key="DB_USERNAME_FIN" value="${dbusernamefin}" />
+                    <token key="DB_PASSWORD_FIN" value="${dbpasswordfin}" />
+   					<token key="FINANCE_HOSTS" value="${finance}" />
+
+                    <token key="DB_USERNAME_MON" value="${dbusernamemon}" />
+                    <token key="DB_PASSWORD_MON" value="${dbpasswordmon}" />
+   					<token key="MONEY_HOSTS" value="${money}" />
+
+                    <token key="DB_USERNAME_GAME" value="${dbusernamegame}" />
+                    <token key="DB_PASSWORD_GAME" value="${dbpasswordgame}" />
+   					<token key="GAME_HOSTS" value="${game}" />
+
+                    <token key="DB_USERNAME_MBR" value="${dbusernamembr}" />
+                    <token key="DB_PASSWORD_MBR" value="${dbpasswordmbr}" />
+   					<token key="MEMBER_HOSTS" value="${member}" />
+
+   					<token key="MOMENT_HOSTS" value="${moment}" />
+
+                    <token key="DB_USERNAME_OFFLINE_SEARCH" value="${dbusernameofflinesearch}" />
+                    <token key="DB_PASSWORD_OFFLINE_SEARCH" value="${dbpasswordofflinesearch}" />
+                    <token key="OFFLINE_SEARCH_HOSTS" value="${offlinesearch}" />
+
+   					<token key="DIR_HOSTS" value="${directory}" />
+
+   					<!-- MAIN MEMCACHE HOSTS -->
+   					<token key="MEMCACHED_HOSTS" value="${memcached}" />
+   					<token key="2013_MEMCACHED_HOSTS" value="${2013_memcached}" />
+
+   					<!-- SEARCH MEMCACHE HOSTS -->
+   					<token key="SEARCH_MEMCACHED_HOSTS" value="${search_memcached}" />
+   					<token key="2013_SEARCH_MEMCACHED_HOSTS" value="${2013_search_memcached}" />
+
+   					<!-- ZSMS MEMCACHE HOSTS -->
+   					<token key="ZSMS_MEMCACHED_HOSTS" value="${zsms_memcached}" />
+   					<token key="2013_ZSMS_MEMCACHED_HOSTS" value="${2013_zsms_memcached}" />
+
+   					<!-- COOKIE MEMCACHE HOSTS -->
+   					<token key="COOKIE_MEMCACHED_HOSTS" value="${cookie_memcached}" />
+   					<token key="2013_COOKIE_MEMCACHED_HOSTS" value="${2013_cookie_memcached}" />
+
+   					<!-- WURFL MEMCACHE HOSTS -->
+   					<token key="WURFL_MEMCACHED_HOSTS" value="${wurfl_memcached}" />
+   					<token key="2013_WURFL_MEMCACHED_HOSTS" value="${2013_wurfl_memcached}" />
+
+   					<!-- should be deprecated -->
+   					<token key="MEMCACHED_HOSTS2" value="${memcached2}" />
+
+                    <token key="DB_USERNAME_SCW" value="${dbusernamescw}" />
+                    <token key="DB_PASSWORD_SCW" value="${dbpasswordscw}" />
+   					<token key="SCHWARTZ_HOSTS" value="${schwartz}" />
+   					<token key="SCHWARTZ2_HOSTS" value="${schwartz2}" />
+
+                    <token key="DB_USERNAME_GEO" value="${dbusernamegeo}" />
+                    <token key="DB_PASSWORD_GEO" value="${dbpasswordgeo}" />
+   					<token key="GEOLOOKUP_HOSTS" value="${geolookup}" />
+
+   					<token key="SMTP_HOSTS" value="${smtp}" />
+					<token key="SMTP_HOTMAIL_CERTIFIED_HOSTS" value="${smtp_hotmail_certified}" />
+					<token key="SMTP_HOTMAIL_UNCERTIFIED_HOSTS" value="${smtp_hotmail_uncertified}" />
+   					<token key="PHOTO_SERVERS" value="${photoservers}" />
+   					<token key="TIGASE_JMX_SERVERS" value="${tigasejmx}" />
+
+   					<!-- application data -->
+   					<token key="CHAT_ADMIN_USERS" value="${chat_admin_users}" />
+   					<token key="CHAT_ROOT_DOMAIN" value="${chat_root_domain}" />
+   					<token key="CHAT_PORT" value="${chat-port}" />
+                    <token key="COOKIE_PREFIX" value="${cookie-prefix}" />
+   					<token key="BOSH_URL_TEMPLATE" value="${chat_bosh_url_template}" />
+   					<token key="BOSH_URL_TEMPLATE_HTTPS" value="${chat_bosh_url_template_https}" />
+                    <token key="MOGILEFS_HOST" value="${mogilefs_host}" />
+               		<token key="MOGILEFS_PORT" value="${mogilefs_port}" />
+               		<token key="MOGILEFS_PHOTO_BACKUP_DOMAIN" value="${mogilefs_photo_backup_domain}" />
+               		<token key="MOGILEFS_PHOTO_STAGING_DOMAIN" value="${mogilefs_photo_staging_domain}" />
+               		<token key="MOGILEFS_PHOTOV3_STAGING_DOMAIN" value="${mogilefs_photov3_staging_domain}" />
+                    <token key="MOGILEFS_PHOTOV3_BACKUP_DOMAIN" value="${mogilefs_photov3_backup_domain}" />
+                    <token key="STATIC_URL" value="${static_url_https_regular}" />
+   					<token key="STATIC_URL_HTTP" value="${static_url_http}" />
+   					<token key="STATIC_URL_HTTPS_REGULAR" value="${static_url_https_regular}" />
+
+   					<token key="MARKETING_STATIC_BUCKET" value="${marketing_static_bucket}" />
+   					<token key="MARKETING_STATIC_URL_HTTP" value="${marketing_static_url_http}" />
+
+   					<token key="AFFINITY_STATIC_BUCKET" value="${affinity_static_bucket}" />
+   					<token key="AFFINITY_STATIC_URL_HTTP" value="${affinity_static_url_http}" />
+
+                    <token key="ANNOUNCEMENT_STATIC_BUCKET" value="${announcement_static_bucket}" />
+                    <token key="ANNOUNCEMENT_STATIC_URL_HTTP" value="${announcement_static_url_http}" />
+
+   					<token key="GAME_STATIC_BUCKET" value="${game_static_bucket}" />
+   					<token key="GAME_STATIC_URL_HTTP" value="${game_static_url_http}" />
+
+   					<token key="TRACKING_IMG_BUCKET" value="${tracking_img_bucket}" />
+   					<token key="TRACKING_IMG_BUCKET_URL_HTTP" value="${tracking_img_bucket_url_http}" />
+   					<token key="TRACKING_EMAIL_OPEN_RATE_HTTP" value="${tracking_email_open_rate_http}" />
+   					<token key="TRACKING_LOG_BUCKET" value="${tracking_log_bucket}" />
+   					<token key="TRACKING_LOG_BUCKET_URL_HTTP" value="${tracking_log_bucket_url_http}" />
+
+                    <token key="VIDEO_VERIFICATION_BUCKET" value="${video_verification_bucket}" />
+                    <token key="VIDEO_VERIFICATION_BUCKET_REGION" value="${video_verification_bucket_region}" />
+                    <token key="VIDEO_VERIFICATION_BUCKET_URL_HTTP" value="${video_verification_bucket_url_http}" />
+
+                    <token key="VIDEO_VERIFICATION_BUCKET_V2" value="${video_verification_bucket_v2}" />
+                    <token key="VIDEO_VERIFICATION_BUCKET_REGION_V2" value ="${video_verification_bucket_region_v2}" />
+                    <token key="VIDEO_VERIFICATION_BUCKET_URL_V2" value="${video_verification_bucket_url_v2}" />
+
+   					<token key="UPLOAD_URL" value="${upload_url}" />
+   					<token key="PHOTO_URL" value="${photo_url}" />
+   					<token key="PHOTO_URL_NEW_BUCKET" value="${photo_url_new_bucket}" />
+   					<token key="PHOTOV3_URL" value="${photov3_url}" />
+   					<token key="STORE_URL" value="${store_url}" />
+                    <token key="NOTIFY_URL" value="${notify_url}" />
+                    <token key="ABOUT_URL" value="${about_url}" />
+   					<token key="ZOOSK_SECRET" value="${zoosk_secret}" />
+   					<token key="THRIFT_HOST" value="${thrift_host}" />
+
+   					<token key="THRIFT_SERVICES_DIR" value="${thrift_services_dir}" />
+   					<token key="STATIC_VERSION" value="${static_version}" />
+   					<token key="STATIC_ON_S3" value="${static_on_s3}" />
+   					<token key="BADGE_BUCKET" value="${badge_bucket}" />
+
+   					<token key="PHOTOBACKUP_BUCKET" value="${photobackup_bucket}" />
+   					<token key="PHOTOSERVE_PATH" value="${photoserve_path}" />
+   					<token key="PHOTOWORKING_PATH" value="${photoworking_path}" />
+   					<token key="PHOTOPUBLISH_BUCKET" value="${photopublish_bucket}" />
+   					<token key="TEST_PUBLISHING_BUCKET" value="${test_publishing_bucket}" />
+
+   					<token key="WWW_APP_URL_1" value="${www_app_url_1}" />
+   					<token key="WWW_CALLBACK_URL_1" value="${www_callback_url_1}" />
+
+   					<token key="ANDROID_APP_URL_1" value="${android_app_url_1}" />
+   					<token key="ANDROID_CALLBACK_URL_1" value="${android_callback_url_1}" />
+   					<token key="ANDROID_PAYPAL_APP_ID" value="${android_paypal_app_id}" />
+   					<token key="ANDROID_PAYPAL_APP_ID_TWO" value="${android_paypal_app_id_two}" />
+
+   					<token key="IPHONE_APP_URL_1" value="${iphone_app_url_1}" />
+   					<token key="IPHONE_CALLBACK_URL_1" value="${iphone_callback_url_1}" />
+   					<token key="IPHONE_PAYPAL_APP_ID" value="${iphone_paypal_app_id}" />
+
+   					<token key="IPAD_APP_URL_1" value="${ipad_app_url_1}" />
+   					<token key="IPAD_CALLBACK_URL_1" value="${ipad_callback_url_1}" />
+
+   					<token key="TOUCH_APP_URL_1" value="${touch_app_url_1}" />
+   					<token key="TOUCH_CALLBACK_URL_1" value="${touch_callback_url_1}" />
+   					<token key="TOUCH_VERSION" value="${touch_version}" />
+
+   					<token key="LOGIN_APP_URL_1" value="${login_app_url_1}" />
+   					<token key="LOGIN_CALLBACK_URL_1" value="${login_callback_url_1}" />
+
+   					<token key="API_CALLBACK_URL_1" value="${api_callback_url_1}" />
+
+   					<token key="ADMIN_APP_URL_1" value="${admin_app_url_1}" />
+   					<token key="ADMIN_CALLBACK_URL_1" value="${admin_callback_url_1}" />
+   					<token key="ADMIN_WORKER_ID" value="${admin_worker_id}" />
+
+   					<token key="PAYPAL_IPN" value="${paypal_ipn}" />
+   					<token key="PAYPAL_MOBILE_URL" value="${paypal_mobile_url}" />
+   					<token key="PAYPAL_NVP" value="${paypal_nvp}" />
+   					<token key="PAYPAL_BUSINESS" value="${paypal_business}" />
+   					<token key="PAYPAL_BUSINESS_TWO" value="${paypal_business_two}" />
+
+   					<token key="GLOBALCOLLECT_IPADDRESS" value="${globalcollect_ipaddress}" />
+   					<token key="GLOBALCOLLECT_WDL" value="${globalcollect_wdl}" />
+   					<token key="GLOBALCOLLECT_NOTIFICATION_EMAIL" value="${globalcollect_notification_email}" />
+
+   					<token key="ZONG_KEY" value="${zong_key}" />
+
+   					<token key="SAFTPAY_WSDL" value="${saftpay_wsdl}" />
+   					<token key="SAFTPAY_API_KEY" value="${saftpay_api_key}" />
+   					<token key="SAFTPAY_API_SECRET" value="${saftpay_api_secret}" />
+
+   					<token key="OFFERPAL_API_KEY" value="${offerpal_api_key}" />
+   					<token key="OFFERPAL_API_SECRET" value="${offerpal_api_secret}" />
+
+   					<token key="TRIALPAY_API_KEY" value="${trialpay_api_key}" />
+
+   					<token key="CHASE_GATEWAY_PRIMARY_URL" value="${chase_gateway_primary_url}" />
+   					<token key="CHASE_GATEWAY_SECONDARY_URL" value="${chase_gateway_secondary_url}" />
+
+   					<token key="AMAZON_API_KEY" value="${amazon_api_key}" />
+   					<token key="AMAZON_API_SECRET" value="${amazon_api_secret}" />
+
+   					<token key="ZOOSK_S3_BACKUP_KEY" value="${zoosk_s3_backup_key}" />
+   					<token key="ZOOSK_S3_BACKUP_SECRET" value="${zoosk_s3_backup_secret}" />
+
+   					<token key="ZOOSK_S3_BUILD_KEY" value="${zoosk_s3_build_key}" />
+   					<token key="ZOOSK_S3_BUILD_SECRET" value="${zoosk_s3_build_secret}" />
+
+   					<token key="ZOOSK_S3_LIVE_KEY" value="${zoosk_s3_live_key}" />
+   					<token key="ZOOSK_S3_LIVE_SECRET" value="${zoosk_s3_live_secret}" />
+
+   					<token key="ZOOSK_S3_PHOTO_KEY" value="${zoosk_s3_photo_key}" />
+   					<token key="ZOOSK_S3_PHOTO_SECRET" value="${zoosk_s3_photo_secret}" />
+
+   					<token key="ZOOSK_S3_TEST_KEY" value="${zoosk_s3_test_key}" />
+   					<token key="ZOOSK_S3_TEST_SECRET" value="${zoosk_s3_test_secret}" />
+
+                    <token key="ZOOSK_S3_VIDEO_VERIFICATION_READER_KEY" value="${zoosk_s3_video_verification_reader_key}" />
+                    <token key="ZOOSK_S3_VIDEO_VERIFICATION_READER_SECRET" value="${zoosk_s3_video_verification_reader_secret}" />
+
+                    <token key="ZOOSK_S3_VIDEO_VALIDATION_GRANT_FEDERATION_KEY" value="${zoosk_s3_video_grant_federation_key}" />
+                    <token key="ZOOSK_S3_VIDEO_VALIDATION_GRANT_FEDERATION_SECRET" value="${zoosk_s3_video_grant_federation_secret}" />
+                    <token key="ZOOSK_S3_VIDEO_VERIFICATION_WRITE_KEY" value="${zoosk_s3_video_verification_write_key}" />
+                    <token key="ZOOSK_S3_VIDEO_VERIFICATION_WRITE_SECRET" value="${zoosk_s3_video_verification_write_secret}" />
+
+   					<token key="RECAPTCHA_API_KEY" value="${recatpcha_api_key}" />
+   					<token key="RECAPTCHA_API_SECRET" value="${recatpcha_api_secret}" />
+
+   					<token key="YAHOO_API_KEY" value="${yahoo_api_key}" />
+   					<token key="YAHOO_API_SECRET" value="${yahoo_api_secret}" />
+   					<token key="YAHOO_OAUTH" value="${yahoo_oauth}" />
+
+   					<token key="GOOGLE_CLIENT_ID" value="${google_client_id}" />
+   					<token key="GOOGLE_CLIENT_SECRET" value="${google_client_secret}" />
+   					<token key="GMAIL_REDIRECT_URI" value="${gmail_redirect_uri}" />
+
+   					<token key="MSN_CLIENT_ID" value="${msn_client_id}" />
+   					<token key="MSN_CLIENT_SECRET" value="${msn_client_secret}" />
+   					<token key="HOTMAIL_REDIRECT_URI" value="${hotmail_redirect_uri}" />
+
+   					<token key="AOL_DEV_ID" value="${aol_dev_id}"/>
+
+   					<token key="IOVATION_SNARE_URL" value="${iovation_snare_url}" />
+   					<token key="IOVATION_DRA_URL" value="${iovation_dra_url}" />
+   					<token key="IOVATION_DRA_SUB" value="${iovation_dra_sub}" />
+   					<token key="IOVATION_DRA_ADMIN" value="${iovation_dra_admin}" />
+   					<token key="IOVATION_DRA_PASSWORD" value="${iovation_dra_password}" />
+
+   					<token key="THREAT_METRIX_API_URL" value="${threat_metrix_api_url}" />
+   					<token key="THREAT_METRIX_PROFILE_URL" value="${threat_metrix_profile_url}" />
+   					<token key="THREAT_METRIX_ORG_ID" value="${threat_metrix_org_id}" />
+   					<token key="THREAT_METRIX_API_KEY" value="${threat_metrix_api_key}" />
+
+   					<token key="ZOOSK_SMS_SHORT_CODE" value ="${zoosk_sms_short_code}" />
+   					<token key="ZOOSK_SMS_LONG_CODE" value ="${zoosk_sms_long_code}" />
+
+   					<token key="CLICKATELL_API_ID" value="${clickatell_api_id}" />
+   					<token key="CLICKATELL_USERNAME" value="${clickatell_username}" />
+   					<token key="CLICKATELL_PASSWORD" value="${clickatell_password}" />
+
+   					<token key="SYNIVERSE_API_URL" value="${syniverse_api_url}" />
+   					<token key="SYNIVERSE_USERNAME" value="${syniverse_username}" />
+   					<token key="SYNIVERSE_PASSWORD" value="${syniverse_password}" />
+
+   					<token key="CLXNETWORK_API_URL" value="${clxnetwork_api_url}" />
+   					<token key="CLXNETWORK_API_URL_BACKUP" value="${clxnetwork_api_url_backup}" />
+   					<token key="CLXNETWORK_USERNAME" value="${clxnetwork_username}" />
+   					<token key="CLXNETWORK_PASSWORD" value="${clxnetwork_password}" />
+
+   					<token key="BOKU_MERCHANT_ID" value="${boku_merchant_id}" />
+   					<token key="BOKU_API_KEY" value="${boku_api_key}" />
+   					<token key="BOKU_SERVICE_ID" value="${boku_service_id}" />
+
+   					<token key="BOKU_MOBILE_MERCHANT_ID" value="${boku_mobile_merchant_id}" />
+   					<token key="BOKU_MOBILE_API_KEY" value="${boku_mobile_api_key}" />
+   					<token key="BOKU_MOBILE_SERVICE_ID" value="${boku_mobile_service_id}" />
+
+   					<token key="ZOOSK_DESKTOP_URL" value="${chat_update_url}" />
+   					<token key="ZOOSK_DESKTOP_VERSION_LATEST" value="${chat_version}" />
+   					<token key="ZOOSK_DESKTOP_VERSION_LEGACY" value="${chat_version_legacy}" />
+   					<token key="ZOOSK_DESKTOP_AIR_VERSION" value="${air_version}" />
+   					<token key="ZOOSK_DESKTOP_PUB_ID" value="${pub-id}" />
+   					<token key="ZOOSK_DESKTOP_APP_ID" value="${app-id}" />
+
+   					<token key="IPHONE_VERSION_LATEST" value="${iphone_version}" />
+   					<token key="IPHONE_VERSION_LEGACY" value="${iphone_version_legacy}" />
+   					<token key="IPHONE_OS_VERSION" value="${iphone_os_version}" />
+
+   					<token key="APNS_FEEDBACK_HOST" value="${apns_feedback_host}" />
+   					<token key="APNS_FEEDBACK_PORT" value="${apns_feedback_port}" />
+
+   					<token key="ANDROID_VERSION_LATEST" value="${android_version}" />
+                    <token key="ANDROID_VERSION_LATEST_GOOGLE" value="${android_version_google}" />
+                    <token key="ANDROID_VERSION_LATEST_AMAZON" value="${android_version_amazon}" />
+                    <token key="ANDROID_VERSION_LEGACY" value="${android_version_legacy}" />
+
+   					<token key="C2DM_ROLE_EMAIL" value="${c2dm_role_email}" />
+   					<token key="C2DM_ROLE_EMAIL_PASSWORD" value="${c2dm_role_email_password}" />
+
+   					<token key="PHOTO_PUBLISH_SERVER" value="${photo_publish_server}" />
+   					<token key="PHOTO_PUBLISH_PORT" value="${photo_publish_port}" />
+   					<token key="PHOTO_PUBLISH_IMPL_ROOT" value="${photo_publish_impl_root}" />
+
+   					<token key="PHOTO_SERVER" value="${photo_server}" />
+   					<token key="PHOTO_PORT" value="${photo_port}" />
+   					<token key="PHOTO_IMPL_ROOT" value="${photo_impl_root}" />
+
+   					<token key="RETURN_EMAIL_ADDRESS" value="${return_email_address}" />
+   					<token key="RETURN_EMAIL_ADDRESS_FOR_GMAIL" value="${return_email_address_for_gmail}" />
+   					<token key="RETURN_EMAIL_ADDRESS_QUIZ" value="${return_email_address_quiz}" />
+   					<token key="RETURN_EMAIL_ADDRESS_SOCIALBOX" value="${return_email_address_socialbox}" />
+   					<token key="RETURN_EMAIL_ADDRESS_FCMP" value="${return_email_address_fcmp}" />
+   					<token key="RETURN_EMAIL_ADDRESS_RATEPHOTO" value="${return_email_address_ratephoto}" />
+   					<token key="RETURN_EMAIL_ADDRESS_REMINDER" value="${return_email_address_reminder}" />
+   					<token key="RETURN_EMAIL_ADDRESS_MEMBER" value="${return_email_address_member}" />
+   					<token key="RETURN_EMAIL_ADDRESS_INVITE" value="${return_email_address_invite}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_DDS" value="${list_unsubscribe_email_dds}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_VIP" value="${list_unsubscribe_email_vip}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_REG" value="${list_unsubscribe_email_reg}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_INVITE" value="${list_unsubscribe_email_invite}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_NOOP" value="${list_unsubscribe_email_noop}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_QUIZ" value="${list_unsubscribe_email_quiz}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_SOCIALBOX" value="${list_unsubscribe_email_socialbox}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_FCMP" value="${list_unsubscribe_email_fcmp}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_RATEPHOTO" value="${list_unsubscribe_email_ratephoto}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_REMINDER" value="${list_unsubscribe_email_reminder}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_DDS_FOR_GMAIL" value="${list_unsubscribe_email_dds_for_gmail}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_VIP_FOR_GMAIL" value="${list_unsubscribe_email_vip_for_gmail}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_REG_FOR_GMAIL" value="${list_unsubscribe_email_reg_for_gmail}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_INVITE_FOR_GMAIL" value="${list_unsubscribe_email_invite_for_gmail}" />
+   					<token key="LIST_UNSUBSCRIBE_EMAIL_NOOP_FOR_GMAIL" value="${list_unsubscribe_email_noop_for_gmail}" />
+   					<token key="CARE_DOMAIN" value="${care_domain}" />
+   					<token key="CARE_CATCH_ALL_PREFIX" value="${care_catch_all_prefix}" />
+   					<token key="BIZDEV_EMAIL" value="${bizdev_email}" />
+   					<token key="ADSALES_EMAIL" value="${adsales_email}" />
+   					<token key="POLICE_EMAIL" value="${police_email}" />
+   					<token key="CANCEL_EMAIL" value="${cancel_email}" />
+   					<token key="CARE_LOCATION_EMAIL" value="${care_location_email}" />
+
+   					<token key="FACEBOOK_ACTIVE_APPS" value="${facebook_active_apps}" />
+
+   					<token key="FACEBOOK_APP_APPID_1" value="${facebook_app_appid_1}" />
+   					<token key="FACEBOOK_APP_ACCESS_TOKEN_1" value="${facebook_app_access_token_1}" />
+   					<token key="FACEBOOK_APP_URL_1" value="${facebook_app_url_1}" />
+   					<token key="FACEBOOK_CALLBACK_URL_1" value="${facebook_callback_url_1}" />
+   					<token key="FACEBOOK_API_KEY_1" value="${facebook_api_key_1}" />
+   					<token key="FACEBOOK_API_SECRET_1" value="${facebook_api_secret_1}" />
+   					<token key="FACEBOOK_WORKER_ID_1" value="${facebook_worker_id_1}" />
+   					<token key="FACEBOOK_WORKER_SESSION_KEY_1" value="${facebook_worker_session_key_1}" />
+   					<token key="FACEBOOK_WORKER_ACCESS_TOKEN_1" value="${facebook_worker_access_token_1}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_1" value="${facebook_feed_location_id_1}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_1" value="${facebook_feed_flirt_sent_id_1}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_1" value="${facebook_feed_language_id_1}" />
+   					<token key="FACEBOOK_APP_REALTIME_CALLBACK_CHALLENGE_STRING_1" value="${facebook_app_realtime_callback_challenge_string_1}" />
+   					<token key="FACEBOOK_APP_NAMESPACE_1" value="${facebook_app_namespace_1}" />
+
+   					<token key="FACEBOOK_APP_URL_2" value="${facebook_app_url_2}" />
+   					<token key="FACEBOOK_CALLBACK_URL_2" value="${facebook_callback_url_2}" />
+   					<token key="FACEBOOK_API_KEY_2" value="${facebook_api_key_2}" />
+   					<token key="FACEBOOK_API_SECRET_2" value="${facebook_api_secret_2}" />
+   					<token key="FACEBOOK_WORKER_ID_2" value="${facebook_worker_id_2}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_2" value="${facebook_feed_location_id_2}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_2" value="${facebook_feed_flirt_sent_id_2}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_2" value="${facebook_feed_language_id_2}" />
+
+   					<token key="FACEBOOK_APP_URL_3" value="${facebook_app_url_3}" />
+   					<token key="FACEBOOK_CALLBACK_URL_3" value="${facebook_callback_url_3}" />
+   					<token key="FACEBOOK_API_KEY_3" value="${facebook_api_key_3}" />
+   					<token key="FACEBOOK_API_SECRET_3" value="${facebook_api_secret_3}" />
+   					<token key="FACEBOOK_WORKER_ID_3" value="${facebook_worker_id_3}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_3" value="${facebook_feed_location_id_3}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_3" value="${facebook_feed_flirt_sent_id_3}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_3" value="${facebook_feed_language_id_3}" />
+
+   					<token key="FACEBOOK_APP_URL_4" value="${facebook_app_url_4}" />
+   					<token key="FACEBOOK_CALLBACK_URL_4" value="${facebook_callback_url_4}" />
+   					<token key="FACEBOOK_API_KEY_4" value="${facebook_api_key_4}" />
+   					<token key="FACEBOOK_API_SECRET_4" value="${facebook_api_secret_4}" />
+   					<token key="FACEBOOK_WORKER_ID_4" value="${facebook_worker_id_4}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_4" value="${facebook_feed_location_id_4}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_4" value="${facebook_feed_flirt_sent_id_4}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_4" value="${facebook_feed_language_id_4}" />
+
+   					<token key="FACEBOOK_APP_URL_5" value="${facebook_app_url_5}" />
+   					<token key="FACEBOOK_CALLBACK_URL_5" value="${facebook_callback_url_5}" />
+   					<token key="FACEBOOK_API_KEY_5" value="${facebook_api_key_5}" />
+   					<token key="FACEBOOK_API_SECRET_5" value="${facebook_api_secret_5}" />
+   					<token key="FACEBOOK_WORKER_ID_5" value="${facebook_worker_id_5}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_5" value="${facebook_feed_location_id_5}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_5" value="${facebook_feed_flirt_sent_id_5}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_5" value="${facebook_feed_language_id_5}" />
+
+   					<token key="FACEBOOK_APP_URL_6" value="${facebook_app_url_6}" />
+   					<token key="FACEBOOK_CALLBACK_URL_6" value="${facebook_callback_url_6}" />
+   					<token key="FACEBOOK_API_KEY_6" value="${facebook_api_key_6}" />
+   					<token key="FACEBOOK_API_SECRET_6" value="${facebook_api_secret_6}" />
+   					<token key="FACEBOOK_WORKER_ID_6" value="${facebook_worker_id_6}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_6" value="${facebook_feed_location_id_6}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_6" value="${facebook_feed_flirt_sent_id_6}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_6" value="${facebook_feed_language_id_6}" />
+
+   					<token key="FACEBOOK_APP_URL_7" value="${facebook_app_url_7}" />
+   					<token key="FACEBOOK_CALLBACK_URL_7" value="${facebook_callback_url_7}" />
+   					<token key="FACEBOOK_API_KEY_7" value="${facebook_api_key_7}" />
+   					<token key="FACEBOOK_API_SECRET_7" value="${facebook_api_secret_7}" />
+   					<token key="FACEBOOK_WORKER_ID_7" value="${facebook_worker_id_7}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_7" value="${facebook_feed_location_id_7}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_7" value="${facebook_feed_flirt_sent_id_7}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_7" value="${facebook_feed_language_id_7}" />
+
+   					<token key="FACEBOOK_APP_URL_8" value="${facebook_app_url_8}" />
+   					<token key="FACEBOOK_CALLBACK_URL_8" value="${facebook_callback_url_8}" />
+   					<token key="FACEBOOK_API_KEY_8" value="${facebook_api_key_8}" />
+   					<token key="FACEBOOK_API_SECRET_8" value="${facebook_api_secret_8}" />
+   					<token key="FACEBOOK_WORKER_ID_8" value="${facebook_worker_id_8}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_8" value="${facebook_feed_location_id_8}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_8" value="${facebook_feed_flirt_sent_id_8}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_8" value="${facebook_feed_language_id_8}" />
+
+   					<token key="FACEBOOK_APP_URL_9" value="${facebook_app_url_9}" />
+   					<token key="FACEBOOK_CALLBACK_URL_9" value="${facebook_callback_url_9}" />
+   					<token key="FACEBOOK_API_KEY_9" value="${facebook_api_key_9}" />
+   					<token key="FACEBOOK_API_SECRET_9" value="${facebook_api_secret_9}" />
+   					<token key="FACEBOOK_WORKER_ID_9" value="${facebook_worker_id_9}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_9" value="${facebook_feed_location_id_9}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_9" value="${facebook_feed_flirt_sent_id_9}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_9" value="${facebook_feed_language_id_9}" />
+
+   					<token key="FACEBOOK_APP_URL_10" value="${facebook_app_url_10}" />
+   					<token key="FACEBOOK_CALLBACK_URL_10" value="${facebook_callback_url_10}" />
+   					<token key="FACEBOOK_API_KEY_10" value="${facebook_api_key_10}" />
+   					<token key="FACEBOOK_API_SECRET_10" value="${facebook_api_secret_10}" />
+   					<token key="FACEBOOK_WORKER_ID_10" value="${facebook_worker_id_10}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_10" value="${facebook_feed_location_id_10}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_10" value="${facebook_feed_flirt_sent_id_10}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_10" value="${facebook_feed_language_id_10}" />
+
+   					<token key="FACEBOOK_APP_URL_11" value="${facebook_app_url_11}" />
+   					<token key="FACEBOOK_CALLBACK_URL_11" value="${facebook_callback_url_11}" />
+   					<token key="FACEBOOK_API_KEY_11" value="${facebook_api_key_11}" />
+   					<token key="FACEBOOK_API_SECRET_11" value="${facebook_api_secret_11}" />
+   					<token key="FACEBOOK_WORKER_ID_11" value="${facebook_worker_id_11}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_11" value="${facebook_feed_location_id_11}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_11" value="${facebook_feed_flirt_sent_id_11}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_11" value="${facebook_feed_language_id_11}" />
+
+   					<token key="FACEBOOK_APP_URL_12" value="${facebook_app_url_12}" />
+   					<token key="FACEBOOK_CALLBACK_URL_12" value="${facebook_callback_url_12}" />
+   					<token key="FACEBOOK_API_KEY_12" value="${facebook_api_key_12}" />
+   					<token key="FACEBOOK_API_SECRET_12" value="${facebook_api_secret_12}" />
+   					<token key="FACEBOOK_WORKER_ID_12" value="${facebook_worker_id_12}" />
+   					<token key="FACEBOOK_FEED_LOCATION_ID_12" value="${facebook_feed_location_id_12}" />
+   					<token key="FACEBOOK_FEED_FLIRT_SENT_ID_12" value="${facebook_feed_flirt_sent_id_12}" />
+   					<token key="FACEBOOK_FEED_LANGUAGE_ID_12" value="${facebook_feed_language_id_12}" />
+
+   					<!-- Twitter -->
+   					<token key="TWITTER_CONSUMER_KEY" value="${twitter_consumer_key}" />
+   					<token key="TWITTER_CONSUMER_SECRECT" value="${twitter_consumer_secrect}" />
+   					<token key="TWITTER_DEV_ACCESS_TOKEN" value="${twitter_dev_access_token}" />
+   					<token key="TWITTER_DEV_ACCESS_TOKEN_SECRECT" value="${twitter_dev_access_token_secrect}" />
+
+   					<!-- Foursquare -->
+   					<token key="FOURSQUARE_CLIENT_ID" value="${foursquare_client_id}" />
+   					<token key="FOURSQUARE_CLIENT_SECRET" value="${foursquare_client_secret}" />
+   					<token key="FOURSQUARE_DEV_ACCESS_TOKEN" value="${foursquare_dev_access_token}" />
+
+   					<!-- !!SYNDICATE!! -->
+   					<token key="SYNDICATE_ACTIVE_APPS" value="${syndicate_active_apps}" />
+   					<token key="SYNDICATE_APP_URL_1" value="${syndicate_app_url_1}" />
+   					<token key="SYNDICATE_APP_URL_2" value="${syndicate_app_url_2}" />
+   					<token key="SYNDICATE_APP_URL_3" value="${syndicate_app_url_3}" />
+   					<token key="SYNDICATE_APP_URL_4" value="${syndicate_app_url_4}" />
+   					<token key="SYNDICATE_APP_URL_5" value="${syndicate_app_url_5}" />
+   					<token key="SYNDICATE_APP_URL_6" value="${syndicate_app_url_6}" />
+   					<token key="SYNDICATE_APP_URL_7" value="${syndicate_app_url_7}" />
+   					<token key="SYNDICATE_APP_URL_8" value="${syndicate_app_url_8}" />
+   					<token key="SYNDICATE_APP_URL_9" value="${syndicate_app_url_9}" />
+   					<token key="SYNDICATE_APP_URL_10" value="${syndicate_app_url_10}" />
+   					<token key="SYNDICATE_CALLBACK_URL" value="${syndicate_callback_url}" />
+
+   					<!-- email aliases -->
+   					<token key="REPORTS_EMAIL" value="${reports_email}" />
+   					<token key="ACCOUNTING_EMAIL" value="${accounting_email}" />
+   					<token key="MONEYOPS_EMAIL" value="${moneyops_email}" />
+   					<token key="CHARGEBACKS_EMAIL" value="${chargebacks_email}" />
+   					<token key="SALES_EMAIL" value="${sales_email}" />
+   					<token key="ADMIN_EMAIL" value="${admin_email}" />
+   					<token key="ADMIN_CHANGE_EMAIL" value="${admin_change_email}" />
+   					<token key="SYNIVERSE_FAILOVER_NOTIFICATION_EMAIL" value="${syniverse_failover_notificaiton_email}" />
+
+   					<!-- test data -->
+   					<token key="TEST_DB_PASS" value="${rootdbpass}" />
+
+   					<!-- bounce email -->
+   					<token key="BOUNCE_STUDIO_KEY" value="${bounce_studio_key}" />
+
+   					<!-- xhprof -->
+   					<token key="XHPROF_INTERVAL" value="${xhprof_interval}" />
+
+   					<!-- SOLR -->
+   					<token key="SOLR_USER_PROFILE_SEARCH_SERVERS" value="${solr-user-profile-search-servers}" />
+   					<token key="SOLR_USER_PROFILE_SEARCH_PATH" value="${solr-user-profile-search-path}" />
+
+   					<token key="SOLR_USER_PROFILE_BATCH_SEARCH_SERVERS" value="${solr-user-profile-batch-search-servers}" />
+   					<token key="SOLR_USER_PROFILE_BATCH_SEARCH_PATH" value="${solr-user-profile-batch-search-path}" />
+
+   					<token key="SOLR_USER_PROFILE_CAROUSEL_SEARCH_SERVERS" value="${solr-user-profile-carousel-search-servers}" />
+   					<token key="SOLR_USER_PROFILE_CAROUSEL_SEARCH_PATH" value="${solr-user-profile-carousel-search-path}" />
+
+                    <token key="SOLR_USER_PROFILE_ONLINENOW_SEARCH_SERVERS" value="${solr-user-profile-onlinenow-search-servers}" />
+              		<token key="SOLR_USER_PROFILE_ONLINENOW_SEARCH_PATH" value="${solr-user-profile-onlinenow-search-path}" />
+
+   					<token key="SOLR_NEWS_HOST" value="${solr-news-host}" />
+   					<token key="SOLR_NEWS_PORT" value="${solr-news-port}" />
+   					<token key="SOLR_NEWS_PATH" value="${solr-news-path}" />
+
+   					<token key="SOLR_GEN_NEWS_HOST" value="${solr-gen-news-host}" />
+   					<token key="SOLR_GEN_NEWS_PORT" value="${solr-gen-news-port}" />
+   					<token key="SOLR_GEN_NEWS_PATH" value="${solr-gen-news-path}" />
+
+   					<token key="SOLR_LEGACY_NEWS_HOST" value="${solr-legacy-news-host}" />
+   					<token key="SOLR_LEGACY_NEWS_PORT" value="${solr-legacy-news-port}" />
+   					<token key="SOLR_LEGACY_NEWS_PATH" value="${solr-legacy-news-path}" />
+
+   					<token key="SOLR_LOCATION_SEARCH_HOST" value="${solr_location_search_host}" />
+   					<token key="SOLR_LOCATION_SEARCH_PORT" value="${solr_location_search_port}" />
+   					<token key="SOLR_LOCATION_SEARCH_PATH" value="${solr_location_search_path}" />
+   					<token key="SOLR_LOCATION_SEARCH_LOAD_PATH" value="${solr_location_search_load_path}" />
+
+                    <!-- New Cluster2 RabbitMQ -->
+                    <token key="CLUSTER2_RABBITMQHA_HOST" value="${cluster2_rabbitmqha_host}" />
+                    <token key="CLUSTER2_RABBITMQHA_PORT" value="${cluster2_rabbitmqha_port}" />
+                    <token key="CLUSTER2_RABBITMQHA_VHOST" value="${cluster2_rabbitmqha_vhost}" />
+                    <token key="CLUSTER2_RABBITMQHA_LOGIN" value="${cluster2_rabbitmqha_login}" />
+                    <token key="CLUSTER2_RABBITMQHA_PASSWORD" value="${cluster2_rabbitmqha_password}" />
+
+                    <!-- New Cluster3 RabbitMQ -->
+                    <token key="CLUSTER3_RABBITMQHA_HOST" value="${cluster3_rabbitmqha_host}" />
+                    <token key="CLUSTER3_RABBITMQHA_PORT" value="${cluster3_rabbitmqha_port}" />
+                    <token key="CLUSTER3_RABBITMQHA_VHOST" value="${cluster3_rabbitmqha_vhost}" />
+                    <token key="CLUSTER3_RABBITMQHA_LOGIN" value="${cluster3_rabbitmqha_login}" />
+                    <token key="CLUSTER3_RABBITMQHA_PASSWORD" value="${cluster3_rabbitmqha_password}" />
+
+                    <!-- New Cluster4 RabbitMQ -->
+                    <token key="CLUSTER4_RABBITMQHA_HOST" value="${cluster4_rabbitmqha_host}" />
+                    <token key="CLUSTER4_RABBITMQHA_PORT" value="${cluster4_rabbitmqha_port}" />
+                    <token key="CLUSTER4_RABBITMQHA_VHOST" value="${cluster4_rabbitmqha_vhost}" />
+                    <token key="CLUSTER4_RABBITMQHA_LOGIN" value="${cluster4_rabbitmqha_login}" />
+                    <token key="CLUSTER4_RABBITMQHA_PASSWORD" value="${cluster4_rabbitmqha_password}" />
+
+                    <!-- New Cluster5 RabbitMQ -->
+                    <token key="CLUSTER5_RABBITMQHA_HOST" value="${cluster5_rabbitmqha_host}" />
+                    <token key="CLUSTER5_RABBITMQHA_PORT" value="${cluster5_rabbitmqha_port}" />
+                    <token key="CLUSTER5_RABBITMQHA_VHOST" value="${cluster5_rabbitmqha_vhost}" />
+                    <token key="CLUSTER5_RABBITMQHA_LOGIN" value="${cluster5_rabbitmqha_login}" />
+                    <token key="CLUSTER5_RABBITMQHA_PASSWORD" value="${cluster5_rabbitmqha_password}" />
+
+                    <!-- New Cluster6 RabbitMQ -->
+                    <token key="CLUSTER6_RABBITMQHA_HOST" value="${cluster6_rabbitmqha_host}" />
+                    <token key="CLUSTER6_RABBITMQHA_PORT" value="${cluster6_rabbitmqha_port}" />
+                    <token key="CLUSTER6_RABBITMQHA_VHOST" value="${cluster6_rabbitmqha_vhost}" />
+                    <token key="CLUSTER6_RABBITMQHA_LOGIN" value="${cluster6_rabbitmqha_login}" />
+                    <token key="CLUSTER6_RABBITMQHA_PASSWORD" value="${cluster6_rabbitmqha_password}" />
+
+                    <!-- New Cluster7 RabbitMQ -->
+                    <token key="CLUSTER7_RABBITMQHA_HOST" value="${cluster7_rabbitmqha_host}" />
+                    <token key="CLUSTER7_RABBITMQHA_PORT" value="${cluster7_rabbitmqha_port}" />
+                    <token key="CLUSTER7_RABBITMQHA_VHOST" value="${cluster7_rabbitmqha_vhost}" />
+                    <token key="CLUSTER7_RABBITMQHA_LOGIN" value="${cluster7_rabbitmqha_login}" />
+                    <token key="CLUSTER7_RABBITMQHA_PASSWORD" value="${cluster7_rabbitmqha_password}" />
+
+   					<!-- Zendesk -->
+   					<token key="ZENDESK_NAME" value="${zendesk-name}" />
+   					<token key="ZENDESK_AUTH_TOKEN" value="${zendesk-auth-token}" />
+   					<token key="ZENDESK_USER_NAME" value="${zendesk-user-name}" />
+   					<token key="ZENDESK_USER_PASSWORD" value="${zendesk-user-password}" />
+   					<token key="ZENDESK_TICKET_FILED_ID" value="${zendesk-ticket-field-id}" />
+                       <token key="ZENDESK_JWT_SECRET" value="${zendesk-jwt-secret}" />
+                       <token key="ZENDESK_API_TOKEN" value="${zendesk-api-token}" />
+
+   					<!-- SV Network -->
+   					<token key="SV_NETWORK_URL" value="${sv_network_url}" />
+
+   					<token key="UTILITY_SERVICE_ENABLED" value="${utility-service-enabled}"/>
+   					<token key="UTILITY_SERVICE_HOST" value="${utility-service-host}"/>
+   					<token key="UTILITY_SERVICE_PORT" value="${utility-service-port}"/>
+
+   					<token key="PAYMENT_SERVICE_ENABLED" value="${payment-service-enabled}"/>
+   					<token key="PAYMENT_SERVICE_HOST" value="${payment-service-host}"/>
+   					<token key="PAYMENT_SERVICE_PORT" value="${payment-service-port}"/>
+
+   					<token key="CATALOG_SERVICE_ENABLED" value="${catalog-service-enabled}"/>
+                       <token key="CATALOG_SERVICE_HOST" value="${catalog-service-host}"/>
+                       <token key="CATALOG_SERVICE_PORT" value="${catalog-service-port}"/>
+
+   					<!-- S2Verify tokens -->
+   					<token key="S2VERIFY_KEY" value="${s2verify_key}"/>
+
+   					<!-- Cupid development mode server -->
+   					<token key="CUPID_DEV_SERVER_URL" value="${cupid-dev-server-url}"/>
+
+                       <!-- Zephyr development mode server -->
+                       <token key="ZEPHYR_DEV_SERVER_URL" value="${zephyr-dev-server-url}"/>
+
+                   <!-- Vulcan development mode server -->
+                   <token key="VULCAN_DEV_SERVER_URL" value="${vulcan-dev-server-url}"/>
+
+                   <!-- Touch development mode server -->
+                   <token key="TOUCH_DEV_SERVER_URL" value="${touch-dev-server-url}"/>
+
+   					<!-- Offers -->
+   					<!-- Google offers -->
+   					<token key="GOOGLE_OFFERS_LID" value="${google_offers_lid}"/>
+   					<token key="GOOGLE_OFFERS_PUBID" value="${google_offers_pubid}"/>
+
+                       <!-- Google maps api key -->
+                       <token key="GOOGLE_MAPS_API_KEY" value="${google_maps_api_key}" />
+
+   					<!-- Google api keys -->
+   					<token key="GOOGLE_PROJECT_NUMBER" value="${google_project_number}" />
+   					<token key="GOOGLE_SIMPLE_API_KEY" value="${google_simple_api_key}" />
+
+                       <!-- Google Analytics IDs -->
+                       <token key="GOOGLE_ANALYTICS_ID_FOR_STORE" value="${google_analytics_id_store}" />
+                       <token key="GOOGLE_ANALYTICS_ID_FOR_WWW" value="${google_analytics_id_www}" />
+
+
+                       <!-- Google+ account id -->
+                       <token key="GOOGLE_PLUS_CLIENT_ID" value="${google_plus_client_id}" />
+
+   					<!-- Onlnie now -->
+   					<token key="ONLINENOW_CHECK_IS_PRIMARY_NODE" value="${onlinenow_check_is_primary_node}" />
+   					<token key="ONLINENOW_GET_ONLINE_USER_LIST_TIMEOUT" value="${onlinenow_get_online_user_list_timeout}" />
+
+                       <!-- ZIA -->
+                    <token key="ZIA_PHONE_VERIFICATION_URL" value="${zia_phone_verification_url}" />
+                    <token key="ZIA_MEMBER_FRIENDS_URL" value="${zia_member_friends_url}" />
+                       <token key="ZIA_MEMBER_NOTIFICATIONS_URL" value="${zia_member_notifications_url}" />
+                       <token key="ZIA_AFFINITIES_URL" value="${zia_affinities_url}" />
+                       <token key="ZIA_LOCATION_SEARCH_URL" value="${zia_location_search_url}" />
+                       <token key="ZIA_AUTH_URL" value="${zia_auth_url}" />
+                       <token key="ZIA_EVENTS_URL" value="${zia_events_url}" />
+   					<token key="ZIA_PHOTOS_WRITE_URL" value="${zia_photos_write_url}" />
+   					<token key="ZIA_PHOTOS_READ_URL" value="${zia_photos_read_url}" />
+   					<token key="ZIA_PHOTOS_MIGRATION_URL" value="${zia_photos_migration_url}" />
+
+                       <!-- ZIA Namespaces -->
+                       <token key="ZIA_AFFINITY_NAMESPACE" value="${zia_affinities_namespace}" />
+                        <token key="ZIA_LOCATION_SEARCH_NAMESPACE" value="${zia_location_search_namespace}" />
+
+                       <!-- SEO S3 Bucket -->
+                       <token key="SEO_SUB" value="${seo_sub}" />
+                       <token key="SEO_BUCKET" value="${seo_bucket}" />
+                       <token key="SEO_URL" value="${seo_url}" />
+
+                       <!-- Parse app details -->
+                       <token key="PARSE_APP_ID" value="${parse_application_id}" />
+                       <token key="PARSE_APP_KEY" value="${parse_application_key}" />
+
+                    <!-- WURFL -->
+                    <token key="WURFL_HOST" value="${wurflHost}" />
+                    <token key="WURFL_USER" value="${wurfl-user}" />
+                    <token key="WURFL_PASS" value="${wurfl-password}" />
+
+                    <token key="2014_FLIRT_DB_CLUSTER_WEIGHTS" value="${flirtdb_cluster_weights}" />
+
+                   </replacetokens>
+   			</filterchain>
+        </copy>
+        <!-- Update the timestamp on these files, in case the files didn't change, but the properties did -->
+        <touch file="${configroot_dir}/ZConfig.php" />
+    </target>
+
+
+
+	<target name="install-po-files" description="Installs the locale (.po) files" depends="fetch-po-files">
+		<mkdir dir="${zooskroot_dir}" />
+		<!-- build binary locale files -->
+		<mkdir dir="${zooskroot_dir}/locale/da_DK/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/da_DK/LC_MESSAGES/ZOOSK.mo locale/da_DK/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/en_US/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/en_US/LC_MESSAGES/ZOOSK.mo locale/en_US/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/en_GB/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/en_GB/LC_MESSAGES/ZOOSK.mo locale/en_GB/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/el_GR/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/el_GR/LC_MESSAGES/ZOOSK.mo locale/el_GR/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/fr_FR/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/fr_FR/LC_MESSAGES/ZOOSK.mo locale/fr_FR/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/es_ES/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/es_ES/LC_MESSAGES/ZOOSK.mo locale/es_ES/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/es_MX/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/es_MX/LC_MESSAGES/ZOOSK.mo locale/es_MX/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/it_IT/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/it_IT/LC_MESSAGES/ZOOSK.mo locale/it_IT/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/ja_JP/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/ja_JP/LC_MESSAGES/ZOOSK.mo locale/ja_JP/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/de_DE/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/de_DE/LC_MESSAGES/ZOOSK.mo locale/de_DE/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/nb_NO/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/nb_NO/LC_MESSAGES/ZOOSK.mo locale/nb_NO/LC_MESSAGES/ZOOSK.po"/>
+        <mkdir dir="${zooskroot_dir}/locale/pl_PL/LC_MESSAGES" />
+        <exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/pl_PL/LC_MESSAGES/ZOOSK.mo locale/pl_PL/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/pt_BR/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/pt_BR/LC_MESSAGES/ZOOSK.mo locale/pt_BR/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/pt_PT/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/pt_PT/LC_MESSAGES/ZOOSK.mo locale/pt_PT/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/tr_TR/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/tr_TR/LC_MESSAGES/ZOOSK.mo locale/tr_TR/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/ro_RO/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/ro_RO/LC_MESSAGES/ZOOSK.mo locale/ro_RO/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/ru_RU/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/ru_RU/LC_MESSAGES/ZOOSK.mo locale/ru_RU/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/sv_SE/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/sv_SE/LC_MESSAGES/ZOOSK.mo locale/sv_SE/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/fi_FI/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/fi_FI/LC_MESSAGES/ZOOSK.mo locale/fi_FI/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/hr_HR/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/hr_HR/LC_MESSAGES/ZOOSK.mo locale/hr_HR/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/hu_HU/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/hu_HU/LC_MESSAGES/ZOOSK.mo locale/hu_HU/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/ko_KR/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/ko_KR/LC_MESSAGES/ZOOSK.mo locale/ko_KR/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/nl_NL/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/nl_NL/LC_MESSAGES/ZOOSK.mo locale/nl_NL/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/sr_RS/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/sr_RS/LC_MESSAGES/ZOOSK.mo locale/sr_RS/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/th_TH/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/th_TH/LC_MESSAGES/ZOOSK.mo locale/th_TH/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/zh_CN/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/zh_CN/LC_MESSAGES/ZOOSK.mo locale/zh_CN/LC_MESSAGES/ZOOSK.po"/>
+		<mkdir dir="${zooskroot_dir}/locale/zh_TW/LC_MESSAGES" />
+		<exec passthru="true" checkreturn="true" command="msgfmt -o ${zooskroot_dir}/locale/zh_TW/LC_MESSAGES/ZOOSK.mo locale/zh_TW/LC_MESSAGES/ZOOSK.po"/>
+	</target>
+	
+	<target name="force-fetch-po-files">
+		<echo msg="FORCE Downloading PO files from Nexus. This requires VPN." />
+		<if>
+			<not><isset property="zooskPO_version" /></not>
+			<then><property file="./locale/ZOOSKPO_VERSION" /></then>
+		</if>
+		<property name="nexus_version_property_expanded" value="${nexus_version_property}" />
+		<phingcall target="download-files-from-nexus">
+			<property name="nexus_download_file_destination" value="./locale/zooskPO.tgz.static" />
+			<property name="nexus_download_repo" value="${locale_repo}" />
+			<property name="nexus_g" value="com.zoosk" />
+			<property name="nexus_p" value="tgz" />
+			<property name="nexus_a" value="zooskPO" />
+			<property name="nexus_file_name" value="./locale/zooskPO.tgz" />
+			<property name="nexus_v" value="${zooskPO_version}" />
+		</phingcall>
+	</target>
+
+
+	<target name="download-files-from-nexus">
+		<echo msg="Downloading files from Nexus. This requires VPN." />
+		<echo msg="Downloading to ${nexus_download_file_destination} from nexus: '${nexus_url}/service/local/artifact/maven/redirect?r=${nexus_download_repo}&amp;g=${nexus_g}&amp;a=${nexus_a}&amp;p=${nexus_p}&amp;v=${nexus_v}'" />
+		<!-- Download from nexus -->
+		<exec command="curl --write-out 'curl_status='%{http_code} --silent -L -o ${nexus_download_file_destination} '${nexus_url}/service/local/artifact/maven/redirect?r=${nexus_download_repo}&amp;g=${nexus_g}&amp;a=${nexus_a}&amp;p=${nexus_p}&amp;v=${nexus_v}' > ${nexus_g}-${nexus_v}" checkreturn="false"/>
+		<property file="${nexus_g}-${nexus_v}"/>
+		<if>
+			<not><equals arg1="${curl_status}" arg2="200" trim="true"/></not>
+			<then><echo msg="You don't have a local ${nexus_file_name} and nexus returns ${curl_status} when downloading"/></then>
+			<else><exec command="ls -l ${nexus_download_file_destination}"/></else>
+		</if>
+		<!-- Copy the file to special location so that it won't download from nexus again -->
+		<echo msg="copying from ${nexus_download_file_destination} to ${nexus_file_name}"/>
+		<exec command="cp -f ${nexus_download_file_destination} ${nexus_file_name}"/>
+		<exec command="rm -f ${nexus_g}-${nexus_v}"/>
+	</target>
+
+	<target name="fetch-po-files">
+	  <if>
+		<isset property="force-fetch-po-file"/>
+		<then>
+		<phingcall target="force-fetch-po-files"/></then>
+	  <else>
+		<if>
+		<!-- Core PO files are no longer in source, it is now versioned and in nexus; try to get a new copy, if not use existing if avail and throw a warning -->
+			<not><available file="./locale/zooskPO.tgz.static" /></not>
+			<then><phingcall target="force-fetch-po-files"/></then>
+	  	<else><exec command="cp -f ./locale/zooskPO.tgz.static ./locale/zooskPO.tgz"/></else>
+		</if>
+	  </else>
+	  </if>
+	  <exec command="cd ./locale &amp;&amp; tar -xzvf ./zooskPO.tgz &amp;&amp; cd .."/>
+	</target>
+
+	<target name="upgrade-service-workload"
+			description="Upgrades a service workload machine"
+			depends="install-services">
+	</target>
+	
+	<target name="clean-web">
+		<if>
+			<available file="${zooskroot_dir}/locale" />
+			<then>
+				<delete dir="${zooskroot_dir}/locale" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${appinclude-target-dir}" />
+			<then>
+				<delete dir="${appinclude-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${zooskweb-target-dir}" />
+			<then>
+				<delete dir="${zooskweb-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${zooskstatic-target-dir}" />
+			<then>
+				<delete dir="${zooskstatic-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${facebookweb-target-dir}" />
+			<then>
+				<delete dir="${facebookweb-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${syndicateweb-target-dir}" />
+			<then>
+				<delete dir="${syndicateweb-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${wwwweb-target-dir}" />
+			<then>
+				<delete dir="${wwwweb-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${adminweb-target-dir}" />
+			<then>
+				<delete dir="${adminweb-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${codeahead-common-dir}" />
+			<then>
+				<delete dir="${codeahead-common-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${controls-common-dir}" />
+			<then>
+				<delete dir="${controls-common-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${photoupload-target-dir}" />
+			<then>
+				<delete dir="${photoupload-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${storeweb-target-dir}" />
+			<then>
+				<delete dir="${storeweb-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<if>
+			<available file="${zooskstatic-target-dir}" />
+			<then>
+				<delete dir="${zooskstatic-target-dir}" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+	</target>
+	
+	<!-- +++++++++++++++++++++++++++++++++++++++++++++++++ -->
+	<!-- PLATFORMS MOVED TO THE NEW SYSTEM BELOW THIS LINE -->
+	<!-- +++++++++++++++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- FACEBOOK -->
+	<target name="install-web-facebook" depends="baseline">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-f8" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${facebookweb-target-dir}" />
+			<property name="platform-name" value="facebook" />
+		</phing>
+	</target>
+	
+	<!-- WWW -->
+	<target name="install-web-www" depends="baseline,install-web-login">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-www" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${wwwweb-target-dir}" />
+			<property name="platform-name" value="www" />
+		</phing>
+	</target>
+
+    <!-- Zoosk Plus -->
+    <target name="install-web-zooskplus" depends="baseline, install-web-zooskplus-indexpages">
+        <phing dir="." phingfile="build_platform.xml" target="install-web-zooskplus" haltonfailure="true">
+      		<property file="${properties_file}" override="true" />
+      		<property file="${pf1}" override="true" />
+      		<property file="${pf2}" override="true" />
+      	</phing>
+    </target>
+
+    <!-- Zoosk Plus Top Level Route Pages -->
+    <target name="install-web-zooskplus-indexpages" depends="baseline">
+        <phing dir="." phingfile="build_platform.xml" target="install-web-zooskplus-indexpages" haltonfailure="true">
+      		<property file="${properties_file}" override="true" />
+      		<property file="${pf1}" override="true" />
+      		<property file="${pf2}" override="true" />
+      	</phing>
+    </target>
+
+	<!-- EMAIL IMPORTER -->
+	<target name="install-web-email-importer" depends="install-web-www,install-web-facebook">
+        <phing dir="." phingfile="build_platform.xml" target="install-web-email-importer" haltonfailure="true">
+      		<property file="${properties_file}" override="true" />
+      		<property file="${pf1}" override="true" />
+      		<property file="${pf2}" override="true" />
+      	</phing>
+	</target>
+	
+	<!-- SYNDICATE -->
+	<target name="install-web-syndicate" depends="baseline,install-web-login">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-os" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${syndicateweb-target-dir}" />
+			<property name="platform-name" value="syndicate" />
+		</phing>
+	</target>
+
+	<!-- WooMe -->
+	<target name="install-web-woome" depends="baseline,install-web-login">
+		<!-- for legacy just put this in the /www folder -->
+		<phing dir="." phingfile="build_platform.xml" target="install-web-woome" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${wwwweb-target-dir}" />
+			<property name="platform-name" value="www" />
+		</phing>
+
+		<echo msg="Installing woome site in ${woomeweb-target-dir}"/>
+		<mkdir dir="${woomeweb-target-dir}/html" />
+		<copy todir="${woomeweb-target-dir}/html" includeemptydirs="false" >
+			<fileset dir="www/woome/html">
+				<include name="**" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- LOGIN -->
+	<target name="install-web-login">
+		<mkdir dir="${loginweb-target-dir}" />
+		<copy todir="${loginweb-target-dir}/html" includeemptydirs="false" >
+			<fileset dir="www/login/html">
+				<include name="**" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+                    <token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+					<token key="PLATFORM_FILE" value="${loginweb-target-dir}/login.php" />
+					<token key="STATIC_URL" value="${static_url_https_regular}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+		<copy todir="${loginweb-target-dir}/html" includeemptydirs="false" >
+			<fileset dir="www/login/html/iphone">
+				<include name="**" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+                    <token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+					<token key="PLATFORM_FILE" value="${loginweb-target-dir}/login.php" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+		<copy todir="${loginweb-target-dir}/html" includeemptydirs="false" >
+			<fileset dir="www/login/html/android">
+				<include name="**" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+                    <token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+					<token key="PLATFORM_FILE" value="${loginweb-target-dir}/login.php" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+		<copy todir="${loginweb-target-dir}/html/errors" overwrite="true" includeemptydirs="false" >
+			<fileset dir="www/login/html/errors">
+				<include name="*" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+					<token key="STATIC_URL" value="${static_url_https_regular}" />
+                    <token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+                    <token key="PLATFORM_FILE" value="${loginweb-target-dir}/login.php"/>
+                </replacetokens>
+			</filterchain>
+		</copy>
+	</target>
+	
+	<!-- UPDATE -->
+	<target name="install-web-update">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-update" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${updateweb-target-dir}" />
+		</phing>
+	</target>
+	
+	<!-- API -->
+	<target name="install-web-api" depends="baseline">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-api" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${apiweb-target-dir}" />
+			<property name="platform-name" value="api" />
+			<property name="loginweb-target-dir" value="${loginweb-target-dir}" />
+			<property name="photoupload-target-dir" value="${photoupload-target-dir}" />
+			<property name="storeweb-target-dir" value="${storeweb-target-dir}" />
+			<property name="internal-apiweb-target-dir" value="${internal-apiweb-target-dir}" />
+		</phing>
+	</target>
+
+	<!-- ADMIN -->
+	<target name="install-web-admin"
+		depends="baseline">
+		<echo msg="Installing admin site in ${adminweb-target-dir}" />
+		<mkdir dir="${adminweb-target-dir}" />
+		<copy todir="${adminweb-target-dir}">
+			<fileset dir="www/admin">
+				<include name="**" />
+                <exclude name="themis/**" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+                    <token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+	</target>
+	
+	<!--  TOUCH -->
+	<target name="install-web-touch" depends="baseline">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-touch" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${touchweb-target-dir}" />
+			<property name="platform-name" value="touch" />
+            <property name="dev-server-url" value="${touch-dev-server-url}" />
+		</phing>
+	</target>
+
+	<!-- ANDROID -->	
+	<target name="install-web-android" depends="baseline">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-android" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${androidweb-target-dir}" />
+			<property name="platform-name" value="android" />
+		</phing>
+	</target>
+
+	<!-- IPHONE -->	
+	<target name="install-web-iphone" depends="baseline">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-iphone" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${iphoneweb-target-dir}" />
+			<property name="platform-name" value="iphone" />
+		</phing>
+	</target>
+
+	<!-- IPAD -->
+	<target name="install-web-ipad" depends="baseline">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-ipad" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${ipadweb-target-dir}" />
+			<property name="platform-name" value="ipad" />
+		</phing>
+	</target>
+	
+	<!-- STORE -->
+	<target name="install-web-store" depends="baseline">
+		<phing dir="." phingfile="build_platform.xml" target="install-web-store" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="target-dir" value="${storeweb-target-dir}" />
+			<property name="platform-name" value="store" />
+		</phing>
+	</target>
+
+	<!-- PHOTO UPLOAD -->
+	<target name="install-web-photoupload"
+		depends="baseline">
+        <phing dir="." phingfile="build_platform.xml" target="install-web-photoupload" haltonfailure="true">
+      		<property file="${properties_file}" override="true" />
+      		<property file="${pf1}" override="true" />
+      		<property file="${pf2}" override="true" />
+      	</phing>
+	</target>
+	
+	<!-- INCLUDES -->
+	<target name="install-web-include" 
+		description="Installs the application specific include files" depends="get_cupid_symbolmap">
+		<echo msg="Installing app include directory site in ${appinclude-target-dir}"/>
+        <mkdir dir="${appinclude-target-dir}" />
+        <if>
+        	<not>
+        		<available file="${cert-working-dir}" />
+        	</not>
+        	<then>
+        		<mkdir dir="${cert-working-dir}" />
+        	</then>
+        </if>
+        <copy todir="${appinclude-target-dir}" >
+            <fileset dir="www/include">
+                <include name="**" />
+            </fileset>
+        </copy>
+		<echo msg="Copying www/include/cupid/* to ${appinclude-target-dir}/cupid"/>
+		<mkdir dir="${appinclude-target-dir}/cupid"/>
+		<copy todir="${appinclude-target-dir}/cupid">
+			<fileset dir="www/include/cupid">
+				<!-- it is important send the symbol maps too -->
+				<include name="*" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="get_cupid_symbolmap" description="Download the symbolmap from nexus">
+		<php expression="getcwd()" returnProperty="_cwd" />
+
+		<if>
+               		<not><isset property="cupid_version" /></not>
+                	<then><property file="www/include/cupid/CUPID_VERSION" /></then>
+        	</if>
+
+		<if>
+               		<not><isset property="cupid_artifact" /></not>
+                	<then>
+			<if>
+				<contains string="${cupid_version}" substring="develop" />
+				<then><property name="cupid_artifact" value="develop" /></then>
+				<else><property name="cupid_artifact" value="rc" /></else>
+			</if>
+			</then>
+        	</if>
+		<echo msg="Download symbolmap from ${nexus_url}/service/local/artifact/maven/redirect?r=${cupid_repo}&amp;g=com.zoosk.cupid&amp;a=${cupid_artifact}&amp;v=${cupid_version}&amp;p=tgz to ${_cwd}/www/include/cupid/symbolmap.tgz"/>
+		<exec command="curl -L -o ${_cwd}/www/include/cupid/symbolmap.tgz '${nexus_url}/service/local/artifact/maven/redirect?r=${cupid_repo}&amp;g=com.zoosk.cupid&amp;a=${cupid_artifact}&amp;v=${cupid_version}&amp;p=tgz'"/>
+	</target>
+
+	<!-- CUPID SYMBOL MAP -->
+	<target name="install-cupid-symbols" description="Installs the cupid symbol map to shared" depends="get_cupid_symbolmap">
+		<echo msg="Copying cupid symbol maps from www/include/cupid/symbolmap.tgz to ${shared-dir}/cupid-symbol-map"/>
+		<php expression="getcwd()" returnProperty="_cwd" />
+		<exec command="mkdir -p ${shared-dir}/cupid-symbol-map; cd ${shared-dir}/cupid-symbol-map; pwd; umask 0000; tar xvf ${_cwd}/www/include/cupid/symbolmap.tgz" checkreturn="false" /> <!-- too many perm issues in prod -->
+		<echo msg="Note: this will get exploded on prod mode by cap"/>
+	</target>
+	
+	<!-- CODEAHEAD -->
+	<target name="install-codeahead-zoosk"
+		description="Installs the common codeahead files">
+		<echo msg="Installing app codeahead directory in ${codeahead-common-dir}"/>
+        <mkdir dir="${codeahead-common-dir}" />
+        <copy todir="${codeahead-common-dir}" >
+            <fileset dir="codeahead">
+                <include name="**" />
+            </fileset>
+        </copy>
+	</target>
+	
+	<!-- CONTROLS -->
+	<target name="install-controls-zoosk"
+		description="Installs the common control files">
+		<echo msg="Installing app controls directory in ${controls-common-dir}"/>
+        <mkdir dir="${controls-common-dir}" />
+        <copy todir="${controls-common-dir}" >
+            <fileset dir="controls">
+                <include name="**" />
+            </fileset>
+        </copy>
+	</target>
+	
+	<!-- STATIC -->
+	<target name="install-static-zoosk" description="installs the static zoosk content to the target directory" depends="install-scripts" >
+		<phing dir="www/static" phingfile="build.xml" target="install-static-zoosk" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+	</target>
+
+	<!-- +++++++++++++++++++++++++++++++++++++++++++++++ -->
+	<!-- 				DATABASE TARGETS				 -->
+	<!-- +++++++++++++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- GLOBAL DATABASE -->
+	<target name="install-db-zoosk" description="Installs the zoosk database" depends="buildsetup">
+		<phing dir="data/global" phingfile="build.xml" target="install-global-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+		<foreach list="${msg_clusters}" param="cluster" target="install-db-zoosk-msg" />
+		<foreach list="${user_clusters}" param="cluster" target="install-db-zoosk-user" />
+		<foreach list="${affinity_clusters}" param="cluster" target="install-db-zoosk-affinity" />
+		<foreach list="${game_clusters}" param="cluster" target="install-db-zoosk-game" />
+
+		<foreach list="${member_clusters}" param="cluster" target="install-db-zoosk-member" />
+		<foreach list="${moment_clusters}" param="cluster" target="install-db-zoosk-moment" />
+
+		<phing dir="data/event" phingfile="build.xml" target="install-event-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+		<phing dir="data/admin" phingfile="build.xml" target="install-admin-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+		<phing dir="data/util" phingfile="build.xml" target="install-util-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+        <phing dir="data/util2" phingfile="build.xml" target="install-util2-db" haltonfailure="true">
+            <property file="${properties_file}" override="true" />
+            <property file="${pf1}" override="true" />
+            <property file="${pf2}" override="true" />
+        </phing>
+		<phing dir="data/onlinenow" phingfile="build.xml" target="install-onlinenow-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+        <phing dir="data/offline_search" phingfile="build.xml" target="install-offline-search-db" haltonfailure="true">
+            <property file="${properties_file}" override="true" />
+            <property file="${pf1}" override="true" />
+            <property file="${pf2}" override="true" />
+        </phing>
+		
+	</target>
+	
+	<!-- MSG DATABASE -->
+	<target name="install-db-zoosk-msg" description="Installs a msg cluster for zoosk" depends="buildsetup">
+		<echo msg="Installs the msg cluster ${cluster} for zoosk"/>
+		<phing dir="data/msg" phingfile="build.xml" target="install-msg-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+			<property name="total_msg_clusters" value="${total_msg_clusters}" />
+		</phing>
+	</target>
+	
+	<!-- USER DATABASE -->
+	<target name="install-db-zoosk-user" description="Installs a user cluster for zoosk" depends="buildsetup">
+		<echo msg="Installs the user cluster ${cluster} for zoosk"/>
+		<phing dir="data/user" phingfile="build.xml" target="install-user-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+		</phing>
+	</target>
+
+	<!-- OBJECT DATABASE -->
+	<target name="install-db-zoosk-affinity" description="Installs a affinity cluster for zoosk" depends="buildsetup">
+		<echo msg="Installs the affinity cluster ${cluster} for zoosk"/>
+		<phing dir="data/affinity" phingfile="build.xml" target="install-affinity-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+			<property name="total_affinity_clusters" value="${total_affinity_clusters}" />
+		</phing>
+	</target>
+
+	<!-- UTIL DATABASE -->
+	<target name="install-db-util" description="Installs a util cluster for zoosk" depends="buildsetup">
+		<phing dir="data/util" phingfile="build.xml" target="install-util-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+	</target>
+    <target name="install-db-util2" description="Installs a util2 cluster for zoosk" depends="buildsetup">
+        <phing dir="data/util2" phingfile="build.xml" target="install-util2-db" haltonfailure="true">
+            <property file="${properties_file}" override="true" />
+            <property file="${pf1}" override="true" />
+            <property file="${pf2}" override="true" />
+        </phing>
+    </target>
+
+	<!-- GAME DATABASE -->
+	<target name="install-db-zoosk-game" description="Installs a game cluster for zoosk" depends="buildsetup,setphpmemory">
+		<echo msg="Installs the game cluster ${cluster} for zoosk"/>
+		<phing dir="data/game" phingfile="build.xml" target="install-game-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+			<property name="total_game_clusters" value="${total_game_clusters}" />
+		</phing>
+	</target>
+		
+	<!-- MEMBER DATABASE -->
+	<target name="install-db-zoosk-member" description="Installs a member cluster for zoosk" depends="buildsetup,setphpmemory">
+		<echo msg="Installs the member cluster ${cluster} for zoosk"/>
+		<phing dir="data/member" phingfile="build.xml" target="install-member-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+			<property name="total_member_clusters" value="${total_member_clusters}" />
+		</phing>
+	</target>
+		
+	<!-- MOMENT DATABASE -->
+	<target name="install-db-zoosk-moment" description="Installs a moment cluster for zoosk" depends="buildsetup,setphpmemory">
+		<echo msg="Installs the moment cluster ${cluster} for zoosk"/>
+		<phing dir="data/moment" phingfile="build.xml" target="install-moment-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+			<property name="total_moment_clusters" value="${total_moment_clusters}" />
+		</phing>
+	</target>
+
+	<!-- UPGRADE GLOBAL DATABASES -->
+	<target name="upgrade-db-zoosk" description="Upgrades the zoosk database" depends="buildsetup">
+		<phing dir="data/global" phingfile="build.xml" target="upgrade-global-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+		<foreach list="${msg_clusters}" param="cluster" target="upgrade-db-zoosk-msg" />
+		<foreach list="${user_clusters}" param="cluster" target="upgrade-db-zoosk-user" />
+		<foreach list="${affinity_clusters}" param="cluster" target="upgrade-db-zoosk-affinity" />
+		<foreach list="${game_clusters}" param="cluster" target="upgrade-db-zoosk-game" />
+
+		<foreach list="${member_clusters}" param="cluster" target="upgrade-db-zoosk-member" />
+		<foreach list="${moment_clusters}" param="cluster" target="upgrade-db-zoosk-moment" />
+
+		<phing dir="data/event" phingfile="build.xml" target="upgrade-event-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+		<phing dir="data/admin" phingfile="build.xml" target="upgrade-admin-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+		<phing dir="data/util" phingfile="build.xml" target="upgrade-util-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+        <phing dir="data/util2" phingfile="build.xml" target="upgrade-util2-db" haltonfailure="true">
+            <property file="${properties_file}" override="true" />
+            <property file="${pf1}" override="true" />
+            <property file="${pf2}" override="true" />
+        </phing>
+		<phing dir="data/onlinenow" phingfile="build.xml" target="upgrade-onlinenow-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+
+	</target>
+
+    <!-- UPGRADE ALL MSG DATABASE CLUSTERS -->
+    <target name="upgrade-db-cluster-msg" description="Upgrades all zoosk message clusters" depends="buildsetup">
+ 		<foreach list="${msg_clusters}" param="cluster" target="upgrade-db-zoosk-msg" />
+    </target>
+	
+	<!-- UPGRADE MSG DATABASE -->
+	<target name="upgrade-db-zoosk-msg" description="Upgrades a specific msg cluster for zoosk">
+		<echo msg="Upgrades the msg cluster ${cluster} for zoosk"/>
+		<phing dir="data/msg" phingfile="build.xml" target="upgrade-msg-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+		</phing>
+	</target>
+	
+        <!-- UPGRADE ALL USER DATABASE CLUSTERS -->
+        <target name="upgrade-db-cluster-user" description="Upgrades all zoosk user clusters" depends="buildsetup">
+                <foreach list="${user_clusters}" param="cluster" target="upgrade-db-zoosk-user" />
+        </target>
+
+	<!-- UPGRADE USER DATABASE -->
+	<target name="upgrade-db-zoosk-user" description="Upgrades a specific user cluster for zoosk">
+		<echo msg="Upgrades the user cluster ${cluster} for zoosk"/>
+		<phing dir="data/user" phingfile="build.xml" target="upgrade-user-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+		</phing>
+	</target>
+
+	<!-- UPGRADE ALL AFFINITY DATABASE CLUSTERS -->
+    <target name="upgrade-db-cluster-affinity" description="Upgrades all zoosk affinity clusters" depends="buildsetup">
+            <foreach list="${affinity_clusters}" param="cluster" target="upgrade-db-zoosk-affinity" />
+    </target>
+
+	
+	<!-- UPGRADE OBJECT DATABASE -->
+	<target name="upgrade-db-zoosk-affinity" description="Upgrades an affinity cluster for zoosk">
+		<echo msg="Upgrades the affinity cluster ${cluster} for zoosk"/>
+		<phing dir="data/affinity" phingfile="build.xml" target="upgrade-affinity-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+		</phing>
+	</target>
+	
+	<!-- UPGRADE EVENT DATABASE -->
+	<target name="upgrade-db-zoosk-event" description="Upgrades the event cluster for zoosk">
+		<echo msg="Upgrades the event cluster for zoosk"/>
+		<phing dir="data/event" phingfile="build.xml" target="upgrade-event-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+	</target>
+	
+	<!-- UPGRADE UTIL DATABASE -->
+	<target name="upgrade-db-zoosk-util" description="Upgrades the util database for zoosk">
+		<echo msg="Upgrades the util db for zoosk"/>
+		<phing dir="data/util" phingfile="build.xml" target="upgrade-util-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+	</target>
+    <target name="upgrade-db-zoosk-util2" description="Upgrades the util2 database for zoosk">
+        <echo msg="Upgrades the util2 db for zoosk"/>
+        <phing dir="data/util2" phingfile="build.xml" target="upgrade-util2-db" haltonfailure="true">
+            <property file="${properties_file}" override="true" />
+            <property file="${pf1}" override="true" />
+            <property file="${pf2}" override="true" />
+        </phing>
+    </target>
+
+        <!-- UPGRADE ALL GAME DATABASE CLUSTERS -->
+        <target name="upgrade-db-cluster-game" description="Upgrades all game database clusters" depends="buildsetup">
+                <foreach list="${game_clusters}" param="cluster" target="upgrade-db-zoosk-game" />
+        </target>
+
+ 
+	<!-- UPGRADE GAME DATABASE -->
+	<target name="upgrade-db-zoosk-game" description="Upgrades a specific game cluster for zoosk" depends="setphpmemory">
+		<echo msg="Upgrades the game cluster ${cluster} for zoosk"/>
+		<phing dir="data/game" phingfile="build.xml" target="upgrade-game-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+		</phing>
+	</target>
+
+	<!-- UPGRADE ALL MEMBER DATABASE CLUSTERS -->
+    <target name="upgrade-db-cluster-member" description="Upgrades all zoosk member clusters" depends="buildsetup">
+		<foreach list="${member_clusters}" param="cluster" target="upgrade-db-zoosk-member" />
+    </target>
+
+	<!-- UPGRADE MEMBER DATABASE -->
+	<target name="upgrade-db-zoosk-member" description="Upgrades a specific member cluster for zoosk" depends="setphpmemory">
+		<echo msg="Upgrades the member cluster ${cluster} for zoosk"/>
+		<phing dir="data/member" phingfile="build.xml" target="upgrade-member-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+		</phing>
+	</target>
+
+	<!-- UPGRADE ALL MOMENT DATABASE CLUSTERS -->
+    <target name="upgrade-db-cluster-moment" description="Upgrades all zoosk moment clusters" depends="buildsetup">
+		<foreach list="${moment_clusters}" param="cluster" target="upgrade-db-zoosk-moment" />
+    </target>
+
+	<!-- UPGRADE MOMENT DATABASE -->
+	<target name="upgrade-db-zoosk-moment" description="Upgrades a specific moment cluster for zoosk" depends="setphpmemory">
+		<echo msg="Upgrades the moment cluster ${cluster} for zoosk"/>
+		<phing dir="data/moment" phingfile="build.xml" target="upgrade-moment-db" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="cluster" value="${cluster}" override="true" />
+		</phing>
+	</target>
+
+	<!-- +++++++++++++++++++++++++++++++++++++++++++++++ -->
+	<!-- 				OTHER TARGETS					 -->
+	<!-- +++++++++++++++++++++++++++++++++++++++++++++++ -->
+	
+	<!-- SERVICES -->
+	<target name="install-services" description="Installs all of the services" depends="baseline, install-codeahead-zoosk, install-controls-zoosk, build-thrift-php-interface">
+        <!-- WURFL db is using the same host as the UTIL db -->
+        <php expression="array_shift(explode('|', '${wurfl}', 2))" returnProperty="wurflHost" />
+
+        <mkdir dir="${service_install_phppath}"/>
+		<copy todir="${service_install_phppath}">
+			<fileset dir="services">
+				<include name="**" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+					<token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+					<token key="TOOLS_ROOT" value="${toolsroot-dir}" />
+					<token key="FINANCE_ROOT" value="${financeroot-dir}" />
+					<token key="DEPLOY_ENV" value="${deploy-environment}" />
+					<token key="DB_ENV" value="${db-environment}" />
+					<token key="SHARED_ROOT" value="${shared-dir}" />
+                    <token key="DB_PREFIX" value="${dbprefix}" />
+           			<token key="DB_USERNAME" value="${dbusername}" />
+               		<token key="DB_PASSWORD" value="${dbpassword}" />
+
+
+                    <token key="DB_USERNAME_UTL" value="${dbusernameutl}" />
+                    <token key="DB_PASSWORD_UTL" value="${dbpasswordutl}" />
+					<token key="UTIL_HOSTS" value="${util}" />
+                    <token key="UTIL_HOSTS2" value="${util2}" />
+
+                    <token key="DB_USERNAME_GLB" value="${dbusernameglb}" />
+                    <token key="DB_PASSWORD_GLB" value="${dbpasswordglb}" />
+					<token key="GLOBAL_HOSTS" value="${global}" />
+
+                    <token key="DB_USERNAME_MSG" value="${dbusernamemsg}" />
+                    <token key="DB_PASSWORD_MSG" value="${dbpasswordmsg}" />
+					<token key="MSG_HOSTS" value="${msg}" />
+
+                    <token key="DB_USERNAME_ADMIN" value="${dbusernameadmin}" />
+                    <token key="DB_PASSWORD_ADMIN" value="${dbpasswordadmin}" />
+					<token key="ADMIN_HOSTS" value="${admin}" />
+
+					<token key="PHOTO_HOSTS" value="${photo}" />
+
+                    <token key="DB_USERNAME_USR" value="${dbusernameusr}" />
+                    <token key="DB_PASSWORD_USR" value="${dbpasswordusr}" />
+					<token key="USER_HOSTS" value="${user}" />
+					<token key="OBJECT_HOSTS" value="${affinity}" />
+
+                    <token key="DB_USERNAME_FIN" value="${dbusernamefin}" />
+                    <token key="DB_PASSWORD_FIN" value="${dbpasswordfin}" />
+					<token key="FINANCE_HOSTS" value="${finance}" />
+
+                    <token key="DB_USERNAME_MON" value="${dbusernamemon}" />
+                    <token key="DB_PASSWORD_MON" value="${dbpasswordmon}" />
+					<token key="MONEY_HOSTS" value="${money}" />
+
+                    <token key="DB_USERNAME_GAME" value="${dbusernamegame}" />
+                    <token key="DB_PASSWORD_GAME" value="${dbpasswordgame}" />
+					<token key="GAME_HOSTS" value="${game}" />
+
+                    <token key="DB_USERNAME_MBR" value="${dbusernamembr}" />
+                    <token key="DB_PASSWORD_MBR" value="${dbpasswordmbr}" />
+                    <token key="MEMBER_HOSTS" value="${member}" />
+					<token key="DIR_HOSTS" value="${directory}" />
+					<token key="REPORTS_EMAIL" value="${reports_email}" />
+					<token key="ACCOUNTING_EMAIL" value="${accounting_email}" />
+					<token key="ADMIN_EMAIL" value="${admin_email}" />
+					<token key="FLUFFY_USER" value="${fluffy-user}" />
+					<token key="FLUFFY_PASSWORD" value="${fluffy-password}" />
+					<token key="SYNIVERSE_FTP_USERNAME" value="${syniverse_ftp_username}" />
+					<token key="SYNIVERSE_FTP_PASSWORD" value="${syniverse_ftp_password}" />
+					<token key="FINANCE_NOTIFY_EMAIL" value="${finance_notify_email}" />
+                    <token key="WURFL_HOST" value="${wurflHost}" />
+                    <token key="WURFL_USER" value="${wurfl-user}" />
+                    <token key="WURFL_PASS" value="${wurfl-password}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+
+		<exec passthru="true" checkreturn="true" command="chmod o+x ${service_install_phppath}/statistics/*.sh"/>
+		<exec passthru="true" checkreturn="true" command="chmod o+x ${service_install_phppath}/cron/*.sh"/>
+	</target>
+	
+	<!-- UNIT TESTS -->
+	<target name="install-test" depends="baseline, install-test-code, fetch-test10k-data">
+		<echo msg="Installing test suites in ${zooskroot_dir}/test"/>
+		<if>
+			<available file="${zooskroot_dir}/test/scripts/tmp/test10000" />
+			<then>
+				<delete dir="${zooskroot_dir}/test/scripts/tmp/test10000" includeemptydirs="true" verbose="true" failonerror="true" />
+			</then>
+		</if>
+		<mkdir dir="${zooskroot_dir}/test/scripts/tmp/test10000" />
+
+		<untar file="./data/test/10000/zoosk_10000.tar.gz" todir="${zooskroot_dir}/test/scripts/tmp/test10000/zoosk" />
+		<untar file="./data/test/10000/user1_10000.tar.gz" todir="${zooskroot_dir}/test/scripts/tmp/test10000/user1" />
+		<untar file="./data/test/10000/msg1_10000.tar.gz" todir="${zooskroot_dir}/test/scripts/tmp/test10000/msg1" />
+	</target>
+	<!-- UNIT TESTS upgrade, first call install-test, then if you modify a unit test you can call install-test-code -->
+	<target name="install-test-code">
+		<echo msg="Upgrading test suites in ${zooskroot_dir}/test"/>
+		<mkdir dir="${zooskroot_dir}/test" />
+		<copy todir="${zooskroot_dir}/test" >
+			<fileset dir="test">
+				<include name="**" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+					<token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+
+
+        <!-- Copy the API endpoint over. NOTE: Probably redundant. @TODO: install the endpoint on all subdomains, OR remove this -->
+        <copy file="www/api/html/test4.0.php" todir="${zooskroot_dir}/www/api/html" />
+	</target>
+	
+	<target name="force-fetch-test10k-data">
+                <echo msg="FORCE Downloading test10k files from Nexus. This requires VPN." />
+		<if>
+                        <not><isset property="test10k_version" /></not>
+                        <then><property file="./data/test/10000/TEST10K_VERSION"/></then>
+                </if>
+                <phingcall target="download-files-from-nexus">
+                <property name="nexus_download_file_destination" value="./data/test/10000/test10k.tgz.static" />
+                <property name="nexus_download_repo" value="${test_repo}" />
+                <property name="nexus_g" value="com.zoosk" />
+                <property name="nexus_a" value="test10k" />
+                <property name="nexus_p" value="tgz" />
+                <property name="nexus_file_name" value="./data/test/10000/test10k.tgz" />
+                <property name="nexus_v" value="${test10k_version}" />
+                </phingcall>
+        </target>
+
+        <target name="fetch-test10k-data">
+          <if>
+                <isset property="force-fetch-test10k-data"/>
+                <then><phingcall target="force-fetch-test10k-data"/></then>
+          <else>
+                <if>
+                <!-- Core Test tgz files are no longer in source, it is now versioned and in nexus; try to get a new copy, if not use existing if avail and throw a warning -->
+                        <not><available file="./data/test/10000/test10k.tgz.static" /></not>
+                        <then><phingcall target="force-fetch-test10k-data"/></then>
+	  	<else><exec command="cp -f ./data/test/10000/test10k.tgz.static ./data/test/10000/test10k.tgz"/></else>
+                </if>
+          </else>
+          </if>
+	  <untar file="./data/test/10000/test10k.tgz" todir="./data/test/10000/" />
+        </target>
+
+	<target name="force-fetch-test200-data">
+                <echo msg="FORCE Downloading test200 files from Nexus. This requires VPN." />
+		<if>
+                        <not><isset property="test200_version" /></not>
+                        <then><property file="./data/test/200/TEST200_VERSION"/></then>
+                </if>
+                <phingcall target="download-files-from-nexus">
+                <property name="nexus_download_file_destination" value="./data/test/200/test200.tgz.static" />
+                <property name="nexus_download_repo" value="${test_repo}" />
+                <property name="nexus_g" value="com.zoosk" />
+                <property name="nexus_a" value="test200" />
+                <property name="nexus_p" value="tgz" />
+                <property name="nexus_file_name" value="./data/test/200/test200.tgz" />
+		<property name="nexus_v" value="${test200_version}" />
+                </phingcall>
+        </target>
+
+	<target name="fetch-test200-data">
+          <if>
+                <isset property="force-fetch-test200-data"/>
+                <then><phingcall target="force-fetch-test200-data"/></then>
+          <else>
+                <if>
+                <!-- Core Test tgz files are no longer in source, it is now versioned and in nexus; try to get a new copy, if not use existing if avail and throw a warning -->
+                      <not><available file="./data/test/200/test200.tgz.static" /></not>
+                      <then><phingcall target="force-fetch-test200-data"/></then>
+	  	<else><exec command="cp -f ./data/test/200/test200.tgz.static ./data/test/200/test200.tgz"/></else>
+                </if>
+          </else>
+          </if>
+	    <exec command="cd ./data/test/200 &amp;&amp; tar -xzvf test200.tgz &amp;&amp; cd ../../../" />
+        </target>
+
+	<!-- TEST DATA SETS -->
+	<target name="install-test-200" depends="buildsetup,fetch-test200-data">
+		<phing dir="data/test" phingfile="build.xml" target="install-200" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+	</target>
+
+	<target name="install-test-200xn" depends="buildsetup,fetch-test200-data">
+		<phing dir="data/test" phingfile="build.xml" target="install-200xn" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+	</target>
+
+	<target name="install-test-10000" depends="buildsetup,fetch-test10k-data">
+		<phing dir="data/test" phingfile="build.xml" target="install-10000" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+	</target>
+	
+	<target name="truncate-all" depends="install-test-code">
+		<echo msg="Trucating Zoosk data"/>
+		<exec passthru="true" checkreturn="true"
+			command="cd ${zooskroot_dir}/test/data &amp;&amp; php truncate_all.php --batch"
+			/>
+	</target>
+	
+	<target name="truncate-memcached" depends="install-test-code">
+		<echo msg="Flushing memcached"/>
+		<exec passthru="true" checkreturn="true"
+			command="cd ${zooskroot_dir}/test/data &amp;&amp; php memcached_flush.php"
+			/>
+	</target>
+	
+	<target name="install-test-10000xn" depends="buildsetup,fetch-test10k-data">
+		<phing dir="data/test" phingfile="build.xml" target="install-10000xn" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+		</phing>
+	</target>
+	
+	<!-- UNIT L10N PO UPLOAD TEST -->
+	<target name="install-l10n-test" depends="install-web-photoupload">
+		<echo msg="Installing po file upload in ${photoupload-target-dir}"/>
+		<mkdir dir="${photoupload-target-dir}/html" />
+		<copy todir="${photoupload-target-dir}/html" >
+			<fileset dir="test/tools/l10n">
+				<include name="**" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+					<token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+		<!-- allow the PO file directory to be written to -->
+		<exec passthru="true" checkreturn="true" command="chmod -R o+w ${zooskroot_dir}/locale/"/>
+	</target>
+	
+	<!-- SCRIPTS -->
+	<target name="install-scripts" depends="baseline">
+		<echo msg="Installing scripts in ${zooskroot_dir}/scripts"/>
+		<mkdir dir="${zooskroot_dir}/scripts" />
+		<copy todir="${zooskroot_dir}/scripts" >
+			<fileset dir="scripts">
+				<exclude name="localization/" />
+				<exclude name="localize_country_names.php" />
+			</fileset>
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+					<token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+					<token key="STATIC_TARGET" value="${zooskstatic-target-dir}" />
+					<token key="PRODUCT_INC" value="${appinclude-target-dir}" />
+					<token key="TOOLS_ROOT" value="${toolsroot-dir}" />
+					<token key="FINANCE_ROOT" value="${financeroot-dir}" />
+					<token key="STATIC_ON_S3" value="${static_on_s3}" />
+				</replacetokens>
+			</filterchain>
+		</copy>		
+	</target>
+	
+	
+	<!-- this should not be called in production environement; make sure you have built the latest code -->
+	<target name="update-pot">
+		<echo msg="Building update POT files"/>
+		<echo msg="WARNING: this will modify files in-place in locale directory that might need to be checked-in"/>
+		<exec passthru="true" checkreturn="true" command="bash locale/build-pot . ../tools"/>	
+	</target>
+
+	<target name="build-thrift-interfaces">
+		<echo msg="Builds all of the various thrift interfaces required by all of Zoosk"/>
+		<phing dir="." phingfile="build.xml" target="build-thrift-php-interface" haltonfailure="true" />
+		<phing dir="." phingfile="build.xml" target="build-thrift-java-interface" haltonfailure="true" />
+		
+	</target>
+
+	<target name="build-thrift-php-interface">
+		<echo msg="Building the thrift interfaces" />
+
+		<echo msg="Attempting build services/thrift/user_lookup.thrift " />
+		<mkdir dir="${zooskroot_dir}/services/thrift/interfaces/userlookup" />
+		<echo msg="Building thrift php server code for userlookup" />
+		<exec passthru="true" checkreturn="true" command="thrift -gen php:server -o ${zooskroot_dir}/services/thrift/  services/thrift/user_lookup.thrift" />
+		<!--  cleanup, remove include commands -->
+		<exec command="let KKK=${zooskroot_dir}/services/thrift/interfaces/photo_publish" />
+		<exec command="echo &quot;|||| ${KKK} ||||&quot;"/>
+    <!--
+    <exec command="mkdir -p ${zooskroot_dir}/services/thrift/gen-php/user_lookup"/>
+		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/user_lookup/*.php" />
+
+		<echo msg="Attempting build services/thrift/photo.thrift " />
+		<echo msg="Building thrift php CLIENT code for photo service" />
+		<exec passthru="true" checkreturn="true" command="thrift -gen php:oop -o ${zooskroot_dir}/services/thrift/  services/thrift/photo.thrift" />
+    -->
+		<!--  cleanup, remove include commands -->
+    <!--
+		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/photo/*.php " />
+
+		<echo msg="Attempting build services/thrift/photo_publish.thrift " />
+		<echo msg="Building thrift php server code for photo_publish" />
+		<exec passthru="true" checkreturn="true" command="thrift -gen php:server -o ${zooskroot_dir}/services/thrift/  services/thrift/photo_publish.thrift" />
+    -->
+		<!--  cleanup, remove include commands -->
+    <!--
+		<exec passthru="true" checkreturn="true" dir="${command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/photo_publish/*.php " />
+    -->
+		
+		<foreach list="acl,acl_granter,manager,photo_manager" param="service" target="build-thrift-php-interface-param"/>
+       <echo msg="Building class=>path mapping for thrift autoloader"/>
+       <exec command="mkdir -p ${zooskroot_dir}/services/thrift/gen_php/${build-thrift-php-interface-param}"/>
+       <exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include ${zooskroot_dir}/services/thrift/gen-php ${zooskroot_dir}/autoload_gen_thrift.php thriftGenClassMap '^.*\/gen-php' config/autoload_gen_thrift.php > /dev/null"/>
+       <echo msg="Finished autoload class name mapping setup"/>
+	</target>
+	
+	<target name="build-thrift-php-interface-param">
+	
+		<echo msg="Attempting build services/thrift/${service}.thrift " />
+		<echo msg="Building thrift php server code for ${service}" />
+		<exec passthru="true" checkreturn="true" command="thrift -gen php:server -o ${zooskroot_dir}/services/thrift/  services/thrift/${service}.thrift" />
+		
+		<!--  cleanup, remove include commands -->
+		<!-- <exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/${service}/*php " /> -->
+	</target>
+	
+
+
+
+	<target name="build-thrift-java-interface">
+		<echo msg="Building the thrift interfaces" />
+		<echo msg="Attempting build services/thrift/user_lookup.thrift " />
+		<mkdir dir="${zooskroot_dir}/services/thrift/interfaces/userlookup" />
+		<echo msg="Building thrift java interfaces for user lookup functionality" />
+		<exec passthru="true" checkreturn="true" command="thrift -gen java -o ${zooskroot_dir}/services/thrift/  services/thrift/user_lookup.thrift" />
+		
+		<!-- Now build the jar files for the interfaces -->
+		<echo msg="Building the java userlookup libraries" />
+		<exec passthru="true" checkreturn="true" dir="${zooskroot_dir}/services/thrift/gen-java/tserver/gen" command="javac -classpath /usr/share/java/libthrift.jar:/usr/local/lib/libthrift.jar:${tigase_libs}/slf4j-api-1.5.8.jar:${tigase_libs}/slf4j-simple-1.5.8.jar *.java" />
+		<exec passthru="true" checkreturn="true" dir="${zooskroot_dir}/services/thrift/gen-java" command="jar cf ${zooskroot_dir}/services/thrift/gen-java/userlookup.jar tserver" />
+		<copy todir="${tigase_libs}">
+			<fileset dir="${zooskroot_dir}/services/thrift/gen-java">
+				<include name="userlookup.jar" />
+			</fileset>
+		</copy>
+		<copy todir="${tigase_jars}">
+			<fileset dir="${zooskroot_dir}/services/thrift/gen-java">
+				<include name="userlookup.jar" />
+			</fileset>
+		</copy>
+	</target>
+	<!--- LOGGER -->
+	<target name="install-logger" description="Installs configuration files for Zoosk logging (log4php)">
+        <mkdir dir="${shared-dir}/log" />
+		<copy file="${logger_config_file}" tofile="${zooskroot_dir}/config/logger.properties" overwrite="true">
+			<filterchain>
+				<replacetokens begintoken="##" endtoken="##">
+					<token key="LOG_DIR" value="${shared-dir}/log" />
+					<token key="PRODUCT_PREFIX" value="Z${dbprefix}" />
+				</replacetokens>
+			</filterchain>
+		</copy>
+	</target>
+	
+	<!--- Feature Flags -->
+	<target name="install-feature" description="Installs configuration files for Zoosk feature flags ">
+		<mkdir dir="${zooskroot_dir}/config"/>
+		<copy todir="${zooskroot_dir}/config" overwrite="true">
+			<fileset dir="config">
+			</fileset>
+            <filterchain>
+         	    <replacetokens begintoken="##" endtoken="##">
+         	        <token key="ZOOSK_ROOT" value="${zooskroot_dir}" />
+         		</replacetokens>
+         	</filterchain>
+		</copy>
+	</target>
+
+
+  <!--- Test Data  -->
+  <target name="install-affinity-data" description="Installs the affinity Dataset">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./scripts/affinity" command="python import_affinity_db.py ${dbprefix} ${dbhost} ${rootdbpass}" />
+  </target>
+
+  <target name="install-test-500" description="Installs the Test 500 Dataset">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=test500-2 --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+  <target name="install-test-500-prod" description="Installs the Test 500 Dataset For Prod Mode">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=test500-prod-2 --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+  <target name="install-test-empty" description="Installs the Empty Test Dataset">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=empty --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+  <target name="install-my-test-data" description="Installs a Personal TestData Set">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=personal --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+
+  <target name="save-test-500" description="Saves the Test 500 Dataset">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --backup --dataset=test500-2 --prefix$={dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+  <target name="save-test-500-prod" description="Saves the Test 500 Dataset For Prod Mode">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --backup --dataset=test500-prod-2 --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+  <target name="save-my-test-data" description="Saves a Personal TestData Set">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --backup --dataset=personal --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+
+  <!-- test2k -->
+  <target name="install-test2k-fake" description="Sets up the phing build process for installing test 2k with fake affinities">
+    <if>
+      <equals arg1="${db-environment}" arg2="prod" />
+      <then>
+        <property name="dataset" value="test2k-prod-fake" />
+      </then>
+      <else>
+        <property name="dataset" value="test2k-dev-fake" />
+      </else>
+    </if>
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=${dataset} --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+  <target name="save-test2k-fake" description="Sets up the phing build process for saving test 2k with fake affinities">
+    <if>
+      <equals arg1="${db-environment}" arg2="prod" />
+      <then>
+        <property name="dataset" value="test2k-prod-fake" />
+      </then>
+      <else>
+        <property name="dataset" value="test2k-dev-fake" />
+      </else>
+    </if>
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --backup --dataset=${dataset} --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+
+  <!-- test ux users -->
+  <target name="install-test-ux" description="Installs the Test UX Production Dataset">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=test-ux --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+  <target name="save-test-ux" description="Saves the Test UX Production Dataset">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --backup --dataset=test-ux --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+
+	
+	<target name="install-code-touch-files" description="Touches files.">
+	<!-- Re. "why!?!" - in case properties changed but files didn't. -->
+		<touch file="www/update/html/air/update.xml"/>
+		<touch file="www/update/html/air/update_2.5.xml"/>
+		<touch file="www/update/html/air/update_final.xml"/>
+	</target>
+
+    <target name="enable-psyche">
+        <touch file="${zooskroot_dir}/psyche_enabled" />
+    </target>
+
+</project>

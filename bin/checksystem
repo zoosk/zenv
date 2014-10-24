@@ -23,7 +23,7 @@ function versioncompare() {
     MY_VERSION="$2"
     REQUIRED_VERSION="$3"
 
-    REQ_LIST=($(echo "${REQUIRED_VERSION}" |sed -e 's?[\.-]? ?g'));
+    REQ_LIST=($(echo "${REQUIRED_VERSION}" | sed -e 's?[\.-]? ?g'));
     MY_LIST=($(echo "${MY_VERSION}" | sed -e 's?[\.-]? ?g'));
 
     REQ_COUNT="${#REQ_LIST[@]}";
@@ -42,13 +42,6 @@ function versioncompare() {
       let IDX++;
     done
     echo ${MY_VERSION}
-
-#   printf "Checking version of ${PROGRAM}..."
-#   if [ "$(php -r "echo version_compare('${MY_VERSION}', '${REQUIRED_VERSION}');")" == '-1' ]; then
-#       echo "${RED}${BOLD}FAILED!${TXTRESET} Your version of ${PROGRAM} is ${MY_VERSION}, but ${REQUIRED_VERSION} is required."
-#       exit 1
-#   fi
-#   echo "${MY_VERSION}"
 }
 
 function checkinstalled() {
@@ -103,6 +96,8 @@ PHING_VERSION="$(phing -v | awk '{print $2}')"
 versioncompare phing $PHING_VERSION '2.8' # was '2.7.0'
 
 printf "Checking for access to MySQL..."
+printf "${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass)"
+
 if [ "$(echo 'show databases;' | mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass) mysql >/dev/null 2>1; echo $?)" != '0' ]; then
     echo "${RED}${BOLD}FAILED!${TXTRESET} Cannot log into MySQL as root. Please talk to TechOps."
     exit 1
