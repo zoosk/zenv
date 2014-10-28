@@ -530,7 +530,7 @@
 		<echo msg="Checking out zs-db-tool..."/>
 		<echo msg="git clone git@g.zoosk.com:platform/zs-db-tool.git ${root_dir}_build/zs-db-tool" />
 		<exec checkreturn="true" command="git clone git@g.zoosk.com:platform/zs-db-tool.git ${root_dir}_build/zs-db-tool" passthru="true"/>
-		<exec checkreturn="true" command="pushd ${root_dir}_build/zs-db-tool &amp;&amp; git checkout tags/${zs-db-tool-version} &amp;&amp; popd" passthru="true"/>
+		<exec checkreturn="true" command="RET_WD=&quot;${PWD}&quot; &amp;&amp; cd ${root_dir}_build/zs-db-tool &amp;&amp; git checkout tags/${zs-db-tool-version} &amp;&amp; cd &quot;${RET_WD}&quot;" passthru="true"/>
 
 		<!-- Checkout the photo v3 db schemas -->
 		<echo msg="Checking out photo v3 schemas..."/>
@@ -538,7 +538,7 @@
 
 		<!-- Run composer -->
 		<echo msg="Running composer on zs-db-tool..."/>
-		<exec checkreturn="true" command="pushd ${root_dir}_build/zs-db-tool &amp;&amp; php composer.phar install -n &amp;&amp; popd" />
+		<exec checkreturn="true" command="RET_WD=&quot;${PWD}&quot; &amp;&amp; cd ${root_dir}_build/zs-db-tool &amp;&amp; php composer.phar install -n &amp;&amp; cd &quot;${RET_WD}&quot;" />
 
 		<!-- Replace config tokens -->
 		<echo msg="Replacing tokens in photov3 schemas..."/>
@@ -554,7 +554,7 @@
 		<!-- Install the db -->
 		<echo msg="INSTALLING PHOTO V3 DATABASE" />
 		<echo msg="php upgrade-db.php -y --config=${root_dir}_build/photov3_schema/config.dev.mine.json" />
-		<exec checkreturn="true" command="pushd ${root_dir}_build/zs-db-tool/src/Zoosk/DBTools &amp;&amp; php upgrade-db.php -y --config=${root_dir}_build/photov3_schema/config.dev.mine.json &amp;&amp; popd" />
+		<exec checkreturn="true" command="RET_WD=&quot;${PWD}&quot; &amp;&amp; cd ${root_dir}_build/zs-db-tool/src/Zoosk/DBTools &amp;&amp; php upgrade-db.php -y --config=${root_dir}_build/photov3_schema/config.dev.mine.json &amp;&amp; cd &quot;${RET_WD}&quot;" />
 
 		<!-- Cleanup.  Delete photo v3 schemas, but leave db-tool git repo -->
 		<echo msg="Cleaning up photo v3 database install..." />
@@ -709,7 +709,7 @@
                 <mkdir dir="${themisroot-dir}" />
                 <exec
                     passthru="true"
-                    command="RET_WD=&quot;${PWD}&quot; &amp;&amp; LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase_dir}/themis-master.tgz &amp;&amp; cd &quot;${themisbase_dir}&quot; &amp;&amp; tar xzf themis-master.tgz php &amp;&amp; cp -R php/* ./ &amp;&amp; rm -r php &amp;&amp; cd &quot;${RET_WD}&quot;"
+                    command="RET_WD=&quot;${PWD}&quot; &amp;&amp; LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase-dir}/themis-master.tgz &amp;&amp; cd &quot;${themisbase-dir}&quot; &amp;&amp; tar xzf themis-master.tgz php &amp;&amp; cp -R php/* ./ &amp;&amp; rm -r php &amp;&amp; cd &quot;${RET_WD}&quot;"
                     checkreturn="true" />
                 <phingcall target="update-themis-config" />
             </then>
