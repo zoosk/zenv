@@ -179,6 +179,13 @@
     <echo msg="Saving Test 2k"/>                                    
     <phing dir="web" phingfile="build.xml" target="save-test2k-fake" haltonfailure="true" />
   </target>
+
+  <!-- test 10k -->
+  <target name="install-test10k-fake" description="Install the Test 10k Dataset with fake affinities">
+    <echo msg="Installing 10,000 users to zoosk"/>
+		<phing dir="web" phingfile="build.xml" target="install-test10k-v3-fake" haltonfailure="true" />
+  </target>
+
 	
 	<target name="truncate-all" description="Truncates all storage systems for Zoosk (including Memcached)">
 		<phing dir="web" phingfile="build.xml" target="truncate-all" haltonfailure="true" />
@@ -707,14 +714,12 @@
             <then>
                 <phingcall target="clean-themis" />
                 <mkdir dir="${themisroot-dir}" />
-                <exec
-                    passthru="true"
-                    command="RET_WD=&quot;${PWD}&quot; &amp;&amp; LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase-dir}/themis-master.tgz &amp;&amp; cd &quot;${themisbase-dir}&quot; &amp;&amp; tar xzf themis-master.tgz php &amp;&amp; cp -R php/* ./ &amp;&amp; rm -r php &amp;&amp; cd &quot;${RET_WD}&quot;"
-                    checkreturn="true" />
+                <exec passthru="true" command="RET_WD=&quot;${PWD}&quot; &amp;&amp; LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase-dir}/themis-master.tgz &amp;&amp; cd ${themisbase-dir} &amp;&amp; tar -xzf themis-master.tgz --wildcards php/* &amp;&amp; cp -R php/* ${themisroot-dir}/ &amp;&amp; rm -rf ${themisbase-dir}/themis-master.tgz &amp;&amp; rm -rf ${themisbase-dir}/php &amp;&amp; cd &quot;${RET_WD}&quot;" checkreturn="true" />
                 <phingcall target="update-themis-config" />
             </then>
         </if>
     </target>
+    <!-- command="RET_WD=&quot;${PWD}&quot; &amp;&amp; LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase-dir}/themis-master.tgz &amp;&amp; cd &quot;${themisbase-dir}&quot; &amp;&amp; tar xzf themis-master.tgz php &amp;&amp; cp -R php/* ./ &amp;&amp; rm -r php &amp;&amp; cd &quot;${RET_WD}&quot;" -->
 
     <target name="clean-themis" description="Clean Themis from dev instance">
         <if><isset property="devid"/>
