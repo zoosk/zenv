@@ -105,25 +105,30 @@
 		<echo msg ="Result ${setphpmemoryresult}"/>
 	</target>
 
-       <target name="refresh-live-mission-control-data-from-production">
-         <if><equals arg1="${dbprefix}" arg2="csr" />
-           <then>
-             <exec command="ssh build1qa.sfo2.zoosk.com &quot;cd /srv/web-core-stag-rc-zoosk/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
-           </then>
-           <else>
-             <exec returnProperty="sshretval" command="ssh ${dev_hostname} &quot;cd /srv/dev${devid}/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
-             <if><equals arg1="${sshretval}" arg2="0" />
-               <then>
-                 <echo msg="refresh mission control data successful"/>
-               </then>
-               <else>
-                 <echo msg="cannot run refresh mission control command on ${dev_hostname} so trying again with an FQDN"/>
-                 <exec returnProperty="sshretval" checkreturn="true" command="ssh ${dev_hostname}.sfo2.zoosk.com &quot;cd /srv/dev${devid}/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
-               </else>
-             </if>
-           </else>
-         </if>
-       </target>
+    <target name="refresh-live-mission-control-data-from-production">
+        <exec command ="ssh ${dev_hostname} &quot;mkdir -p /srv/mission_control/releases/0 &amp;&amp; cp /srv/dev${devid}/current/web/config/mission_control.js /srv/mission_control/releases/0 &amp;&amp; rm -rf /srv/mission_control/current &amp;&amp; ln -s /srv/mission_control/releases/0 /srv/mission_control/current &quot;" />
+        <if><equals arg1="${dbprefix}" arg2="csr" />
+            <then>
+                <exec command="ssh build1qa.sfo2.zoosk.com &quot;cd /srv/web-core-stag-rc-zoosk/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
+            </then>
+            <else>
+                <exec returnProperty="sshretval" command="ssh ${dev_hostname} &quot;cd /srv/dev${devid}/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
+                <if><equals arg1="${sshretval}" arg2="0" />
+                    <then>
+                        <echo msg="refresh mission control data successful"/>
+                    </then>
+                <else>
+                    <echo msg="cannot run refresh mission control command on ${dev_hostname} so trying again with an FQDN"/>
+                    <exec returnProperty="sshretval" checkreturn="true" command="ssh ${dev_hostname}.sfo2.zoosk.com &quot;cd /srv/dev${devid}/current/web/scripts;php refresh_mission_control_db_from_json.php&quot;" />
+                </else>
+                </if>
+            </else>
+        </if>
+    </target>
+
+    <target name="copy-mission-control-json-from-source">
+        <exec command ="ssh ${dev_hostname} &quot;mkdir -p /srv/mission_control/releases/0 &amp;&amp; cp /srv/dev${devid}/current/web/config/mission_control.js /srv/mission_control/releases/0 &amp;&amp; rm -rf /srv/mission_control/current &amp;&amp; ln -s /srv/mission_control/releases/0 /srv/mission_control/current&quot;" />
+    </target>
 	
 	<target name="all" description="Show Build Options">
 		<echo msg="Select 'install', 'upgrade', 'install-test', 'install-web-photoupload', 'clean-web', 'install-static-zoosk', 'install-codeahead-zoosk', 'install-test-10000xn' targets"/>
@@ -2135,28 +2140,21 @@
 		<echo msg="Building thrift php server code for userlookup" />
 		<exec passthru="true" checkreturn="true" command="thrift -gen php:server -o ${zooskroot_dir}/services/thrift/  services/thrift/user_lookup.thrift" />
 		<!--  cleanup, remove include commands -->
-		<exec command="let KKK=${zooskroot_dir}/services/thrift/interfaces/photo_publish" />
-		<exec command="echo &quot;|||| ${KKK} ||||&quot;"/>
-    <!--
-    <exec command="mkdir -p ${zooskroot_dir}/services/thrift/gen-php/user_lookup"/>
 		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/user_lookup/*.php" />
 
 		<echo msg="Attempting build services/thrift/photo.thrift " />
+		<mkdir dir="${zooskroot_dir}/services/thrift/interfaces/photo" />
 		<echo msg="Building thrift php CLIENT code for photo service" />
 		<exec passthru="true" checkreturn="true" command="thrift -gen php:oop -o ${zooskroot_dir}/services/thrift/  services/thrift/photo.thrift" />
-    -->
 		<!--  cleanup, remove include commands -->
-    <!--
-		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/photo/*.php " />
+		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/photo/*.php" />
 
 		<echo msg="Attempting build services/thrift/photo_publish.thrift " />
+		<mkdir dir="${zooskroot_dir}/services/thrift/interfaces/photo_publish" />
 		<echo msg="Building thrift php server code for photo_publish" />
 		<exec passthru="true" checkreturn="true" command="thrift -gen php:server -o ${zooskroot_dir}/services/thrift/  services/thrift/photo_publish.thrift" />
-    -->
 		<!--  cleanup, remove include commands -->
-    <!--
-		<exec passthru="true" checkreturn="true" dir="${command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/photo_publish/*.php " />
-    -->
+		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/photo_publish/*.php" />
 		
 		<foreach list="acl,acl_granter,manager,photo_manager" param="service" target="build-thrift-php-interface-param"/>
        <echo msg="Building class=>path mapping for thrift autoloader"/>
@@ -2172,7 +2170,7 @@
 		<exec passthru="true" checkreturn="true" command="thrift -gen php:server -o ${zooskroot_dir}/services/thrift/  services/thrift/${service}.thrift" />
 		
 		<!--  cleanup, remove include commands -->
-		<!-- <exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/${service}/*php " /> -->
+		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/${service}/*php " />
 	</target>
 	
 
@@ -2291,6 +2289,13 @@
     <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
     <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --backup --dataset=${dataset} --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
   </target>
+
+  <!-- test10k -->
+  <target name="install-test10k-v3-fake" description="Sets up the phing build process for installing test 10k with fake affinities">
+    <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=test10k-v3-fake --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+  </target>
+
 
   <!-- test ux users -->
   <target name="install-test-ux" description="Installs the Test UX Production Dataset">
