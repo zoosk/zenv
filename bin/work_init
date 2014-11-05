@@ -67,7 +67,7 @@ read -p "Enter the dev ID associated with this checkout (${ZENV_DEVID}): " TEMP
 if [ "$TEMP" != '' ]; then
     ZENV_DEVID=$TEMP
 fi
-if [ "$ZENV_DEVID" -ne "$ZENV_DEVID" ]; then
+if [ ! "$ZENV_DEVID" -eq "$ZENV_DEVID" ]; then
     echo 'You must enter a number for your dev id.'
     exit 1
 fi

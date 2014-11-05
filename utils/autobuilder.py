@@ -203,7 +203,7 @@ def callback(event):
         print "Build complete.\n"
 
 
-
+# mikem - changes for watchdog
 observer = Observer()
 observer.schedule( callback, local_path, recursive=True)
 observer.start()
