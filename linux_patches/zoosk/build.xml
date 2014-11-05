@@ -719,7 +719,6 @@
             </then>
         </if>
     </target>
-    <!-- command="RET_WD=&quot;${PWD}&quot; &amp;&amp; LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase-dir}/themis-master.tgz &amp;&amp; cd &quot;${themisbase-dir}&quot; &amp;&amp; tar xzf themis-master.tgz php &amp;&amp; cp -R php/* ./ &amp;&amp; rm -r php &amp;&amp; cd &quot;${RET_WD}&quot;" -->
 
     <target name="clean-themis" description="Clean Themis from dev instance">
         <if><isset property="devid"/>
