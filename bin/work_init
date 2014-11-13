@@ -150,13 +150,13 @@ while [ $DONE -eq 0 ]; do
 
 	'touch_js' )
 	    ZENV_BUILD_COMMAND="./gradlew -Pproperties_file=\${ZENV_BUILDPROPS}"
-        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}/current/web/www/touch/html"
+        ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}/web/www/touch/html"
 	    DONE=1
 	    ;;
 
 	'zephyr_css' )
 	    ZENV_BUILD_COMMAND="./zephyr"
-            ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}/current/web/www/static/20000101"
+            ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}/web/www/static/20000101"
 	    if [ "$(which compass)" == '' ]; then
             TEMP='y'
             read -p "It doesn't look like you have compass installed. Would you like to install it now [y/n] (y)? " TEMP
@@ -171,13 +171,13 @@ while [ $DONE -eq 0 ]; do
 
 	'cupid_js' )
 	    ZENV_BUILD_COMMAND="./cupid -Pproperties_file=\${ZENV_BUILDPROPS}"
-        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}"
+        ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}"
 	    DONE=1
 	    ;;
 
 	'vulcan' )
 	    ZENV_BUILD_COMMAND="./vulcan -Pproperties_file=\${ZENV_BUILDPROPS}"
-        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}"
+        ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}"
 	    DONE=1
 	    ;;
 
