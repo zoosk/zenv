@@ -37,7 +37,7 @@ A Simple Settings File
 
 Here is a very simple settings file::
 
-  set TARGET_DIR=${ZENV_SERVERDIR}/web/www/static/20000101
+  set TARGET_DIR=${ZENV_SERVERDIR}/current/web/www/static/20000101
 
   # Directly copy any .jpg files into the dev instance
   \.jpg$

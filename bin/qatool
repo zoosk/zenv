@@ -42,7 +42,7 @@ function zooskbuild() {
         patch -p0 < "$2" || exit 1
     fi
     # TODO: Add database clearing to the below ssh command and reinstalling to the following build commands
-    ssh -t "$ZENV_DEVSERVER" "rm -rf ${ZENV_SERVERDIR}/*" 2>/dev/null || exit 1
+    ssh -t "$ZENV_DEVSERVER" "rm -rf ${ZENV_SERVERDIR}/current/*" 2>/dev/null || exit 1
     build install-tools install-schwartz install-web install-web-test build-thrift-php-interface || exit 1
     buildweb install-test-500 || exit 1
     clearmem || exit 1

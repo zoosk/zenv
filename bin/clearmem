@@ -21,7 +21,7 @@ fi
 
 
 if [ "$1" == '' ]; then
-    CMD="php ${ZENV_SERVERDIR}/web/test/data/memcached_flush.php 2>/dev/null"
+    CMD="php ${ZENV_SERVERDIR}/current/web/test/data/memcached_flush.php 2>/dev/null"
 else
     ARGS=$*
     CMD=""
