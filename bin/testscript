@@ -17,4 +17,4 @@ fi
 
 SCRIPT_NAME="$1"
 shift
-ssh "$ZENV_LDAP_USERNAME"@"$ZENV_DEVSERVER" "cd ${ZENV_SERVERDIR}/current/web/test && php ${SCRIPT_NAME} $@"
+ssh "$ZENV_LDAP_USERNAME"@"$ZENV_DEVSERVER" "cd ${ZENV_SERVERDIR}/web/test && php ${SCRIPT_NAME} $@"
