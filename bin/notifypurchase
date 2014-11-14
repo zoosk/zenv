@@ -28,4 +28,4 @@ else
     USER_ID=$(echo "select user_id from payment_orders where id=${ORDER_ID} limit 1" |  mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass) ${ZENV_DEVID}finance 2>/dev/null | tail -1)
 fi
 
-ssh "$ZENV_LDAP_USERNAME"@"$ZENV_DEVSERVER" "php ${ZENV_SERVERDIR}/current/web/test/scripts/money/generate_purchase_notification.php -u ${USER_ID} -o ${ORDER_ID}" && clearmem
+ssh "$ZENV_LDAP_USERNAME"@"$ZENV_DEVSERVER" "php ${ZENV_SERVERDIR}/web/test/scripts/money/generate_purchase_notification.php -u ${USER_ID} -o ${ORDER_ID}" && clearmem
