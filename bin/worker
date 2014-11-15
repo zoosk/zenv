@@ -16,7 +16,7 @@ elif [ -z "$ZENV_CURRENT_WORK" ]; then
     exit 1
 fi
 
-WORKERS_DIR="${ZENV_SERVERDIR}/current/web/services/jobworkers"
+WORKERS_DIR="${ZENV_SERVERDIR}/web/services/jobworkers"
 
 if [ "$1" == '' ]; then
     echo 'The possible workers are:'

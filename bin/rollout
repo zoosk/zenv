@@ -74,4 +74,4 @@ case "$PRODUCT_ID" in
         ;;
 esac
 
-ssh -t "$ZENV_DEVSERVER" "cd ${ZENV_SERVERDIR}/current/web/scripts/mission_control_commandline_tools && php update_rollout.php ${1} ${PRODUCT_ID} ${3} && bash start.sh"
+ssh -t "$ZENV_DEVSERVER" "cd ${ZENV_SERVERDIR}/web/scripts/mission_control_commandline_tools && php update_rollout.php ${1} ${PRODUCT_ID} ${3} && bash start.sh"

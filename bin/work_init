@@ -76,11 +76,11 @@ fi
 ZENV_DEVID_PADDED="$(printf "%03d" $(echo ${ZENV_DEVID}))"
 ZENV_DEVSERVER="sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com"
 ZENV_DBIP="$(dig +short ${ZENV_DEVSERVER})"
-ZENV_SERVERDIR="${ZENV_LOCAL_DEPLOY_DIR}/dev${ZENV_DEVID}"
-ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}"
+ZENV_SERVERDIR="${ZENV_LOCAL_DEPLOY_DIR}/zoosk/releases/${ZENV_DEVID}"
+ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}"
 
 # Create your target dirs if they do not already exist
-DIRS="dev${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service psyche-dev${ZENV_DEVID}/current"
+DIRS="zoosk/releases/${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service psyche-dev${ZENV_DEVID}/current"
 for d in ${DIRS}; do
     mkdir -p ${ZENV_LOCAL_DEPLOY_DIR}/${d}
 done
@@ -143,20 +143,20 @@ while [ $DONE -eq 0 ]; do
 
         ZENV_BUILDPROPS_COMMON="${ZENV_CURRENT_WORK}/vmdev.properties"
 	    ZENV_BUILD_COMMAND="phing -logger phing.listener.DefaultLogger -Dpf1=\${ZENV_BUILDPROPS} -Dpf2=\${ZENV_BUILDPROPS_COMMON}"
-        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service"
+        ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service"
 	    update_properties
 	    DONE=1
 	    ;;
 
 	'touch_js' )
 	    ZENV_BUILD_COMMAND="./gradlew -Pproperties_file=\${ZENV_BUILDPROPS}"
-        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}/current/web/www/touch/html"
+        ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}/web/www/touch/html"
 	    DONE=1
 	    ;;
 
 	'zephyr_css' )
 	    ZENV_BUILD_COMMAND="./zephyr"
-            ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}/current/web/www/static/20000101"
+            ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}/web/www/static/20000101"
 	    if [ "$(which compass)" == '' ]; then
             TEMP='y'
             read -p "It doesn't look like you have compass installed. Would you like to install it now [y/n] (y)? " TEMP
@@ -171,13 +171,13 @@ while [ $DONE -eq 0 ]; do
 
 	'cupid_js' )
 	    ZENV_BUILD_COMMAND="./cupid -Pproperties_file=\${ZENV_BUILDPROPS}"
-        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}"
+        ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}"
 	    DONE=1
 	    ;;
 
 	'vulcan' )
 	    ZENV_BUILD_COMMAND="./vulcan -Pproperties_file=\${ZENV_BUILDPROPS}"
-        ZENV_RSYNC_DIRECTORIES="dev${ZENV_DEVID}"
+        ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}"
 	    DONE=1
 	    ;;
 
