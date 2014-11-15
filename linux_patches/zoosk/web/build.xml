@@ -1569,11 +1569,16 @@
 			<property file="${pf1}" override="true" />
 			<property file="${pf2}" override="true" />
 		</phing>
-        <phing dir="data/util2" phingfile="build.xml" target="install-util2-db" haltonfailure="true">
-            <property file="${properties_file}" override="true" />
-            <property file="${pf1}" override="true" />
-            <property file="${pf2}" override="true" />
-        </phing>
+		<phing dir="data" phingfile="build.xml" target="db-install-enhanced" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="dbPath" value="util2" override="true" />
+			<property name="dbName" value="util2" override="true" />
+			<property name="dbHostString" value="${util2}" override="true" />
+			<property name="dbCluster" value="1" override="true" />
+			<property name="dbUserPassword" value="${dbpasswordutl}" override="true" />
+		</phing>
 		<phing dir="data/onlinenow" phingfile="build.xml" target="install-onlinenow-db" haltonfailure="true">
 			<property file="${properties_file}" override="true" />
 			<property file="${pf1}" override="true" />
@@ -1704,17 +1709,19 @@
 			<property file="${pf1}" override="true" />
 			<property file="${pf2}" override="true" />
 		</phing>
-        <phing dir="data/util2" phingfile="build.xml" target="upgrade-util2-db" haltonfailure="true">
-            <property file="${properties_file}" override="true" />
-            <property file="${pf1}" override="true" />
-            <property file="${pf2}" override="true" />
+        <phing dir="data" phingfile="build.xml" target="db-upgrade-enhanced" haltonfailure="true">
+			<property file="${properties_file}" override="true" />
+			<property file="${pf1}" override="true" />
+			<property file="${pf2}" override="true" />
+			<property name="dbPath" value="util2" override="true" />
+			<property name="dbName" value="util2" override="true" />
+			<property name="dbHostString" value="${util2}" override="true" />
         </phing>
 		<phing dir="data/onlinenow" phingfile="build.xml" target="upgrade-onlinenow-db" haltonfailure="true">
 			<property file="${properties_file}" override="true" />
 			<property file="${pf1}" override="true" />
 			<property file="${pf2}" override="true" />
 		</phing>
-
 	</target>
 
     <!-- UPGRADE ALL MSG DATABASE CLUSTERS -->
@@ -2140,7 +2147,7 @@
 		<echo msg="Building thrift php server code for userlookup" />
 		<exec passthru="true" checkreturn="true" command="thrift -gen php:server -o ${zooskroot_dir}/services/thrift/  services/thrift/user_lookup.thrift" />
 		<!--  cleanup, remove include commands -->
-		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/user_lookup/*.php" />
+		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/user_lookup/*.php " />
 
 		<echo msg="Attempting build services/thrift/photo.thrift " />
 		<mkdir dir="${zooskroot_dir}/services/thrift/interfaces/photo" />
@@ -2156,7 +2163,7 @@
 		<!--  cleanup, remove include commands -->
 		<exec passthru="true" checkreturn="true" command="sed -i -e 's/include_once/\/\/Removed includes through build: include_once/g' ${zooskroot_dir}/services/thrift/gen-php/photo_publish/*.php" />
 		
-		<foreach list="acl,acl_granter,manager,photo_manager" param="service" target="build-thrift-php-interface-param"/>
+    <foreach list="acl,acl_granter,manager,photo_manager" param="service" target="build-thrift-php-interface-param"/>
        <echo msg="Building class=>path mapping for thrift autoloader"/>
        <exec command="mkdir -p ${zooskroot_dir}/services/thrift/gen_php/${build-thrift-php-interface-param}"/>
        <exec passthru="true" checkreturn="true" command="bash ${toolsroot-dir}/scripts/autoload/autoLoadClassMapper.sh www/include ../tools/include ${zooskroot_dir}/services/thrift/gen-php ${zooskroot_dir}/autoload_gen_thrift.php thriftGenClassMap '^.*\/gen-php' config/autoload_gen_thrift.php > /dev/null"/>
@@ -2291,9 +2298,9 @@
   </target>
 
   <!-- test10k -->
-  <target name="install-test10k-v3-fake" description="Sets up the phing build process for installing test 10k with fake affinities">
+  <target name="install-test10k-fake" description="Sets up the phing build process for installing test 10k with fake affinities">
     <php expression="array_shift(explode('|', '${util}', 2))" returnProperty="dbhost" />
-    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=test10k-v3-fake --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
+    <exec passthru="true" checkreturn="true" dir="./test/data/testdata" command="python testdata.py --restore --dataset=test10k-fake --prefix=${dbprefix} --dbhost=${dbhost} --dbpass=${rootdbpass}" />
   </target>
 
 

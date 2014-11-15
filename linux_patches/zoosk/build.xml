@@ -183,9 +183,14 @@
   <!-- test 10k -->
   <target name="install-test10k-fake" description="Install the Test 10k Dataset with fake affinities">
     <echo msg="Installing 10,000 users to zoosk"/>
-		<phing dir="web" phingfile="build.xml" target="install-test10k-v3-fake" haltonfailure="true" />
+		<phing dir="web" phingfile="build.xml" target="install-test10k-fake" haltonfailure="true" />
   </target>
 
+  <!-- test ux -->
+  <target name="install-test-ux" description="Install the Test UX Dataset">
+    <echo msg="Installing 102 UX users to zoosk"/>
+		<phing dir="web" phingfile="build.xml" target="install-test-ux" haltonfailure="true" />
+  </target>
 	
 	<target name="truncate-all" description="Truncates all storage systems for Zoosk (including Memcached)">
 		<phing dir="web" phingfile="build.xml" target="truncate-all" haltonfailure="true" />

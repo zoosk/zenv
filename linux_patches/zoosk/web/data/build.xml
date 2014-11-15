@@ -1,291 +1,281 @@
 <?xml version="1.0"?>
-<project name="testdata" default="all" >
-	<property name="propfile_exists" value="0" override="true" />
-	<property name="propfile_exists1" value="0" override="true" />
-	<property name="propfile_exists2" value="0" override="true" />
-	<available file="${properties_file}" property="propfile_exists" value="1"/>
+<project name="util2" default="all" >
+
+	<!-- Universal DB migration script.  Pass the following parameters -->
+	<fail unless="dbPath" msg="dbPath is a required parameter" />
+	<fail unless="dbName" msg="dbName is a required parameter" />
+	<fail unless="dbHostString" msg="dbHostString is a required parameter" />
+
+	<!-- Load properties files -->
 	<if>
-		<equals arg1="${propfile_exists}" arg2="1" />
+		<available file="${properties_file}" />
 		<then>
 			<property file="${properties_file}" override="true" />
 		</then>
 	</if>
-
-	<available file="${pf1}" property="propfile_exists1" value="1"/>
 	<if>
-		<equals arg1="${propfile_exists1}" arg2="1" />
+		<available file="${pf1}" />
 		<then>
 			<property file="${pf1}" override="true" />
 		</then>
 	</if>
-	
-	<available file="${pf2}" property="propfile_exists2" value="1"/>
 	<if>
-		<equals arg1="${propfile_exists2}" arg2="1" />
+		<available file="${pf2}" />
 		<then>
 			<property file="${pf2}" override="true" />
 		</then>
 	</if>
-	
+
+	<!-- Create temporary directory -->
 	<php function="md5" returnProperty="root_hash">
-	  <param value="${zooskroot_dir}/test"/>
+		<param value="${zooskroot_dir}"/>
 	</php>
-
-	<php expression="count(explode(',', '${msg}'))" returnProperty="total_msg_clusters" />
-	<php expression="count(explode(',', '${affinity}'))" returnProperty="total_affinity_clusters" />
-	
 	<property name="temp_dir" value="/tmp/${root_hash}" />
-	<property name="data_tmp_dir" value="${temp_dir}/test-dbdata" />
-	
-	<property name="mysql_root_exec" value="mysql --default-character-set=utf8 -uroot -p${rootdbpass}" />
-	
 	<mkdir dir="${temp_dir}" />
-	
-	<target name="all" description="Show Build Options">
-			<echo msg="Available targets: 'install-200, install-200xn, install-10000, install-2500x4, install-10000xn'"/>
+
+	<target name="db-install-enhanced" description="Installs an entire database for all clusters">
+		<echo msg="DB ${dbName} CLUSTER ALL" />
+
+		<php expression="implode(',', range(1, count(explode(',', '${dbHostString}'))))" returnProperty="clusterNumbers" />
+		<foreach list="${clusterNumbers}" param="dbCluster" target="db-install-cluster-enhanced" />
 	</target>
 
-	<target name='install-200'>
-		<echo msg="Installing 200 user data"/>
+	<target name="db-install-cluster-enhanced" description="Installs an entire database on a given cluster">
+		<fail unless="dbCluster" msg="dbCluster is a required parameter" />
 
-		<phingcall target="install-test-userset">
-			<property name="data_subdir" value="200"/>
-			<property name="zoosk_db_file" value="200/zoosk_200.tar.gz"/>
-			<property name="util_db_file" value="200/util_200.tar.gz"/>
-			<property name="user_db_file" value="200/user1_200.tar.gz"/>
-			<property name="msg_db_file" value="200/msg1_200.tar.gz"/>
-			<property name="install_all_clusters" value="0"/>
-		</phingcall>
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
+
+		<php expression="array_shift(explode('|', array_shift(array_slice(explode(',', '${dbHostString}'), ${dbCluster}-1, 1))))" returnProperty="masterHost" />
+
+		<!-- Try/finally so we can make sure to clean up sensitive files -->
+		<trycatch>
+			<try>
+				<!-- Setup access file -->
+				<phingcall target="db-setup-access-file" />
+				<phingcall target="db-setup-root-access-file" />
+
+				<!-- Run updates -->
+				<phingcall target="db-users-enhanced">
+					<property name="masterHost" value="${masterHost}" />
+				</phingcall>
+				<phingcall target="db-schema-enhanced">
+					<property name="masterHost" value="${masterHost}" />
+				</phingcall>
+				<phingcall target="db-data-enhanced">
+					<property name="masterHost" value="${masterHost}" />
+				</phingcall>
+				<phingcall target="db-migration-enhanced">
+					<property name="masterHost" value="${masterHost}" />
+				</phingcall>
+			</try>
+
+			<finally>
+				<!-- Cleanup files -->
+				<phingcall target="db-teardown-access-file" />
+				<phingcall target="db-teardown-root-access-file" />
+			</finally>
+		</trycatch>
+
 	</target>
 
-	<target name='install-10000'>
-		<echo msg="Installing 10,000 user data"/>
+	<target name="db-upgrade-enhanced" description="Upgrades the database for all clusters">
+		<echo msg="DB ${dbName} CLUSTER ALL" />
 
-		<phingcall target="install-test-userset">
-			<property name="data_subdir" value="10000"/>
-			<property name="zoosk_db_file" value="10000/zoosk_10000.tar.gz"/>
-			<property name="util_db_file" value="10000/util_10000.tar.gz"/>
-			<property name="user_db_file" value="10000/user1_10000.tar.gz"/>
-			<property name="msg_db_file" value="10000/msg1_10000.tar.gz"/>
-			<property name="install_all_clusters" value="0"/>
-		</phingcall>
+		<php expression="implode(',', range(1, count(explode(',', '${dbHostString}'))))" returnProperty="clusterNumbers" />
+		<foreach list="${clusterNumbers}" param="dbCluster" target="db-upgrade-cluster-enhanced" />
 	</target>
 
-	<target name='install-200xn'>
-		<echo msg="Installing 200 user data across ${total_user_clusters} user clusters"/>
+	<target name="db-upgrade-cluster-enhanced" description="Upgrades the database for a given cluster">
+		<fail unless="dbCluster" msg="dbCluster is a required parameter" />
 
-		<phingcall target="install-test-userset">
-			<property name="data_subdir" value="200"/>
-			<property name="zoosk_db_file" value="200/zoosk_200.tar.gz"/>
-			<property name="util_db_file" value="200/util_200.tar.gz"/>
-			<property name="user_db_file" value="200/user1_200.tar.gz"/>
-			<property name="msg_db_file" value="200/msg1_200.tar.gz"/>
-			<property name="install_all_clusters" value="1"/>
-		</phingcall>
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
+
+		<php expression="array_shift(explode('|', array_shift(array_slice(explode(',', '${dbHostString}'), ${dbCluster}-1, 1))))" returnProperty="masterHost" />
+
+		<!-- Try/finally so we can make sure to clean up sensitive files -->
+		<trycatch>
+			<try>
+				<!-- Setup access file -->
+				<phingcall target="db-setup-access-file" />
+
+				<!-- Run updates -->
+				<phingcall target="db-migration-enhanced">
+					<property name="masterHost" value="${masterHost}" />
+				</phingcall>
+			</try>
+
+			<finally>
+				<!-- Cleanup files -->
+				<phingcall target="db-teardown-access-file" />
+			</finally>
+		</trycatch>
 	</target>
 
-	<target name='install-10000xn'>
-		<echo msg="Installing 10,000 users' data across ${total_user_clusters} user clusters"/>
+	<target name="db-setup-access-file" hidden="true">
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
 
-		<phingcall target="install-test-userset">
-			<property name="data_subdir" value="10000"/>
-			<property name="zoosk_db_file" value="10000/zoosk_10000.tar.gz"/>
-			<property name="msg_db_file" value="10000/msg1_10000.tar.gz"/>
-			<property name="util_db_file" value="10000/util_10000.tar.gz"/>
-			<property name="user_db_file" value="10000/user1_10000.tar.gz"/>
-			<property name="install_all_clusters" value="1"/>
-		</phingcall>
-	</target>
-
-	<!-- ==============================================	-->
-    <!-- Target: install-test-userset					-->
-    <!--	@param data_subdir							-->
-	<!--	@param zoosk_db_file						-->
-	<!--	@param user_db_file							-->
-	<!--	@param install_all_clusters					-->
-    <!-- ==============================================	-->
-	<target name='install-test-userset'>
-		<php expression="array_shift(explode('|', '${global}', 2))" returnProperty="globaldb" />
-		<php expression="array_shift(explode('|', '${util}', 2))" returnProperty="utildb" />
-
+		<!-- Remove old copy if it exists -->
 		<if>
-			<equals arg1="${install_all_clusters}" arg2="1" />
+			<available file="${temp_dir}/mysql.cnf" />
 			<then>
-				<php expression="implode(',', range(1, ${total_user_clusters}))" returnProperty="user_cluster_list" />
-				<php expression="implode(',', range(1, ${total_msg_clusters}))" returnProperty="msg_cluster_list" />
-				<php expression="implode(',', range(1, ${total_affinity_clusters}))" returnProperty="affinity_cluster_list" />
+				<delete file="${temp_dir}/mysql.cnf" failonerror="true" />
 			</then>
-			<else>
-				<property name="user_cluster_list" value="1" />
-				<property name="msg_cluster_list" value="1" />
-				<property name="affinity_cluster_list" value="1" />
-			</else>
 		</if>
 
-		<if>
-			<available file="${data_tmp_dir}" />
-			<then>
-				<delete dir="${data_tmp_dir}" includeemptydirs="true" verbose="true" failonerror="true" />
-			</then>
-		</if>
-		<mkdir dir="${data_tmp_dir}" />
-
-		<untar file="${zoosk_db_file}" todir="${data_tmp_dir}/zoosk" />
-		<untar file="${util_db_file}" todir="${data_tmp_dir}/util" />
-		<untar file="${user_db_file}" todir="${data_tmp_dir}/user1" />
-		<untar file="${msg_db_file}" todir="${data_tmp_dir}/msg1" />
-
-		<copy todir="${temp_dir}" overwrite="true">
-			<fileset dir="${data_subdir}">
-				<include name="zoosk_in.sql" />
-				<include name="user1_in.sql" />
-				<include name="msg1_in.sql" />
-				<include name="affinity1_in.sql" />
-				<include name="util_in.sql" />
-			</fileset>
+		<!-- Copy mysql configuration file -->
+		<copy file="mysql.cnf" tofile="${temp_dir}/mysql.cnf" >
 			<filterchain>
 				<replacetokens begintoken="##" endtoken="##">
-					<!-- environment -->
-					<token key="DATA_TEMP_DIR" value="${data_tmp_dir}" />
+					<token key="DB_HOST" value="${masterHost}" />
+					<token key="DB_USER" value="${dbusernamemigration}" />
+					<token key="DB_PASSWORD" value="${dbpasswordmigration}" />
 				</replacetokens>
 			</filterchain>
 		</copy>
+	</target>
 
-		<!-- load all the global data into the database -->
-    <echo msg="${mysql_root_exec} -h${globaldb} ${dbprefix}zoosk &lt; ${temp_dir}/zoosk_in.sql" />
-		<exec passthru="true" checkreturn="true" command="${mysql_root_exec} -h${globaldb} ${dbprefix}zoosk &lt; ${temp_dir}/zoosk_in.sql"/>
+	<target name="db-teardown-access-file" hidden="true">
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
 
-		<!-- load all the util data into the database -->
-		<exec passthru="true" checkreturn="true" command="${mysql_root_exec} -h${utildb} ${dbprefix}util &lt; ${temp_dir}/util_in.sql"/>
+		<!-- Delete the config file -->
+		<delete file="${temp_dir}/mysql.cnf" failonerror="true" />
+	</target>
 
-		
-		<!-- load the user data into each of the user databases -->
-		<foreach list="${user_cluster_list}" param="cluster" target="install-user-cluster-testdata">
-			<property name="input_file" value="${temp_dir}/user1_in.sql" />
-		</foreach>
+	<target name="db-setup-root-access-file" hidden="true">
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
 
-		<!-- load the msg data into each of the msg databases -->
-		<foreach list="${msg_cluster_list}" param="cluster" target="install-msg-cluster-testdata">
-			<property name="input_file" value="${temp_dir}/msg1_in.sql" />
-		</foreach>
-
-		<!-- load the affinity data into each of the msg databases -->
-		<foreach list="${affinity_cluster_list}" param="cluster" target="install-affinity-cluster-testdata">
-			<property name="input_file" value="${temp_dir}/affinity1_in.sql" />
-		</foreach>
-
+		<!-- Remove old copy if it exists -->
 		<if>
-			<equals arg1="${install_all_clusters}" arg2="1" />
+			<available file="${temp_dir}/mysql_root.cnf" />
 			<then>
-				<!-- Run scripts that tweak the data in the DB to be correct for the number of databases -->
-				<foreach list="${user_cluster_list}" param="cluster" target="global-correction" />
-				<foreach list="${user_cluster_list}" param="cluster" target="user-correction" />
-				<foreach list="${user_cluster_list}" param="cluster" target="util-correction" />
+				<delete file="${temp_dir}/mysql_root.cnf" failonerror="true" />
 			</then>
 		</if>
 
-		<delete file="${temp_dir}/zoosk_in.sql" />
-		<delete file="${temp_dir}/util_in.sql" />
-		<delete file="${temp_dir}/user1_in.sql" />
-		<delete file="${temp_dir}/msg1_in.sql" />
-		<delete dir="${data_tmp_dir}" />
-
-	</target>
-	
-    <!-- =============================================	-->
-    <!-- Target: install-affinity-cluster-testdata		-->
-    <!--	@param cluster								-->
-	<!--	@param input_file							-->
-    <!-- =============================================	-->
-	<target name="install-affinity-cluster-testdata">
-		<php expression="array_shift(explode('|', array_shift(array_slice(explode(',', '${affinity}'), ${cluster}-1, 1)), 2))" returnProperty="masterHost" />
-		<exec passthru="true" checkreturn="true" command="${mysql_root_exec} -h${masterHost} ${dbprefix}affinity${cluster} &lt; ${input_file}"/>
-	</target>
-	
-    <!-- =============================================	-->
-    <!-- Target: install-user-cluster-testdata			-->
-    <!--	@param cluster								-->
-	<!--	@param input_file							-->
-    <!-- =============================================	-->
-	<target name="install-user-cluster-testdata">
-		<php expression="array_shift(explode('|', array_shift(array_slice(explode(',', '${user}'), ${cluster}-1, 1)), 2))" returnProperty="masterHost" />
-		<exec passthru="true" checkreturn="true" command="${mysql_root_exec} -h${masterHost} ${dbprefix}user${cluster} &lt; ${input_file}"/>
-	</target>
-
-    <!-- =============================================	-->
-    <!-- Target: install-msg-cluster-testdata			-->
-    <!--	@param cluster								-->
-	<!--	@param input_file							-->
-    <!-- =============================================	-->
-	<target name="install-msg-cluster-testdata">
-		<php expression="array_shift(explode('|', array_shift(array_slice(explode(',', '${msg}'), ${cluster}-1, 1)), 2))" returnProperty="masterHost" />
-		<exec passthru="true" checkreturn="true" command="${mysql_root_exec} -h${masterHost} ${dbprefix}msg${cluster} &lt; ${input_file}"/>
-	</target>
-
-	
-	<!-- =============================================	-->
-	<!-- Target: global-correction						-->
-	<!--	@param cluster								-->
-	<!-- =============================================	-->
-	<target name="global-correction">
-		<phingcall target="exec-user-cluster-script">
-			<property name="sqlfile" value="global_update.sql" />
-			<property name="db_host" value="${globaldb}" />
-			<property name="db_name" value="${dbprefix}zoosk" />
-		</phingcall>
-	</target>
-	
-	<!-- =============================================	-->
-	<!-- Target: util-correction						-->
-	<!--	@param cluster								-->
-	<!-- =============================================	-->
-	<target name="util-correction">
-		<phingcall target="exec-user-cluster-script">
-			<property name="sqlfile" value="util_update.sql" />
-			<property name="db_host" value="${utildb}" />
-			<property name="db_name" value="${dbprefix}util" />
-		</phingcall>
-	</target>
-	
-	<!-- =============================================	-->
-	<!-- Target: user-correction						-->
-	<!--	@param cluster								-->
-	<!-- =============================================	-->
-	<target name="user-correction">
-		<php expression="array_shift(explode('|', array_shift(array_slice(explode(',', '${user}'), ${cluster}-1, 1)), 2))" returnProperty="user_host" />
-		
-		<phingcall target="exec-user-cluster-script">
-			<property name="sqlfile" value="user_update.sql" />
-			<property name="db_host" value="${user_host}" />
-			<property name="db_name" value="${dbprefix}user${cluster}" />
-		</phingcall>
-	</target>
-	
-	
-	
-	<!-- =============================================	-->
-	<!-- Target: exec-user-cluster-script				-->
-	<!--	@param cluster								-->
-	<!--	@param sqlfile								-->
-	<!--	@param db_host								-->
-	<!--	@param db_name								-->
-	<!-- =============================================	-->
-	<target name="exec-user-cluster-script">
-		<delete file="${temp_dir}/${sqlfile}" />
-		<copy todir="${temp_dir}" overwrite="true">
-			<fileset dir="${data_subdir}">
-				<include name="${sqlfile}" />
-			</fileset>
+		<!-- Copy mysql configuration file -->
+		<copy file="mysql.cnf" tofile="${temp_dir}/mysql_root.cnf" >
 			<filterchain>
 				<replacetokens begintoken="##" endtoken="##">
-					<!-- environment -->
-					<token key="TOTAL_CLUSTERS" value="${total_user_clusters}" />
-					<token key="CLUSTER" value="${cluster}" />
+					<token key="DB_HOST" value="${masterHost}" />
+					<token key="DB_USER" value="root" />
+					<token key="DB_PASSWORD" value="${rootdbpass}" />
 				</replacetokens>
 			</filterchain>
 		</copy>
-		<exec passthru="true" checkreturn="true" command="${mysql_root_exec} -h${db_host} ${db_name} &lt; ${temp_dir}/${sqlfile}"/>
-		<delete file="${temp_dir}/${sqlfile}" />
 	</target>
 
+	<target name="db-teardown-root-access-file" hidden="true">
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
+
+		<!-- Delete the config file -->
+		<delete file="${temp_dir}/mysql_root.cnf" failonerror="true" />
+	</target>
+
+	<target name='db-schema-enhanced' hidden="true">
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
+		<exec passthru="true" checkreturn="true" command="mysql --defaults-extra-file=${temp_dir}/mysql.cnf --default-character-set=utf8 ${dbprefix}${dbName} &lt; ${dbPath}/schema.sql" />
+	</target>
+
+	<target name='db-migration-enhanced' hidden="true">
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
+		<!-- Delete any pre-existing copies of required files -->
+		<if>
+			<available file="${temp_dir}/run-migration-enhanced" />
+			<then>
+				<delete file="${temp_dir}/run-migration-enhanced" failonerror="true" />
+			</then>
+		</if>
+
+		<!-- Try/finally so we can make sure to clean up sensitive files -->
+		<trycatch>
+			<try>
+				<!-- Copy migration script -->
+				<copy file="run-migration-enhanced" tofile="${temp_dir}/run-migration-enhanced" >
+					<filterchain>
+						<replacetokens begintoken="##" endtoken="##">
+							<token key="DB_NAME" value="${dbprefix}${dbName}" />
+							<token key="MYSQL_CNF" value="${temp_dir}/mysql.cnf" />
+						</replacetokens>
+					</filterchain>
+				</copy>
+
+				<exec passthru="true" checkreturn="true" command="cd ${dbPath} &amp;&amp; bash ${temp_dir}/run-migration-enhanced"/>
+			</try>
+
+			<finally>
+				<!-- Cleanup files -->
+				<delete file="${temp_dir}/run-migration-enhanced" failonerror="true" />
+			</finally>
+		</trycatch>
+	</target>
+
+	<target name='db-users-enhanced' hidden="true">
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
+		<!-- Delete any pre-existing copies of required files -->
+		<if>
+			<available file="${temp_dir}/create.sql" />
+			<then>
+				<delete file="${temp_dir}/create.sql" failonerror="true" />
+			</then>
+		</if>
+
+		<!-- Try/finally so we can make sure to clean up sensitive files -->
+		<trycatch>
+			<try>
+				<!-- Copy creation script -->
+				<copy file="create.sql" tofile="${temp_dir}/create.sql" >
+					<filterchain>
+						<replacetokens begintoken="##" endtoken="##">
+							<token key="DB_HOST" value="${masterHost}" />
+							<token key="DB_NAME" value="${dbprefix}${dbName}" />
+							<token key="DB_USER" value="${dbusernameutl}" />
+							<token key="DB_PASSWORD" value="${dbUserPassword}" />
+							<token key="DB_BASEPASS" value="${dbpassword}" />
+							<token key="DB_PREFIX" value="${dbprefix}" />
+						</replacetokens>
+					</filterchain>
+				</copy>
+				<exec passthru="true" checkreturn="true" command="mysql --defaults-extra-file=${temp_dir}/mysql_root.cnf --default-character-set=utf8 &lt; ${temp_dir}/create.sql" />
+			</try>
+
+			<finally>
+				<!-- Cleanup files -->
+				<delete file="${temp_dir}/create.sql" failonerror="true" />
+			</finally>
+		</trycatch>
+	</target>
+
+	<target name='db-data-enhanced' hidden="true">
+		<echo msg="DB ${dbName} CLUSTER ${dbCluster}" />
+		<!-- Delete any pre-existing copies of required files -->
+		<if>
+			<available file="${temp_dir}/data.sql" />
+			<then>
+				<delete file="${temp_dir}/data.sql" failonerror="true" />
+			</then>
+		</if>
+
+		<!-- Try/finally so we can make sure to clean up sensitive files -->
+		<trycatch>
+			<try>
+				<!-- Copy data script -->
+				<copy file="./${dbPath}/data.sql" tofile="${temp_dir}/data.sql" >
+					<filterchain>
+						<replacetokens begintoken="##" endtoken="##">
+							<token key="DB_HOST" value="${masterHost}" />
+							<token key="PUBLISH_DIR" value="${app-publish-dir}" />
+							<token key="TOOLS_DIR" value="${toolsroot-dir}" />
+							<token key="GEOIP_DIR" value="${datapublish-geoip-dir}" />
+						</replacetokens>
+					</filterchain>
+				</copy>
+				<exec passthru="true" checkreturn="true" command="mysql --defaults-extra-file=${temp_dir}/mysql.cnf --default-character-set=utf8 ${dbprefix}${dbName} &lt; ${temp_dir}/data.sql"/>
+			</try>
+
+			<finally>
+				<!-- Cleanup files -->
+				<delete file="${temp_dir}/data.sql" failonerror="true" />
+			</finally>
+		</trycatch>
+	</target>
 </project>
