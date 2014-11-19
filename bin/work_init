@@ -80,7 +80,7 @@ ZENV_SERVERDIR="${ZENV_LOCAL_DEPLOY_DIR}/zoosk/releases/${ZENV_DEVID}"
 ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}"
 
 # Create your target dirs if they do not already exist
-DIRS="zoosk/releases/${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service psyche-dev${ZENV_DEVID}/current"
+DIRS="zoosk/shared zoosk/releases/${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service psyche-dev${ZENV_DEVID}/current"
 for d in ${DIRS}; do
     mkdir -p ${ZENV_LOCAL_DEPLOY_DIR}/${d}
 done
@@ -143,7 +143,7 @@ while [ $DONE -eq 0 ]; do
 
         ZENV_BUILDPROPS_COMMON="${ZENV_CURRENT_WORK}/vmdev.properties"
 	    ZENV_BUILD_COMMAND="phing -logger phing.listener.DefaultLogger -Dpf1=\${ZENV_BUILDPROPS} -Dpf2=\${ZENV_BUILDPROPS_COMMON}"
-        ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service"
+        ZENV_RSYNC_DIRECTORIES="zoosk/shared zoosk/releases/${ZENV_DEVID} dev${ZENV_DEVID}_payment-service dev${ZENV_DEVID}_photo-service dev${ZENV_DEVID}-themis dev${ZENV_DEVID}_utility-service dev${ZENV_DEVID}_catalog-service"
 	    update_properties
 	    DONE=1
 	    ;;
