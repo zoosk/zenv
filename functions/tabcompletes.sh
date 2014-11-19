@@ -18,7 +18,7 @@ complete -F _tabcomp_use zbranch
 _tabcomp_worker() {
     local cur workers
     if [ "$ZENV_SERVERDIR" != '' ]; then
-        workers=$(/bin/ls ${ZENV_SERVERDIR}/current/web/services/jobworkers | cut -d / -f 1)
+        workers=$(/bin/ls ${ZENV_SERVERDIR}/web/services/jobworkers | cut -d / -f 1)
         cur="${COMP_WORDS[COMP_CWORD]}"
         COMPREPLY=( $(compgen -W "${workers}" -- ${cur}) )
     else
@@ -32,7 +32,7 @@ _tabcomp_webscript() {
     local cur scripts dirbase
     if [ "$ZENV_SERVERDIR" != '' ]; then
         cur="${COMP_WORDS[COMP_CWORD]}"
-        dirbase="${ZENV_SERVERDIR}/current/web/scripts"
+        dirbase="${ZENV_SERVERDIR}/web/scripts"
         if [[ $cur == */* ]]; then
             local files=("${dirbase}/$2"*)
             [[ -e ${files[0]} ]] && COMPREPLY=( "${files[@]##${dirbase}/}" )
@@ -55,7 +55,7 @@ _tabcomp_testscript() {
     local cur scripts dirbase
     if [ "$ZENV_SERVERDIR" != '' ]; then
         cur="${COMP_WORDS[COMP_CWORD]}"
-        dirbase="${ZENV_SERVERDIR}/current/web/test"
+        dirbase="${ZENV_SERVERDIR}/web/test"
         if [[ $cur == */* ]]; then
             local files=("${dirbase}/$2"*)
             [[ -e ${files[0]} ]] && COMPREPLY=( "${files[@]##${dirbase}/}" )
