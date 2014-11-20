@@ -85,6 +85,15 @@ for d in ${DIRS}; do
     mkdir -p ${ZENV_LOCAL_DEPLOY_DIR}/${d}
 done
 
+echo "Checking if you have a /srv/zoosk/current symlink"
+if [ ! -L "/srv/zoosk/current" ]; then
+  echo "Creating symlink /srv/zoosk/current pointing to /srv/zoosk/releases/${ZENV_DEVID}"
+  rm -rf /srv/zoosk/current
+  ln -sf /srv/zoosk/releases/${ZENV_DEVID} /srv/zoosk/current
+else
+  echo "/srv/zoosk/current symlink existed."
+fi
+
 read -p 'Many commands require a connection to your dev instance. Would you like to set up an SSH key to log in without a password [y/n] (n)? ' TEMP
 if [ "$TEMP" == 'y' ]; then
     if [ ! -e ~/.ssh/id_rsa ]; then
