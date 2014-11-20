@@ -1,0 +1,14 @@
+# Work file to fix ./build.xml for OSX/Linux cross-compatible use (tar broken)
+
+# ORIGINAL COMMAND: RET_WD=&quot;${PWD}&quot; &amp;&amp; LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2&gt;/dev/null | grep '&lt;version&gt;'| sed -e 's/&lt;[/]*version&gt;//g' | sort -b -g | tail -1 | awk '{$1=$1}1') &amp;&amp; mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase-dir}/themis-master.tgz &amp;&amp; cd ${themisbase-dir} &amp;&amp; tar -xzf themis-master.tgz --wildcards php/* &amp;&amp; cp -R php/* ${themisroot-dir}/ &amp;&amp; rm -rf ${themisbase-dir}/themis-master.tgz &amp;&amp; rm -rf ${themisbase-dir}/php &amp;&amp; cd &quot;${RET_WD}&quot;
+
+# UNESCAPED COMMAND: RET_WD="${PWD}" && LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2>/dev/null | grep '<version>'| sed -e 's/<[/]*version>//g' | sort -b -g | tail -1 | awk '{$1=$1}1') && mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase_dir}/themis-master.tgz && cd ${themisbase_dir} && tar -xzf themis-master.tgz --wildcards php/* && cp -R php/* ${themisroot-dir}/ && rm -rf ${themisbase_dir}/themis-master.tgz && rm -rf ${themisbase_dir}/php && cd "${RET_WD}"
+
+# SET ENV VARS per zoosk/zooskdev.properties
+  dev_projname="dev89";
+  root_dir="/srv/${dev_projname}";
+  themisbase_dir="${root_dir}-themis"
+  themisroot_dir="${themisbase_dir}/current"
+
+# EXECUTE download of test tar file
+RET_WD="${PWD}" && LATEST=$(curl http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/com/zoosk/themis-master/maven-metadata.xml 2>/dev/null | grep '<version>'| sed -e 's/<[/]*version>//g' | sort -b -g | tail -1 | awk '{$1=$1}1') && mvn org.apache.maven.plugins:maven-dependency-plugin:2.4:get -DremoteRepositories=http://build1qa.sfo2.zoosk.com:8081/nexus/content/repositories/themis/ -Dartifact=com.zoosk:themis-master:$LATEST:tgz -Ddest=${themisbase_dir}/themis-master.tgz 
