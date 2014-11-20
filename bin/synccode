@@ -48,3 +48,6 @@ for d in ${DIRS}; do
             ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
     fi
 done
+
+echo "Creating symlink /srv/zoosk/current pointing to /srv/zoosk/releases/${ZENV_DEVID}"
+ln -sfn /srv/zoosk/releases/${ZENV_DEVID} /srv/zoosk/current
