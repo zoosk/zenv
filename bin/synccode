@@ -38,13 +38,13 @@ for d in ${DIRS}; do
     fi
     if [ -e ${ZENV_LOCAL_DEPLOY_DIR}/${d} ]; then
         echo "Rsync ${ZENV_LOCAL_DEPLOY_DIR}/${d} to ${ZENV_DEVSERVER}:/srv/${d}/ at $(date)"
-        rsync -az --delete $ph  --exclude="shared/media" \
-                               --exclude="shared/working" \
-                               --exclude="shared/photoworking" \
-                               --exclude="shared/certs" \
-                               --exclude="shared/log" \
-                               --exclude="shared/environment.json" \
-                               --exclude="shared/server.json" \
+        rsync -az --delete $ph  --exclude="media" \
+                               --exclude="working" \
+                               --exclude="photoworking" \
+                               --exclude="certs" \
+                               --exclude="log" \
+                               --exclude="environment.json" \
+                               --exclude="server.json" \
             ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
     fi
 done
