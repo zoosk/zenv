@@ -18,6 +18,8 @@ def readprops(*property_names):
         with open(os.environ['ZENV_BUILDPROPS_COMMON'], 'r') as fp:
             settings_string += fp.read()
 
+    settings_string += "\n"
+    
     with open(os.environ['ZENV_BUILDPROPS'], 'r') as fp:
         settings_string += fp.read()
 
