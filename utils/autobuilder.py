@@ -1,11 +1,6 @@
 #! /usr/bin/env python
 
-try:
-    from fsevents import Observer
-    from fsevents import Stream
-except ImportError:
-    print 'You need to install fsevents to be able to watch for changes. Please run sudo easy_install macfsevents.'
-    exit(1)
+import warnings
 
 import os
 from os.path import basename
@@ -17,15 +12,23 @@ from pipes import quote
 import re
 import signal
 
+import sys
+import time
+import logging
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+# from watchdog.events import LoggingEventHandler
+#       try:
+#           from fsevents import Observer
+#           from fsevents import Stream
+#       except ImportError:
+#           print 'You need to install fsevents to be able to watch for changes. Please run sudo easy_install macfsevents.'
+#           exit(1)
 
 # Settings
 BUILD_SETTINGS_FILE = 'autobuild_settings'
-DEBUG = False
-
-# Events
-UPDATE_EVENT = 0x2
-ADD_EVENT = 0x100
-DELETE_EVENT = 0x200
+DEBUG = True
 
 # Keywords
 KEY_COMMENT = '#'
@@ -61,20 +64,31 @@ def is_excluded_filename(name):
     """ Check if a file should be excluded from builds. """
     return name.startswith('.') or name.startswith('#') or name.endswith('~') or name in EXCLUDED_FILE_NAMES
 
-def callback(event):
+def on_created(event):
+    file_path = event.src_path
+    event_type = event.event_type
+    print 'Created', file_path, event_type
+    return
+
+def on_any_event(event):
+    file_path = event.src_path
+    event_type = event.event_type
+    print 'Any', file_path, event_type
+    return
+
     """ Callback function for when a file is changed. """
     if DEBUG:
-        print 'Caught event %d for %s' % (event.mask, event.name)
-    if (event.mask == UPDATE_EVENT or event.mask == ADD_EVENT or event.mask == DELETE_EVENT) and not is_excluded_path(event.name):
+        print 'Caught event %d for %s' % ( event_type, file_path )
+    if (event_type == 'modified' or event_type == 'created' or event_type == 'deleted') and not is_excluded_path(file_path):
         # Get the name of the changed file
-        filename = basename(event.name)
+        filename = basename(file_path)
         if is_excluded_filename(filename):
             print '%s was changed, and is excluded.' % filename
             return
 
         # Travel up the directory structure until we find one with a settings file in it
         extra_dirs = []
-        settings_dir = dirname(event.name)
+        settings_dir = dirname(file_path)
         while not exists(settings_dir + '/' + BUILD_SETTINGS_FILE) and settings_dir != '/':
             extra_dirs.insert(0, basename(settings_dir)+'/')
             settings_dir = dirname(settings_dir)
@@ -84,15 +98,15 @@ def callback(event):
 
         if settings_dir == '/':
             # This is certainly not a workspace
-            print 'Could not find a settings file appropriate for %s.' % event.name
+            print 'Could not find a settings file appropriate for %s.' % file_path
             return
 
         # Get the kind of rules that we are looking for
-        if event.mask == UPDATE_EVENT:
+        if event_type == 'modified':
             rules_to_run = set([KEY_ALL, KEY_UPDATE, KEY_ADDUP, KEY_UPDEL])
-        elif event.mask == ADD_EVENT:
+        elif event_type == 'created':
             rules_to_run = set([KEY_ALL, KEY_ADD, KEY_ADDUP, KEY_ADDDEL])
-        elif event.mask == DELETE_EVENT:
+        elif event_type == 'deleted':
             rules_to_run = set([KEY_ALL, KEY_DELETE, KEY_ADDDEL, KEY_UPDEL])
         else:
             print 'OH GOD AN UNHANDLED EVENT'
@@ -144,7 +158,7 @@ def callback(event):
                             break
                         elif key_line not in rules_to_run:
                             if DEBUG:
-                                print 'Rule %s does not apply to event %d on %s.' % (key_line, event.mask, rule)
+                                print 'Rule %s does not apply to event %d on %s.' % (key_line, event_type, rule)
                             # Skip the contents of this rule
                             key_line = fp.readline()
                             while re.match('^'+indent+indent, key_line):
@@ -184,7 +198,7 @@ def callback(event):
         match_groups = {str(i + 1): groups[i] for i in xrange(len(groups))}
 
         # Replace autobuild variables $0, $1, $2, etc with Python-esqe $(0)s, $(1)s, etc and use that to pass matched groups in
-        match_groups['0'] = relpath(event.name, settings_dir)
+        match_groups['0'] = relpath(file_path, settings_dir)
         commands = re.sub('\$\{([0-9]+)\}', '%(\\1)s', re.sub('\$([0-9]+)', '%(\\1)s', commands)) % match_groups
 
         # Add the inherited ZEnv variables
@@ -194,7 +208,7 @@ def callback(event):
         full_program = '; '.join([inherited_envs, var_decls, commands])
 
         # Run the command
-        print 'Running build for %s' % event.name
+        print 'Running build for %s' % file_path
         if DEBUG:
             print full_program
         else:
@@ -202,16 +216,19 @@ def callback(event):
         os.system(('cd %s; ' % settings_dir) + full_program)
         print "Build complete.\n"
 
+if __name__ == '__main__':
+    observer = Observer()
+    event_handler = FileSystemEventHandler();
+    event_handler.on_any_event = on_any_event;
+    event_handler.on_created   = on_created; 
 
-# mikem - changes for watchdog
-observer = Observer()
-observer.schedule( callback, local_path, recursive=True)
-observer.start()
+    observer.schedule( event_handler, local_path, recursive=True)
+    observer.start()
 
-try:
-    while True:
-        time.sleep(1)
-except keyboardInterupt
+    try:
+        while True:
+            time.sleep(10)
+    except keyboardInterupt:
+        observer.stop()
 
-    observer.stop()
-observer.join()
+    observer.join()

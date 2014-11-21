@@ -22,18 +22,18 @@ cd "$ZENV_CURRENT_WORK"
 
 REPO_TYPE=$(inspect "$PWD" repo_type 2>/dev/null)
 
-# Fail if the user doesn't have the mac developer tools installed
-if [ "$(which clang)" == '' ]; then
-    echoerr 'You must have the Xcode command line tools installed to run the automatic builder.'
-    echoerr 'http://docwiki.embarcadero.com/RADStudio/XE4/en/Installing_the_Xcode_Command_Line_Tools_on_a_Mac'
-    exit 1
-fi
-# Automatically install MacFSEvents when you try to run this without it
-if [ "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
-    echoerr 'You need to install MacFSEvents to use the automatic builder. If prompted, please type your sudo password below to install it.'
-    sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future easy_install macfsevents || exit 1
-    echo -e "---------------------------------------------------------\n"
-fi
+# # Fail if the user doesn't have the mac developer tools installed
+# if [ "$(which clang)" == '' ]; then
+#     echoerr 'You must have the Xcode command line tools installed to run the automatic builder.'
+#     echoerr 'http://docwiki.embarcadero.com/RADStudio/XE4/en/Installing_the_Xcode_Command_Line_Tools_on_a_Mac'
+#     exit 1
+# fi
+# # Automatically install MacFSEvents when you try to run this without it
+# if [ "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
+#     echoerr 'You need to install MacFSEvents to use the automatic builder. If prompted, please type your sudo password below to install it.'
+#     sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future easy_install macfsevents || exit 1
+#     echo -e "---------------------------------------------------------\n"
+# fi
 
 
 case "$REPO_TYPE" in
