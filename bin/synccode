@@ -46,7 +46,6 @@ for d in ${DIRS}; do
                                --exclude="environment.json" \
                                --exclude="server.json" \
                                --exclude="paypal-certs" \
-                               --exclude="working_certs" \
             ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
     fi
 done
