@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+PLATFORM=$(uname -a |grep -qi linux && echo 'linux' || echo 'osx');
+
 # Usage information
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
@@ -14,7 +16,8 @@ if [ -z "$ZENV_INITIALIZED" ]; then
 fi
 
 if [ -z "$ZENV_CURRENT_WORK" ]; then
-    echo "${RED}${BOLD}FAILED!${TXTRESET} You are not using a checkout, so you can't build anything."
+    echo "${RED}${BOLD}FAILED!${TXTRESET} You are not using a checkout,"
+    echo "    so you can't build anything."
     exit 1
 fi
 
@@ -28,18 +31,18 @@ function versioncompare() {
 
     REQ_COUNT="${#REQ_LIST[@]}";
     IDX=0;
-    
+
     printf "Checking version of ${PROGRAM}..."
     while [ "${IDX}" -lt "${REQ_COUNT}" ]; do
-      RV="${REQ_LIST[IDX]}";
-      MV="${MY_LIST[IDX]}";
-      # echo "${RV} ${MV}";
-      if [ "${RV}" != "${MV}" ]; then
-        echo "${RED}${BOLD}FAILED!${TXTRESET} Your version of ${PROGRAM} is "
-        echo "${MY_VERSION}, but ${REQUIRED_VERSION} is required."
-        exit 1;
-      fi
-      let IDX++;
+        RV="${REQ_LIST[IDX]}";
+        MV="${MY_LIST[IDX]}";
+        # echo "${RV} ${MV}";
+        if [ "${RV}" != "${MV}" ]; then
+            echo "${RED}${BOLD}FAILED!${TXTRESET}. ${PROGRAM} is "
+            echo "version ${MY_VERSION}, but ${REQUIRED_VERSION} required."
+            exit 1;
+        fi
+        let IDX++;
     done
     echo ${MY_VERSION}
 }
@@ -58,7 +61,7 @@ echo 'Checking if your system can install Zoosk...'
 
 checkinstalled php
 PHP_VERSION=$(php -v | /usr/bin/head -1 | awk '{print $2}')
-versioncompare php $PHP_VERSION '5.5' # .11
+versioncompare php $PHP_VERSION '5.5' # was 5.5.11
 
 checkinstalled mysql
 
@@ -86,7 +89,9 @@ if [ "$?" != '0' ]; then
 fi
 echo 'Success'
 
-# checkinstalled xcode-select
+if [ "${PLATFORM}" = "osx" ]; then
+  checkinstalled xcode-select
+fi
 
 checkinstalled clang
 checkinstalled gcc
@@ -96,7 +101,6 @@ PHING_VERSION="$(phing -v | awk '{print $2}')"
 versioncompare phing $PHING_VERSION '2.8' # was '2.7.0'
 
 printf "Checking for access to MySQL..."
-printf "${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass)"
 
 if [ "$(echo 'show databases;' | mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass) mysql >/dev/null 2>1; echo $?)" != '0' ]; then
     echo "${RED}${BOLD}FAILED!${TXTRESET} Cannot log into MySQL as root. Please talk to TechOps."
@@ -105,9 +109,7 @@ fi
 echo 'Success'
 
 checkinstalled mvn
-
 checkinstalled git
-
 checkinstalled thrift
 
 echo "${GREEN}${BOLD}SUCCESS!${TXTRESET}"
