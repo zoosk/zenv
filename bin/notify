@@ -1,6 +1,10 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 # Cross-platform OSX / Linux notification utility
+
+# bail on errors and undefined values
+# set -e
+# set -u
 
 # Startup checks
 if [ -z "$ZENV_INITIALIZED" ]; then
@@ -10,45 +14,81 @@ fi
 
 NTITLE=''; # Title
 NMSG='';   # Message
-NTIME=2;   # Residency time
+NWAIT=2;   # Residency time
 
 # Set title and message per options
-while getopts "t:m:" arg; do
-  case $arg in
-    t)
-      NTITLE="${OPTARG}"
+while :; do
+  case $1 in
+    -h|--help|-\?)
+      echo "One day, this will be helpful."
+      exit
       ;;
-    m)
-      NMSG="${OPTARG}"
+    -t|-title|--title)
+      if [ "${2}" ]; then
+        NTITLE="${2}"
+        shift 2
+        continue
+      else
+        echo "Error, option ${1} requires an argument."
+        exit 1
+      fi
       ;;
+    -m|-message|--message)
+      if [ "${2}" ]; then
+        NMSG="${2}"
+        shift 2
+        continue
+      else
+        echo "Error, option ${2} requires an argument."
+        exit 1
+      fi
+      ;;
+    -w|-wait|--wait)
+      if [ "${2}" ]; then
+        let NWAIT="${2}"+0
+        shift 2
+        continue
+      else
+        echo "Error, option ${2} requires an argument."
+        exit 1
+      fi
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      # If no options provided, use the first argument as the mssage
+      if [ -z "${NTITLE}" ] && [ -z "${NMSG}" ]; then
+        NMSG="${1}"
+        NTITLE=""
+        if [ -z "${NMSG}" ]; then exit 0; fi
+      fi
+      break
   esac
+  shift
 done
 
-# If no options provided, use the first argument as the mssage
-if [ -z "${NTITLE}" ] && [ -z "${NMSG}" ]; then
-  NMSG="{$1}";
-  if [ -z "${NMSG}" ]; then exit 0; fi
-fi
 
 # This environment variable should be set for all Linux distros
 # and will provide 'KDE', 'UNITY', 'GNOME', etc
-NOTIFY_DE="${XDG_CURRENT_DESKTOP}";
+NOTIFY_DE="${XDG_CURRENT_DESKTOP}"
 
 case "${NOTIFY_DE}" in
   '') # OSX
     BIN_FILE="${ZENV_ROOT}/utils/terminal-notifier.app/Contents/MacOS/terminal-notifier"
     if [ ! -z "${BIN_FILE}" ]; then
-      $BIN_FILE -title "${NTITLE}" -message "${NMSG}";
+      $BIN_FILE -title "${NTITLE}" -message "${NMSG}"
     fi
     ;;
   KDE) # KDE, of course
     if [ ! -z $(which kdialog) ]; then
-      kdialog --title "${NTITLE}" --passivepopup "${NMSG}" "${NTIME}";
+      kdialog --title "${NTITLE}" --passivepopup "${NMSG}" "${NWAIT}"
     fi
     ;;
   *) # Unity, Gnome, etc
     if [ ! -z $(which notify-send) ]; then
-      notify_send "${NTITLE}" "${NMSG}" -t "${NTIME}";
+      notify_send "${NTITLE}" "${NMSG}" -t "${NWAIT}"
     fi
     ;;
 esac
