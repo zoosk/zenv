@@ -1,9 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # Cross-platform OSX / Linux notification utility
 
-# bail on errors and undefined values
-# set -e
+# bail on errors
+set -e
+
+# bail on undefined values
 # set -u
 
 # Startup checks
@@ -11,7 +13,7 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'You must run this program from within ZEnv.'
     exit 1
 fi
-
+i=0;
 NTITLE=''; # Title
 NMSG='';   # Message
 NWAIT=2;   # Residency time
@@ -23,6 +25,7 @@ while :; do
       echo "One day, this will be helpful."
       exit
       ;;
+
     -t|-title|--title)
       if [ "${2}" ]; then
         NTITLE="${2}"
@@ -33,6 +36,7 @@ while :; do
         exit 1
       fi
       ;;
+
     -m|-message|--message)
       if [ "${2}" ]; then
         NMSG="${2}"
@@ -43,6 +47,7 @@ while :; do
         exit 1
       fi
       ;;
+
     -w|-wait|--wait)
       if [ "${2}" ]; then
         let NWAIT="${2}"+0
@@ -53,18 +58,21 @@ while :; do
         exit 1
       fi
       ;;
-    --)
+
+    --) # end of all options
       shift
       break
       ;;
+
     *)
-      # If no options provided, use the first argument as the mssage
+      # If no options provided, use the first argument as the message
       if [ -z "${NTITLE}" ] && [ -z "${NMSG}" ]; then
-        NMSG="${1}"
-        NTITLE=""
-        if [ -z "${NMSG}" ]; then exit 0; fi
+        NTITLE="${1}"
+        NMSG=""
+        if [ -z "${NTITLE}" ]; then exit 0; fi
       fi
       break
+      ;;
   esac
   shift
 done
@@ -73,6 +81,16 @@ done
 # This environment variable should be set for all Linux distros
 # and will provide 'KDE', 'UNITY', 'GNOME', etc
 NOTIFY_DE="${XDG_CURRENT_DESKTOP}"
+
+# Blank variables make some utilities cranky....
+if ( echo "${NTITLE}" |grep -q '^\s*$' ); then
+  NTITLE="--";
+fi
+
+if ( echo "${NMSG}" |grep -q '^\s*$' ); then
+  NMSG="--";
+fi
+
 
 case "${NOTIFY_DE}" in
   '') # OSX
@@ -83,6 +101,7 @@ case "${NOTIFY_DE}" in
     ;;
   KDE) # KDE, of course
     if [ ! -z $(which kdialog) ]; then
+      echo kdialog --title "\"${NTITLE}\" --passivepopup \"${NMSG}\" \"${NWAIT}\""
       kdialog --title "${NTITLE}" --passivepopup "${NMSG}" "${NWAIT}"
     fi
     ;;
