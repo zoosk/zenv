@@ -1,5 +1,12 @@
 #! /usr/bin/env python
 
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
+except ImportError:
+    print 'You need to install watchdog to be able to watch for changes. Please run sudo easy_install watchdog'
+    exit(1)
+
 import warnings
 
 import os
@@ -13,12 +20,10 @@ import re
 import signal
 
 import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
 # Settings
 BUILD_SETTINGS_FILE = 'autobuild_settings'
-DEBUG = True
+DEBUG = False
 
 # Keywords
 KEY_COMMENT = '#'
@@ -45,30 +50,30 @@ if 'ZENV_CURRENT_WORK' not in os.environ:
 local_path = os.environ['ZENV_CURRENT_WORK']
 server_path = os.environ['ZENV_SERVERDIR']
 
-def is_excluded_path( path ):
+def is_excluded_path(path):
     file_name = basename(path)
     return re.match( '^\d+$|.*~$', file_name ) or '.svn' in path or '.idea' in path or '/sass-cache' in path or '.git' in path
 
-def is_excluded_filename( name ):
+def is_excluded_filename(name):
     """ Check if a file should be excluded from builds. """
     return name.startswith('.') or name.startswith('#') or name.endswith('~') or name in EXCLUDED_FILE_NAMES
 
-def process_event( event_type, path ):
+def process_event(event_type, path):
     """ Utility to sync vm when a file is changed. """
     if DEBUG:
-        print 'Caught event %s for %s' % ( event_type, path )
+        print 'Caught event %s for %s' % (event_type, path)
 
-    if not re.match( 'modified|created|deleted', event_type):
+    if not re.match('modified|created|deleted', event_type):
         if DEBUG:
             print '    - skipped: event type not supported'
         return
 
-    if is_excluded_path( path ):
+    if is_excluded_path(path):
         if DEBUG:
             print '    - skipped: path pattern is excluded'
         return
 
-    filename = basename( path )
+    filename = basename(path)
     if is_excluded_filename(filename):
         if DEBUG:
             print '    - skipped: file name pattern is excluded'
@@ -76,7 +81,7 @@ def process_event( event_type, path ):
 
     # Travel up the directory structure until we find one with a settings file in it
     extra_dirs = []
-    settings_dir = dirname( path )
+    settings_dir = dirname(path)
     while not exists(settings_dir + '/' + BUILD_SETTINGS_FILE) and settings_dir != '/':
         extra_dirs.insert(0, basename(settings_dir)+'/')
         settings_dir = dirname(settings_dir)
@@ -116,7 +121,7 @@ def process_event( event_type, path ):
                 if DEBUG:
                     print 'Found a variable declaration: %s = %s' % (env_name, env_value)
                 continue
-            
+
             elif line.startswith(KEY_COMMENT):
                 if DEBUG:
                     print 'Found a comment: %s' % line
@@ -186,7 +191,7 @@ def process_event( event_type, path ):
         match_groups = {str(i + 1): groups[i] for i in xrange(len(groups))}
 
         # Replace autobuild variables $0, $1, $2, etc with Python-esqe $(0)s, $(1)s, etc and use that to pass matched groups in
-        match_groups['0'] = relpath( path, settings_dir )
+        match_groups['0'] = relpath(path, settings_dir)
         commands = re.sub('\$\{([0-9]+)\}', '%(\\1)s', re.sub('\$([0-9]+)', '%(\\1)s', commands)) % match_groups
 
         # Add the inherited ZEnv variables
@@ -204,26 +209,26 @@ def process_event( event_type, path ):
         os.system(('cd %s; ' % settings_dir) + full_program)
         print "Build complete.\n"
 
-def on_handled( event ):
+def on_handled(event):
     path       = event.src_path
     event_type = event.event_type
     class_name = event.__class__.__name__
-    if re.match( '^Dir', class_name ):
+    if re.match('^Dir', class_name):
         if DEBUG:
-            print '    - skipped dir %s' %( path )
+            print '    - skipped dir %s' %(path)
             return
 
-    return process_event( event_type, path );
+    return process_event(event_type, path);
 
 if __name__ == '__main__':
     observer = Observer()
     event_handler = FileSystemEventHandler()
-    event_handler.on_created   = on_handled 
+    event_handler.on_created   = on_handled
     event_handler.on_modified  = on_handled
     event_handler.on_deleted   = on_handled
 
     ## The following event types are not supported
-    # event_handler.on_moved     = on_moved 
+    # event_handler.on_moved     = on_moved
     # event_handler.on_any_event = on_any_event
 
     observer.schedule( event_handler, local_path, recursive=True)

@@ -28,7 +28,7 @@ if [ -e "$ZENV_SETTINGS" ]; then
     read -p 'You have already installed ZEnv; would you like to reinstall [y/n]? ' TEMP
     if [ "$TEMP" != 'y' ]; then
         exit 0
-    fi    
+    fi
 fi
 
 
@@ -52,9 +52,14 @@ fi
 
 # Give the option to install MacFSEvents, as the autobuilder requires it
 if [ "$(which clang)" != '' -a "$(python -c 'import watchdog' 2>/dev/null; echo $?)" == '1' ]; then
-    read -p 'You need to have watchdog installed if you want to use the '
-      'automatic builder. Please install it now.'
-    exit 1;
+    read -p 'You need to have watchdog installed if you want to use the automatic builder. Would you like to install it now [y/n] (y)? ' TEMP
+    if [ "$TEMP" != 'n' ]; then
+        if [ "$(which pip)" == '' ]; then
+            sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future easy_install watchdog
+        else
+            sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future pip install watchdog
+        fi
+    fi
 fi
 
 ZENV_LOCAL_DEPLOY_DIR="/srv"
@@ -85,9 +90,8 @@ echo 'Installing...'
 echo "#! /usr/bin/env bash
 
 ######
-## This is the global ZEnv settings file. If you want to change your global 
-## configuration withoutreinstalling everything, just modify the values in 
-## this file and then start a new terminal.
+## This is the global ZEnv settings file. If you want to change your global configuration without
+## reinstalling everything, just modify the values in this file and then start a new terminal.
 ######
 
 # The path to the ZEnv directory.
@@ -112,7 +116,7 @@ export ZENV_LDAP_USERNAME=\"${ZENV_LDAP_USERNAME}\"
 export ZENV_LOCAL_DEPLOY_DIR=\"${ZENV_LOCAL_DEPLOY_DIR}\"
 
 
-###### Anything below this line SHOULD NOT BE EDITED!!! #######
+############################## Anything below this line SHOULD NOT BE EDITED!!! ##############################
 
 export PATH=\"\${ZENV_ROOT}/bin:\$PATH\"
 for i in \$(find \${ZENV_ROOT}/functions -name '*.sh'); do
@@ -131,7 +135,7 @@ touch ~/.bash_login
 if [ "$(egrep '^alias zenv=.*activate.sh$' ~/.bash_login)" == '' ]; then
     echo "alias zenv=${ZENV_ROOT}/activate.sh" >> ~/.bash_login
 else
-    sed -i "s?alias zenv=.*?alias zenv=${ZENV_ROOT}/activate.sh?" ~/.bash_login
+    perl -pi -e "s?alias zenv=.*?alias zenv=${ZENV_ROOT}/activate.sh?" ~/.bash_login
 fi
 
 # Remove all the old work init files just in case something has changed
@@ -148,7 +152,7 @@ if [ "$(egrep 'source .*\.zenvrc' ~/.bash_login)" == '' ]; then
     if [ "$TEMP" != 'n' ]; then
 	echo "### BEGIN ZENV INIT
 source '${ZENV_SETTINGS}'
-if [ -z \"\$ZENV_CURRENT_WORK\" -a -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then 
+if [ -z \"\$ZENV_CURRENT_WORK\" -a -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then
     use \$(python -c \"from os import path; print path.relpath('\${PWD}', '\${ZENV_WORKSPACE}')\")
 fi
 ### END ZENV INIT

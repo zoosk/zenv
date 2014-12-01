@@ -7,9 +7,10 @@
 # be easily motified to work on other systems.
 #
 # PLEASE USE ONLY X-PLATFORM SUPPORTED OPTIONS for zenv scripts:
-# -title, -message, and -help.
-#
-# All other options are OSX specific.
+#               [ -title, -message, -help ]
+# All other options are OSX specific.  We have preserved the OSX
+# behavior as other OSX scripts rely on notify, and we do not want
+# to break them.
 #
 
 ## BAIL on errors
@@ -89,7 +90,7 @@ while :; do
             ;;
         # If no options provided, use the first argument as the message
         # and the second as the title.
-        *)  
+        *)
             if [ -z "${NOTIFY_MSG}" ] && [ -z "${NOTIFY_TITLE}" ]; then
               echo "$@"
               NOTIFY_MSG="$@"

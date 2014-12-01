@@ -20,26 +20,26 @@ case "$ARG" in
         echo 'Usage (print current checkout): use'
         echo 'Usage (change current checkout): use <checkout>'
         ;;
-    
+
     'build' | 'buildweb' | 'buildstatic' )
         echo 'build, buildweb, buildstatic: Build files in the current checkout.'
         echo 'Usage: build <command args>...'
         echo 'Arguments will be passed to the build process.'
         ;;
-    
+
     'devbox' )
         echo 'devbox: SSH into your dev instance.'
         ;;
-    
+
     'dbbox' )
         echo 'dbbox: Log into your MySQL database.'
         ;;
-    
+
     'deactivate' )
         echo 'deactivate: Exit ZEnv (also Ctrl+D).'
         echo 'This will exit the current shell, so look out!'
         ;;
-    
+
     'alias' | 'aliases' )
         # Colorize the aliases file for easy reading
         sed -e "s/^\(#.*#\)$/${BOLD}${UNDERLINE}\1${TXTRESET}/" \

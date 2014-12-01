@@ -16,8 +16,7 @@ if [ -z "$ZENV_INITIALIZED" ]; then
 fi
 
 if [ -z "$ZENV_CURRENT_WORK" ]; then
-    echo "${RED}${BOLD}FAILED!${TXTRESET} You are not using a checkout,"
-    echo "    so you can't build anything."
+    echo "${RED}${BOLD}FAILED!${TXTRESET} You are not using a checkout, so you can't build anything."
     exit 1
 fi
 
@@ -61,7 +60,7 @@ echo 'Checking if your system can install Zoosk...'
 
 checkinstalled php
 PHP_VERSION=$(php -v | /usr/bin/head -1 | awk '{print $2}')
-versioncompare php $PHP_VERSION '5.5' # was 5.5.11
+versioncompare php $PHP_VERSION '5.5' #5.5.11
 
 checkinstalled mysql
 
@@ -98,10 +97,15 @@ checkinstalled gcc
 
 checkinstalled phing
 PHING_VERSION="$(phing -v | awk '{print $2}')"
-versioncompare phing $PHING_VERSION '2.8' # was '2.7.0'
+if [ "${PLATFORM}" = "osx" ]; then
+  PHING_TGT_VERSION='2.7.0'
+else
+  PHING_TGT_VERSION='2.8'
+fi
+
+versioncompare phing $PHING_VERSION $PHING_TGT_VERSION
 
 printf "Checking for access to MySQL..."
-
 if [ "$(echo 'show databases;' | mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass) mysql >/dev/null 2>1; echo $?)" != '0' ]; then
     echo "${RED}${BOLD}FAILED!${TXTRESET} Cannot log into MySQL as root. Please talk to TechOps."
     exit 1
@@ -109,7 +113,9 @@ fi
 echo 'Success'
 
 checkinstalled mvn
+
 checkinstalled git
+
 checkinstalled thrift
 
 echo "${GREEN}${BOLD}SUCCESS!${TXTRESET}"
