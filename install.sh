@@ -100,10 +100,10 @@ export ZENV_SETTINGS=${ZENV_SETTINGS}
 export ZENV_WORKSPACE=${ZENV_WORKSPACE}
 
 # The command that will run after builds complete successfully.
-export ZENV_COMPLETE_COMMAND='notify -t \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -m \"Build complete!\" >/dev/null'
+export ZENV_COMPLETE_COMMAND='notify -title \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -message \"Build complete!\" >/dev/null'
 
 # The command that will run if a build fails.
-export ZENV_FAILED_COMMAND='notify -t \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -m \"Build failed!\" >/dev/null'
+export ZENV_FAILED_COMMAND='notify -title \"\$(basename \"\${ZENV_CURRENT_WORK}\")\" -message \"Build failed!\" >/dev/null'
 
 # Your LDAP username, that is, what you use to login to your Dev server
 export ZENV_LDAP_USERNAME=\"${ZENV_LDAP_USERNAME}\"

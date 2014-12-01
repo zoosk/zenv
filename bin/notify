@@ -1,34 +1,45 @@
-#!/bin/sh
+#! /usr/bin/env bash
 
-# Cross-platform OSX / Linux notification utility
-
-# bail on errors
-set -e
-
-# bail on undefined values
-# set -u
+## Bail on errors or unset vars
+set -e # we can not use set -u as we rely on XDG_CURRENT_DESKTOP
 
 # Startup checks
 if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'You must run this program from within ZEnv.'
     exit 1
 fi
-i=0;
-NTITLE=''; # Title
-NMSG='';   # Message
-NWAIT=2;   # Residency time
+
+NOTIFY_DE="${XDG_CURRENT_DESKTOP}"
+
+# Support OSX EXACTLY as before
+if [ -z "${NOTIFY_DE}" ]; then
+    BIN_FILE="${ZENV_ROOT}"/utils/terminal-notifier.app/Contents/MacOS/terminal-notifier
+    if [ -n "$1" -a "$(echo "$1" | sed 's/\(.\).*/\1/')" != '-' ]; then
+        $BIN_FILE -message "$1"
+    else
+        $BIN_FILE "$@"
+    fi
+    exit $?
+fi
+
+# Other environments
+NOTIFY_TITLE=''; # Title
+NOTIFY_MSG='';   # Message
+NOTIFY_DWELL=2;  # Residency time
+ARG_STACK=();
 
 # Set title and message per options
 while :; do
   case $1 in
     -h|--help|-\?)
-      echo "One day, this will be helpful."
-      exit
+      echo "Notify is a zenv cross-platform wrapper for desktop notifications."
+      echo "Only -message and -title options are supported across all platforms."
+      exit 0;
       ;;
 
-    -t|-title|--title)
+    -title)
       if [ "${2}" ]; then
-        NTITLE="${2}"
+        NOTIFY_TITLE="${2}"
         shift 2
         continue
       else
@@ -37,9 +48,9 @@ while :; do
       fi
       ;;
 
-    -m|-message|--message)
+    -message)
       if [ "${2}" ]; then
-        NMSG="${2}"
+        NOTIFY_MSG="${2}"
         shift 2
         continue
       else
@@ -48,9 +59,9 @@ while :; do
       fi
       ;;
 
-    -w|-wait|--wait)
+    -dwell)
       if [ "${2}" ]; then
-        let NWAIT="${2}"+0
+        let NOTIFY_DWELL="${2}"+0
         shift 2
         continue
       else
@@ -66,10 +77,10 @@ while :; do
 
     *)
       # If no options provided, use the first argument as the message
-      if [ -z "${NTITLE}" ] && [ -z "${NMSG}" ]; then
-        NTITLE="${1}"
-        NMSG=""
-        if [ -z "${NTITLE}" ]; then exit 0; fi
+      # and the second as the title.
+      if [ -z "${NOTIFY_MSG}" ] && [ -z "${NOTIFY_TITLE}" ]; then
+        NOTIFY_MSG="${1}"
+        if [ -z "${NOTIFY_MSG}" ]; then exit 0; fi
       fi
       break
       ;;
@@ -78,36 +89,26 @@ while :; do
 done
 
 
-# This environment variable should be set for all Linux distros
-# and will provide 'KDE', 'UNITY', 'GNOME', etc
-NOTIFY_DE="${XDG_CURRENT_DESKTOP}"
-
-# Blank variables make some utilities cranky....
-if ( echo "${NTITLE}" |grep -q '^\s*$' ); then
-  NTITLE="--";
-fi
-
-if ( echo "${NMSG}" |grep -q '^\s*$' ); then
-  NMSG="--";
-fi
-
-
 case "${NOTIFY_DE}" in
-  '') # OSX
-    BIN_FILE="${ZENV_ROOT}/utils/terminal-notifier.app/Contents/MacOS/terminal-notifier"
-    if [ ! -z "${BIN_FILE}" ]; then
-      $BIN_FILE -title "${NTITLE}" -message "${NMSG}"
-    fi
-    ;;
-  KDE) # KDE, of course
-    if [ ! -z $(which kdialog) ]; then
-      echo kdialog --title "\"${NTITLE}\" --passivepopup \"${NMSG}\" \"${NWAIT}\""
-      kdialog --title "${NTITLE}" --passivepopup "${NMSG}" "${NWAIT}"
-    fi
-    ;;
-  *) # Unity, Gnome, etc
-    if [ ! -z $(which notify-send) ]; then
-      notify_send "${NTITLE}" "${NMSG}" -t "${NWAIT}"
-    fi
-    ;;
+    KDE)
+        if [ ! -z $(which kdialog) ]; then
+            ARG_STACK+=('--title')
+            ARG_STACK+=("${NOTIFY_TITLE:-...}")
+            ARG_STACK+=('--passivepopup')
+            ARG_STACK+=("${NOTIFY_MSG:-...}")
+            ARG_STACK+=("${NOTIFY_DWELL}")
+
+            kdialog ${ARG_STACK[*]}
+        fi
+        ;;
+    *) # Unity, Gnome, etc
+        if [ ! -z $(which notify-send) ]; then
+            ARG_STACK+=("${NOTIFY_TITLE:-...}")
+            ARG_STACK+=("${NOTIFY_MSG:-...}")
+            ARG_STACK+=('-t')
+            ARG_STACK+=("${NOTIFY_DWELL}")
+
+            notify_send ${ARG_STACK[*]}
+        fi
+        ;;
 esac
