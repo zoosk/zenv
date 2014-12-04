@@ -1,25 +1,30 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
+"""Utility to build changed, added, or deleted dev files on VM"""
 
+# Libraries
 try:
     from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
-except ImportError:
-    print 'You need to install watchdog to be able to watch for changes. Please run sudo easy_install watchdog'
-    exit(1)
 
-import warnings
+except ImportError:
+    print ('You need to install watchdog to be able to watch for changes. ' +
+      'Please run sudo easy_install watchdog')
+    exit(1)
 
 import os
 from os.path import basename
 from os.path import dirname
 from os.path import exists
 from os.path import relpath
-from os.path import splitext
 from pipes import quote
-import re
-import signal
-
 import time
+import re
+
+# Env check
+if 'ZENV_CURRENT_WORK' not in os.environ:
+    print 'You must use a workspace before you start autobuild.'
+    exit(1)
 
 # Settings
 BUILD_SETTINGS_FILE = 'autobuild_settings'
@@ -43,63 +48,66 @@ EXCLUDED_FILE_NAMES = set([
     'Makefile'
 ])
 
-if 'ZENV_CURRENT_WORK' not in os.environ:
-    print 'You must use a workspace before you start autobuild.'
-    exit(1)
+# Work paths
+LOCAL_PATH = os.environ['ZENV_CURRENT_WORK']
+    # In the future, we may have a need for...
+    # SERVER_PATH = os.environ['ZENV_SERVERDIR']
 
-local_path = os.environ['ZENV_CURRENT_WORK']
-server_path = os.environ['ZENV_SERVERDIR']
+# Check if a file should be excluded from builds
+def is_excluded_path(path, file_name):
+    """Determine if a path is disallowed from processing"""
+    return(
+        file_name.startswith('.') or
+        file_name.startswith('#') or
+        file_name.endswith('~') or
+        re.match(r'^\d+$|.*~$', file_name) or
+        file_name in EXCLUDED_FILE_NAMES or
+        '.svn' in path or
+        '.idea' in path or
+        '/sass-cache' in path or
+        '.git' in path
+      )
 
-def is_excluded_path(path):
-    file_name = basename(path)
-    return re.match( '^\d+$|.*~$', file_name ) or '.svn' in path or '.idea' in path or '/sass-cache' in path or '.git' in path
-
-def is_excluded_filename(name):
-    """ Check if a file should be excluded from builds. """
-    return name.startswith('.') or name.startswith('#') or name.endswith('~') or name in EXCLUDED_FILE_NAMES
-
-def process_event(event_type, path):
+def process_change(change_type, path):
     """ Utility to sync vm when a file is changed. """
     if DEBUG:
-        print 'Caught event %s for %s' % (event_type, path)
+        print 'Caught event |%s| for path |%s|' % (change_type, path)
 
-    if not re.match('modified|created|deleted', event_type):
+    if not re.match('modified|created|deleted', change_type):
         if DEBUG:
-            print '    - skipped: event type not supported'
+            print '    - skipped: event type |%s| not supported' % change_type
         return
 
-    if is_excluded_path(path):
+    file_name = basename(path)
+    if is_excluded_path(path, file_name):
         if DEBUG:
-            print '    - skipped: path pattern is excluded'
+            print '    - skipped: path pattern |%s| is excluded' % path
         return
 
-    filename = basename(path)
-    if is_excluded_filename(filename):
-        if DEBUG:
-            print '    - skipped: file name pattern is excluded'
-        return
-
-    # Travel up the directory structure until we find one with a settings file in it
+    # Travel up the directory structure until we find one
+    # with a settings file in it
+    #
     extra_dirs = []
     settings_dir = dirname(path)
-    while not exists(settings_dir + '/' + BUILD_SETTINGS_FILE) and settings_dir != '/':
-        extra_dirs.insert(0, basename(settings_dir)+'/')
+    while (not exists(settings_dir + '/' + BUILD_SETTINGS_FILE)
+      and settings_dir != '/'):
+        extra_dirs.insert(0, basename(settings_dir) + '/')
         settings_dir = dirname(settings_dir)
 
     if DEBUG:
-        print 'Directory with settings file is %s' % settings_dir
+        print 'Directory with settings file is |%s|' % settings_dir
 
     if settings_dir == '/':
         # This is certainly not a workspace
         print 'Could not find a settings file appropriate for %s.' % path
         return
 
-    # Get the kind of rules that we are looking for
-    if event_type == 'modified':
+    # Get the kind of rules_to_run that we are looking for
+    if change_type == 'modified':
         rules_to_run = set([KEY_ALL, KEY_UPDATE, KEY_ADDUP, KEY_UPDEL])
-    elif event_type == 'created':
+    elif change_type == 'created':
         rules_to_run = set([KEY_ALL, KEY_ADD, KEY_ADDUP, KEY_ADDDEL])
-    elif event_type == 'deleted':
+    elif change_type == 'deleted':
         rules_to_run = set([KEY_ALL, KEY_DELETE, KEY_ADDDEL, KEY_UPDEL])
     else:
         print 'OH GOD AN UNHANDLED EVENT'
@@ -109,64 +117,82 @@ def process_event(event_type, path):
     matched_rule = None
     commands = None
     envs = []
-    rules = []
-    with open(settings_dir + '/' + BUILD_SETTINGS_FILE) as fp:
+
+    with open(settings_dir + '/' + BUILD_SETTINGS_FILE) as file_ptr:
         while matched_rule is None:
-            line = fp.readline()
+            line = file_ptr.readline()
 
             # Read the variable settings
             if line.startswith(KEY_SET):
-                env_name, env_value = re.search('%s ([^=]+)=(.*)' % KEY_SET, line).groups()
+                env_name, env_value = (
+                    re.search('%s ([^=]+)=(.*)' % KEY_SET, line).groups()
+                )
+
                 envs.append('%s=%s' % (env_name, env_value))
                 if DEBUG:
-                    print 'Found a variable declaration: %s = %s' % (env_name, env_value)
+                    print ('Found variable declaration |%s| = |%s|'
+                        % (env_name, env_value))
                 continue
 
             elif line.startswith(KEY_COMMENT):
                 if DEBUG:
-                    print 'Found a comment: %s' % line
+                    print 'Found comment |%s|' % line
                 # This is a comment
                 continue
 
-            elif re.match('^\S', line):
+            elif re.match(r'^\S', line):
                 # This does not start with whitespace, so it must be a rule
                 if DEBUG:
-                    print 'Found a rule: %s' % line,
+                    print 'Found rule |%s|' % line,
                 rule = line.rstrip("\n")
-                if not re.search(rule, filename):
+                if not re.search(rule, file_name):
                     if DEBUG:
-                        print 'Rule %s does not match %s' % (rule, filename)
+                        print ('Rule |%s| does not match file |%s|'
+                          % (rule, file_name))
                     continue
 
                 matched_rule = rule
 
                 # Find out what kind of rule this is
-                key_line = fp.readline()
-                indent = re.findall('^(\s+)', key_line)[0]
+                key_line = file_ptr.readline()
+                indent = re.findall(r'^(\s+)', key_line)[0]
+
                 while re.match('^' + indent, key_line):
                     key_line = key_line.strip()
                     if DEBUG:
-                        print 'Found %s rule for %s' % (key_line, rule)
+                        print 'Found key |%s| for rule |%s|' % (key_line, rule)
                     if key_line == "\n":
                         break
                     elif key_line not in rules_to_run:
                         if DEBUG:
-                            print 'Rule %s does not apply to event %s on %s.' % (key_line, event_type, rule)
+                            print (
+                                'Rule |{sr}| does not apply to ' +
+                                'change |{sc}| on key |{sk}|'.format(
+                                    sr='' if not rule else rule,
+                                    sk='' if not key_line else key_line,
+                                    sc='' if not change_type else change_type
+                                )
+                            )
+
                         # Skip the contents of this rule
-                        key_line = fp.readline()
-                        while re.match('^'+indent+indent, key_line):
-                            key_line = fp.readline()
+                        key_line = file_ptr.readline()
+                        while re.match('^' + indent + indent, key_line):
+                            key_line = file_ptr.readline()
                         continue
 
-                    last_pos = fp.tell()
-                    rule_line = fp.readline()
+                    # last postion is file_ptr.tell()
+                    rule_line = file_ptr.readline()
                     rule_contents = []
-                    while re.match('^'+indent+indent, rule_line) and rule_line != "\n":
+                    while (re.match('^' + indent + indent, rule_line)
+                        and rule_line != "\n"
+                    ):
                         rule_contents.append(rule_line.strip())
-                        last_pos = fp.tell()
-                        rule_line = fp.readline()
+                        # last postion is file_ptr.tell()
+                        rule_line = file_ptr.readline()
 
-                    # Combine the given commands into one line using ands so that one failure makes everything stop
+                    # Combine the given commands into one line using
+                    # so that one failure makes everything stop
+                    #
                     commands = ' && '.join(rule_contents)
                     if DEBUG:
                         print "Rule contents are:\n%s" % commands
@@ -179,29 +205,40 @@ def process_event(event_type, path):
                 break
 
         if matched_rule is None:
-            print 'No matching rule found for %s.' % filename
+            print 'No matching rule found for file |%s|.' % file_name
             return
         elif DEBUG:
-            print 'Matched rule %s for %s' % (matched_rule, filename)
+            print ('Matched rule |%s| for file |%s|'
+                % (matched_rule, file_name))
 
-        # Check the changed filename against each of the regexes from the settings file
-        match = re.search(matched_rule, filename)
+        # Check the changed file_name against each of the regexes from
+        # the settings file
+        match = re.search(matched_rule, file_name)
+
         # Create a dict that maps the group numbers to their matched values
         groups = match.groups()
         match_groups = {str(i + 1): groups[i] for i in xrange(len(groups))}
 
-        # Replace autobuild variables $0, $1, $2, etc with Python-esqe $(0)s, $(1)s, etc and use that to pass matched groups in
+        # Replace autobuild variables $0, $1, $2, etc with
+        # Python-esqe $(0)s, $(1)s, etc and use that to pass matched groups
         match_groups['0'] = relpath(path, settings_dir)
-        commands = re.sub('\$\{([0-9]+)\}', '%(\\1)s', re.sub('\$([0-9]+)', '%(\\1)s', commands)) % match_groups
+        commands = re.sub(r'\$\{([0-9]+)\}', '%(\\1)s',
+            re.sub(r'\$([0-9]+)', '%(\\1)s', commands)) % match_groups
+        # commands = re.sub(r'\$\{([0-9]+)\}', r'%(\\1)s',
+        #    re.sub(r'\$([0-9]+)', r'%(\\1)s', commands)) % match_groups
 
         # Add the inherited ZEnv variables
-        inherited_envs = '; '.join('%s=%s' % (i, quote(os.environ[i])) for i in os.environ if i.startswith('ZENV_'))
+        inherited_envs = '; '.join('%s=%s' %
+            (i, quote(os.environ[i]))
+            for i in os.environ if i.startswith('ZENV_')
+        )
+
         # Add variable declarations to the beginning of the commands
         var_decls = '; '.join(envs)
         full_program = '; '.join([inherited_envs, var_decls, commands])
 
         # Run the command
-        print 'Running build for %s' % path
+        print 'Running build for path |%s|' % path
         if DEBUG:
             print full_program
         else:
@@ -210,34 +247,38 @@ def process_event(event_type, path):
         print "Build complete.\n"
 
 def on_handled(event):
-    path       = event.src_path
-    event_type = event.event_type
+    """Handle handler for fsevents.
+    This is separate from process_change so that may be used independently.
+    """
+
+    path = event.src_path
+    change_type = event.event_type
     class_name = event.__class__.__name__
     if re.match('^Dir', class_name):
         if DEBUG:
-            print '    - skipped dir %s' %(path)
+            print '    - skipped dir |%s|' %(path)
             return
 
-    return process_event(event_type, path);
+    return process_change(change_type, path)
 
 if __name__ == '__main__':
-    observer = Observer()
-    event_handler = FileSystemEventHandler()
-    event_handler.on_created   = on_handled
-    event_handler.on_modified  = on_handled
-    event_handler.on_deleted   = on_handled
+    OBSERVER = Observer()
+    EVENT_HANDLER = FileSystemEventHandler()
+    EVENT_HANDLER.on_created = on_handled
+    EVENT_HANDLER.on_modified = on_handled
+    EVENT_HANDLER.on_deleted = on_handled
 
     ## The following event types are not supported
-    # event_handler.on_moved     = on_moved
-    # event_handler.on_any_event = on_any_event
+    # EVENT_HANDLER.on_moved     = on_moved
+    # EVENT_HANDLER.on_any_event = on_any_event
 
-    observer.schedule( event_handler, local_path, recursive=True)
-    observer.start()
+    OBSERVER.schedule(EVENT_HANDLER, LOCAL_PATH, recursive=True)
+    OBSERVER.start()
 
     try:
         while True:
             time.sleep(10)
-    except keyboardInterupt:
-       observer.stop()
+    except KeyboardInterrupt:
+        OBSERVER.stop()
 
-    observer.join()
+    OBSERVER.join()

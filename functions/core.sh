@@ -28,10 +28,10 @@ function uninstall_zenv() {
     read -p 'This will delete all your checkout configuration. Are you sure you want to continue [y/n]? ' TEMP
     if [ "$TEMP" == 'y' ]; then
         if [ $PLATFORM = 'osx' ]; then
-            sed -i '' "/### BEGIN ZENV INIT/,/### END ZENV INIT/d" ~/.bash_login
+            sed -i '' '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' ~/.bash_login
             sed -i '' '/^alias zenv/d' ~/.bash_login
         else
-            sed -i "/### BEGIN ZENV INIT/,/### END ZENV INIT/d" ~/.bash_login
+            sed -i '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' ~/.bash_login
             sed -i '/^alias zenv/d' ~/.bash_login
         fi
             

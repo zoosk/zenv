@@ -4,7 +4,7 @@
 #
 # This is a wrapper script around desktop notifications.
 # It supports OSX and Linux (KDE/UNITY/GNOME), and should
-# be easily motified to work on other systems.
+# be easily modified to work on other systems.
 #
 # PLEASE USE ONLY X-PLATFORM SUPPORTED OPTIONS for zenv scripts:
 #               [ -title, -message, -help ]

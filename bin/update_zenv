@@ -20,10 +20,10 @@ BORDER="${RED}${BOLD}OMG${TXTRESET}"
 if [ "$(echo "${UPDATE_TEXT}" | grep install.sh)" != '' ]; then
 
     if [ $PLATFORM = 'osx' ]; then
-        sed -i '' "/### BEGIN ZENV INIT/,/### END ZENV INIT/d" ~/.bash_login
+        sed -i '' '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' ~/.bash_login
         sed -i '' '/^alias zenv/d' ~/.bash_login
     else
-        sed -i "/### BEGIN ZENV INIT/,/### END ZENV INIT/d" ~/.bash_login
+        sed -i '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' ~/.bash_login
         sed -i '/^alias zenv/d' ~/.bash_login
     fi
     rm -f "$ZENV_SETTINGS"

@@ -139,11 +139,11 @@ else
 fi
 
 # Remove all the old work init files just in case something has changed
-WORKPROPERTIES_LIST=$(\
+WORKPROP_STR=$(\
   find "${ZENV_WORKSPACE}" -maxdepth 5 -type f -name 'work.properties' \
   | xargs grep -l ZENV\
 )
-if [ "${WORKPROP_LIST}" != "" ]; then rm "{WORKPROP_LIST}"; fi
+if [ "${WORKPROP_STR}" != "" ]; then rm ${WORKPROP_STR}; fi
 
 # Attempt to make ZEnv start by default
 touch ~/.bash_login
