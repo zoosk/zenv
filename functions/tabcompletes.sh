@@ -72,3 +72,6 @@ _tabcomp_testscript() {
     fi
 }
 complete -o nospace -F _tabcomp_testscript testscript
+
+## zli
+eval "$(_ZLI_COMPLETE=source /usr/local/bin/zli 2>/dev/null)"
