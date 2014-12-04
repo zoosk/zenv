@@ -71,11 +71,11 @@ def is_excluded_path(path, file_name):
 def process_change(change_type, path):
     """ Utility to sync vm when a file is changed. """
     if DEBUG:
-        print 'Caught event |%s| for path |%s|' % (change_type, path)
+        print 'Change type |%s| reported for path |%s|' % (change_type, path)
 
     if not re.match('modified|created|deleted', change_type):
         if DEBUG:
-            print '    - skipped: event type |%s| not supported' % change_type
+            print '    - skipped: change type |%s| not supported' % change_type
         return
 
     file_name = basename(path)
@@ -110,7 +110,7 @@ def process_change(change_type, path):
     elif change_type == 'deleted':
         rules_to_run = set([KEY_ALL, KEY_DELETE, KEY_ADDDEL, KEY_UPDEL])
     else:
-        print 'OH GOD AN UNHANDLED EVENT'
+        print 'OH GOD AN UNHANDLED CHANGE TYPE'
         return
 
     # Get the contents of the settings file
@@ -246,7 +246,7 @@ def process_change(change_type, path):
         os.system(('cd %s; ' % settings_dir) + full_program)
         print "Build complete.\n"
 
-def on_handled(event):
+def on_changed(event):
     """Handle handler for fsevents.
     This is separate from process_change so that may be used independently.
     """
@@ -264,13 +264,13 @@ def on_handled(event):
 if __name__ == '__main__':
     OBSERVER = Observer()
     EVENT_HANDLER = FileSystemEventHandler()
-    EVENT_HANDLER.on_created = on_handled
-    EVENT_HANDLER.on_modified = on_handled
-    EVENT_HANDLER.on_deleted = on_handled
+    EVENT_HANDLER.on_created = on_changed
+    EVENT_HANDLER.on_modified = on_changed
+    EVENT_HANDLER.on_deleted = on_changed
 
     ## The following event types are not supported
-    # EVENT_HANDLER.on_moved     = on_moved
-    # EVENT_HANDLER.on_any_event = on_any_event
+    # EVENT_HANDLER.on_moved     = on_changed
+    # EVENT_HANDLER.on_any_event = on_changed
 
     OBSERVER.schedule(EVENT_HANDLER, LOCAL_PATH, recursive=True)
     OBSERVER.start()
