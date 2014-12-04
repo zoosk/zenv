@@ -12,7 +12,12 @@ if [ -z "$ZENV_INITIALIZED" ]; then
 fi
 
 UPDATE_TEXT=$(cd "${ZENV_ROOT}"; git pull; git submodule update)
-
+cd $ZENV_ROOT/utils
+if [ ! -d zli ]; then
+   git clone git@g.zoosk.com:merrickp/zli.git
+fi
+cd zli
+git pull
 
 TOPLINE="${RED}${BOLD}OMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMG${TXTRESET}"
 BORDER="${RED}${BOLD}OMG${TXTRESET}"
