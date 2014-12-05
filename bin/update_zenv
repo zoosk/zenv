@@ -11,8 +11,14 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     exit 1
 fi
 
-UPDATE_TEXT=$(cd "${ZENV_ROOT}"; git pull)
 PLATFORM=$(uname -a |grep -qi linux && echo 'linux' || echo 'osx');
+UPDATE_TEXT=$(cd "${ZENV_ROOT}"; git pull; git submodule update)
+cd $ZENV_ROOT/utils
+if [ ! -d zli ]; then
+   git clone git@g.zoosk.com:merrickp/zli.git
+fi
+cd zli
+git pull
 
 TOPLINE="${RED}${BOLD}OMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMG${TXTRESET}"
 BORDER="${RED}${BOLD}OMG${TXTRESET}"

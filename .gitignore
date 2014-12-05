@@ -4,3 +4,5 @@
 *~
 #*
 utils/zbranch/*
+*.pyc
+utils/zli
