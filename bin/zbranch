@@ -552,7 +552,9 @@ fi
 DATA_ROOT="${ZENV_ROOT}/utils/zbranch"
 mkdir -p ${DATA_ROOT}
 mkdir -p ${DATA_ROOT}/profiles
+
 ! [ -f ${DATA_ROOT}/default ] && touch ${DATA_ROOT}/default
+
 case "$1" in
     "add" )
         add $2 $3 $4
