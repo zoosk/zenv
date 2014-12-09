@@ -57,6 +57,9 @@ function general_usage() {
     exit
 }
 
+
+function join_list() { local DELMT=$1; shift; printf "${DELMT}%s" "$@"; }
+
 function add_usage() {
     echo ""
     echo "===== ZBRANCH ADD ====="
@@ -419,7 +422,8 @@ function pull() {
     fi
 
     REPO_LIST=$(cat "${PROFILE_PATH}")
-    FAIL_COUNT=0
+    LF_STR="\n"
+    FAIL_LIST=()
     DEFAULT_BRANCH=$(get_default_branch)
 
     echo ""
@@ -428,10 +432,12 @@ function pull() {
         REPO_NAME="${ARR[0]}"
         REPO_PATH="${ZENV_WORKSPACE}/${REPO_NAME}"
 
+        echo -n "${GREEN}**** Processing Repository |${REPO_NAME}|"
+        echo " ****${TXTRESET}"
+
         cd "${REPO_PATH}"
         if [ "$?" != "0" ]; then
-            echo "${RED}Failed to cd to ${REPO_PATH}"
-            ((FAIL_COUNT++))
+            FAIL_LIST+=("${RED}Failed to cd to |${REPO_PATH}|${TXTRESET}")
             continue
         fi
 
@@ -443,23 +449,42 @@ function pull() {
         fi
 
         if [ "${TGT_BRANCH}" != "${USE_BRANCH}" ]; then
-            echo "${RED}********* WARNING - DOES NOT MATCH PROFILE BRANCH ************"
-            echo "For ${REPO}, using branch |${USE_BRANCH}| instead of |${TGT_BRANCH}|${TXTRESET}"
+            STR_LIST=();
+            STR_LIST+=("${RED}**** WARN - BRANCH DOES NOT MATCH ****")
+            STR_LIST+=("  Repository |${REPO_NAME}|")
+            STR_LIST+=("  Branch     |${USE_BRANCH}|")
+            STR_LIST+=("  Profile    |${ACTIVE_NAME}|")
+            STR_LIST+=("  Branch does not match |${TGT_BRANCH}|")
+            STR_LIST+=("  as defined in active profile. ${TXTRESET}")
+
+            SCRATCH_STR=$(join_list "${LF_STR}" "${STR_LIST[@]}")
+            echo "${FAIL_STR}"
+            echo
+            FAIL_LIST+=("${SCRATCH_STR}")
         fi
 
         echo "Pulling branch ${USE_BRANCH} for ${REPO_NAME}"
         git pull
 
         if [ "$?" != "0" ]; then
-            echo "${RED}Failed to pull ${USE_BRANCH} for ${REPO_NAME}${TXTRESET}"
-            ((FAIL_COUNT++))
+            STR_LIST=();
+            STR_LIST+=("${RED}**** WARN - PULL FAILED ****")
+            STR_LIST+=("  Repository |${REPO_NAME}|")
+            STR_LIST+=("  Branch     |${USE_BRANCH}|${TXTRESET}")
+
+            SCRATCH_STR=$(join_list "${LF_STR}" "${STR_LIST[@]}")
+            echo "${FAIL_STR}"
+            echo
+            FAIL_LIST+=("${SCRATCH_STR}")
         fi
-        echo ""
+        echo
     done
 
+    FAIL_COUNT="${#FAIL_LIST[@]}"
     if [ "$FAIL_COUNT" != 0 ]; then
-        echo "${RED}********* ERROR ON PULL ************"
-        echo "$FAIL_COUNT REPO_LIST failed to pull correctly${TXTRESET}"
+        echo -n "${RED}********* ERROR ON PULL ************"
+        join_list "${LF_STR}" "${FAIL_LIST[@]}"
+        echo
     fi
 }
 
