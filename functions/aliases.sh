@@ -15,7 +15,7 @@ alias install-most='(build install-tools install-schwartz install-web install-we
 # Install all geodata
 alias install-geodata='(rsync-geodbdata && build install-geoip-data && build install-geolookup-data)'
 # Get rid of all the work files (done using ssh for speed)
-alias delete-all="(rm -rf \${ZENV_SERVERDIR}/* 2>/dev/null && synccode \${ZENV_SERVERDIR})"
+alias delete-all='(if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to delete its files."; else rm -rf \${ZENV_SERVERDIR}/* 2>/dev/null && synccode \${ZENV_SERVERDIR}; fi)'
 # Get rid of all the database info
 alias delete-db='(build truncate-all)'
 
