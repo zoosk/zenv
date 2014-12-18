@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
+# TODO mikem 2014-12-04 These should be set
+# set -e; set -u 
 
+## BEGIN FUNCTIONS
 ####################################
 # usage function for all commands. #
 ####################################
@@ -17,6 +20,9 @@ function usage() {
         "checkout" )
             checkout_usage
             ;;
+        "pull" )
+            pull_usage
+            ;;
         "profile" )
             profile_usage
             ;;
@@ -33,11 +39,10 @@ function usage() {
 }
 
 function general_usage() {
-    PROGNAME=$(basename $0)
-    echo ""
-    echo "===== ZBRANCH ====="
+    echo
+    echo "===== ${PROGNAME} ====="
     echo "Automatic git checkout system for multiple repositories."
-    echo ""
+    echo
     echo "AVAILABLE COMMANDS"
     echo "------------------"
     echo "${PROGNAME} add <repo-name> [profile-name] [branch-name]"
@@ -48,154 +53,168 @@ function general_usage() {
     echo "${PROGNAME} delete-profile <profile-name>"
     echo "${PROGNAME} snapshot [profile-name]"
     echo "${PROGNAME} help [command-name]"
-    echo ""
+    echo
     exit
 }
 
+
+function join_list() { local DELMT=$1; shift; printf "${DELMT}%s" "$@"; }
+
 function add_usage() {
-    echo ""
-    echo "===== ZBRANCH ADD ====="
-    echo "ZBRANCH ADD adds a specific repo to a zbranch default profile or any custom profile."
-    echo ""
-    echo "format: zbranch add [repo-name] [profile-name (optional)] [branch-name (optional)]"
-    echo ""
-    echo "ex) zbranch add zoosk-core"
-    echo "ex) zbranch add zoosk-core core-develop develop"
+    echo
+    echo "===== ${PROGNAME} add ====="
+    echo "${PROGNAME} add <repo-name> [<profile-name>] [<branch-name>]"
+    echo "Adds a specific repo to a ${PROGNAME} default profile or any custom profile."
+    echo 
+    echo "ex) ${PROGNAME} add zoosk-core"
+    echo "ex) ${PROGNAME} add zoosk-core core-develop develop"
+    echo
     exit
 }
 
 function delete_usage() {
-    echo ""
-    echo "===== ZBRANCH DELETE ====="
-    echo "ZBRANCH DELETE deletes a specific repo from a zbranch default profile or custom profile."
-    echo ""
-    echo "format: zbranch delete [repo-name] [profile-name (optional)] [branch-name (optional)]"
-    echo ""
-    echo "ex) zbranch delete zoosk-core"
-    echo "ex) zbranch delete zoosk-core core-develop develop"
+    echo
+    echo "===== ${PROGNAME} delete ====="
+    echo "${PROGNAME} delete <repo-name> [<profile-name>] [<branch-name>]"
+    echo "Deletes a specific repo from a default profile or custom profile."
+    echo 
+    echo "ex) ${PROGNAME} delete zoosk-core"
+    echo "ex) ${PROGNAME} delete zoosk-core core-develop develop"
+    echo
     exit
 }
 
 function show_usage() {
-    echo ""
-    echo "===== ZBRANCH SHOW ====="
-    echo "ZBRANCH SHOW lists all profiles and repos that are controlled by zbranch system."
-    echo ""
-    echo "format: zbranch show [profile-name (optional)]"
-    echo ""
-    echo "ex) zbranch show"
-    echo "ex) zbranch show core-master"
+    echo
+    echo "===== ${PROGNAME} show ====="
+    echo "${PROGNAME} show [<profile-name>]"
+    echo "Lists all profiles and repos that are controlled by ${PROGNAME}"
+    echo
+    echo "ex) ${PROGNAME} show"
+    echo "ex) ${PROGNAME} show core-master"
+    echo
     exit
 }
 
 function checkout_usage() {
-    echo ""
-    echo "===== ZBRANCH CHECKOUT ====="
-    echo "ZBRANCH CHECKOUT checks out repos in the default group to a branch provided."
-    echo ""
-    echo "ex) zbranch checkout develop"
-    echo "ex) zbranch checkout master"
+    echo
+    echo "===== ${PROGNAME} checkout ====="
+    echo "${PROGNAME} checkout"
+    echo "Checks out repos in the default group to a branch provided."
+    echo 
+    echo "ex) ${PROGNAME} checkout develop"
+    echo "ex) ${PROGNAME} checkout master"
     exit
 }
 
 function profile_usage() {
-    echo ""
-    echo "===== ZBRANCH PROFILE ====="
-    echo "ZBRANCH PROFILE checks out repos to specific branches according to a saved profile."
-    echo ""
-    echo "format: zbranch snapshot "
-    echo ""
-    echo "ex) zbranch profile [profile-name]"
-    echo "ex) zbranch profile core-master"
+    echo
+    echo "===== ${PROGNAME} profile ====="
+    echo "${PROGNAME} profile [<profile-name>]"
+    echo "Checks out repos to specific branches according to a saved profile."
+    echo
+    echo "ex) ${PROGNAME} profile core-master"
+    echo
+    exit
+}
+
+function pull_usage() {
+    echo
+    echo "===== ${PROGNAME} pull ====="
+    echo "${PROGNAME} pull"
+    echo "Executes 'git pull' for all ${PROGNAME} repos listed in the active profile."
+    echo
+    echo "ex) ${PROGNAME} pull"
+    echo
     exit
 }
 
 function delete_profile_usage() {
-    echo ""
-    echo "===== ZBRANCH DELETE PROFILE ====="
-    echo "ZBRANCH DELETE PROFILE deletes a custom profile."
-    echo ""
-    echo "format: zbranch delete-profile [profile-name]"
-    echo ""
-    echo "ex) zbranch delete-profile core-master"
-}
-
-function snapshot_usage() {
-    echo ""
-    echo "===== ZBRANCH SNAPSHOT ====="
-    echo "ZBRANCH SNAPSHOT takes a snapshot of current branches for zbranch repos and create a custom profile."
-    echo ""
-    echo "format: zbranch snapshot [repo-name1 (optional)] [repo-name2 (optional)] ..."
-    echo ""
-    echo "ex) zbranch snapshot"
-    echo "ex) zbranch snapshot zoosk touch cupid"
+    echo
+    echo "===== ${PROGNAME} delete-profile ====="
+    echo "${PROGNAME} delete-profile <profile-name>"
+    echo
+    echo "ex) ${PROGNAME} delete-profile core-master"
+    echo
     exit
 }
 
+function snapshot_usage() {
+    echo
+    echo "===== ${PROGNAME} snapshot ====="
+    echo "${PROGNAME} snapshot [<repo1-name> <repo2-name>, ... ]"
+    echo "Take a snapshot of current branches for ${PROGNAME} repos"
+    echo "and creates a custom profile."
+    echo
+    echo "ex) ${PROGNAME} snapshot"
+    echo "ex) ${PROGNAME} snapshot zoosk touch cupid"
+    exit
+}
 
 # function for adding a repo to a default profile, or adding repo, branch pair to a custom profile.
 function add() {
     if [ "$1" == '' ]
     then
         add_usage
-    else
-        if [ "$2" == '' -o "$3" == '' ]
+        exit
+    fi
+
+    if [ "$2" == '' -o "$3" == '' ]
+    then
+        # profile name not specified. using the default profile.
+        CONFIG="${DATA_ROOT}/default"
+        ! [ -f $CONFIG ] && touch $CONFIG
+        # if the repo is already in the config file
+        if grep -q "$1" "$CONFIG"
         then
-            # profile name not specified. using the default profile.
-            CONFIG=${ZENV_ROOT}/utils/zbranch/default
-            ! [ -f $CONFIG ] && touch $CONFIG
-            # if the repo is already in the config file
-            if grep -q "$1" "$CONFIG"
-            then
-                echo "Already in the path. Aborting..."
-                exit 0
-            else
-                path="${ZENV_WORKSPACE}/$1"
-                cd $path
-                if [ "$?" != "0" ]
-                then
-                    # if there is no such repo..
-                    echo "There is no such repo. Aborting..."
-                    exit 1
-                fi
-
-                read -p "Do you want to add $1 to zbranch [y/n] (y)?" A
-                if [ "$A" = "y" -o "$A" = "" ]
-                then
-                    echo "$1" >> "$CONFIG"
-                    echo "Successfully added $1 to zbranch."
-                else
-                    echo "Aborting..."
-                    exit
-                fi
-            fi
+            echo "Already in the path. Aborting..."
+            exit 0
         else
-            # using the specified custom profile.
-            CONFIG=${ZENV_ROOT}/utils/zbranch/profiles/$2
-            ! [ -f $CONFIG ] && touch $CONFIG
-            # if the repo is already in the config file
-            if grep -q "$1" "$CONFIG"
+            path="${ZENV_WORKSPACE}/$1"
+            cd $path
+            if [ "$?" != "0" ]
             then
-                echo "Already in the path. Aborting..."
-                exit 0
-            else
-                path="${ZENV_WORKSPACE}/$1"
-                cd $path
-                if [ "$?" != "0" ]
-                then
-                    echo "There is no such repo. Aborting..."
-                    exit 1
-                fi
+                # if there is no such repo..
+                echo "There is no such repo. Aborting..."
+                exit 1
+            fi
 
-                read -p "Do you want to add $1:$3 to zbranch profile \"$2\" [y/n] (y)?" A
-                if [ "$A" = "y" -o "$A" = "" ]
-                then
-                    echo "$1,$3" >> "$CONFIG"
-                    echo "Successfully added $1:$3 to zbranch to profile \"$2\"."
-                else
-                    echo "Aborting..."
-                    exit
-                fi
+            read -p "Do you want to add $1 to ${PROGNAME} [y/n] (y)?" A
+            if [ "$A" = "y" -o "$A" = "" ]
+            then
+                echo "$1" >> "$CONFIG"
+                echo "Successfully added $1 to ${PROGNAME}."
+            else
+                echo "Aborting..."
+                exit
+            fi
+        fi
+    else
+        # using the specified custom profile.
+        CONFIG=${DATA_ROOT}/profiles/$2
+        ! [ -f $CONFIG ] && touch $CONFIG
+        # if the repo is already in the config file
+        if grep -q "$1" "$CONFIG"
+        then
+            echo "Already in the path. Aborting..."
+            exit 0
+        else
+            path="${ZENV_WORKSPACE}/$1"
+            cd $path
+            if [ "$?" != "0" ]
+            then
+                echo "There is no such repo. Aborting..."
+                exit 1
+            fi
+
+            read -p "Do you want to add $1:$3 to ${PROGNAME} profile \"$2\" [y/n] (y)?" A
+            if [ "$A" = "y" -o "$A" = "" ]
+            then
+                echo "$1,$3" >> "$CONFIG"
+                echo "Successfully added $1:$3 to ${PROGNAME} to profile \"$2\"."
+            else
+                echo "Aborting..."
+                exit
             fi
         fi
     fi
@@ -212,17 +231,17 @@ function delete() {
     # if optional paramters (profile-name and branch-name) are not provided
     if [ "$2" = "" -o "$3" = "" ]; then
         # delete from default profile
-        line=$(egrep "^$1\$" "${ZENV_ROOT}/utils/zbranch/default")
+        line=$(egrep "^$1\$" "${DATA_ROOT}/default")
         if [ "$line" = "" ]
         then
-            echo "This repo is not controlled by zbranch or does not exist."
+            echo "This repo is not controlled by ${PROGNAME} or does not exist."
         else
-            read -p "Do you want to remove $1 from zbranch [y/n] (y)?" A
+            read -p "Do you want to remove $1 from ${PROGNAME} [y/n] (y)?" A
             if [ "$A" = "y" -o "$A" = "" ]
             then
                 path=$(echo $1 | sed 's|/|\\/|g')
-                echo $(sed -e "/^$path$/d" "${ZENV_ROOT}/utils/zbranch/default") > ${ZENV_ROOT}/utils/zbranch/default
-                echo "Successfully removed $1 repo from zbranch."
+                echo $(sed -e "/^$path$/d" "${DATA_ROOT}/default") > ${DATA_ROOT}/default
+                echo "Successfully removed $1 repo from ${PROGNAME}."
             else
                 echo "Aborting..."
             fi
@@ -230,18 +249,18 @@ function delete() {
         exit
     fi
     pair="$1,$3"
-    line=$(egrep "^$pair\$" "${ZENV_ROOT}/utils/zbranch/profiles/$2")
+    line=$(egrep "^$pair\$" "${DATA_ROOT}/profiles/$2")
     if [ "$line" = "" ]
     then
         echo "This repo does not exist in the custom profile $2."
     else
-        read -p "Do you want to remove $1 from zbranch profile $2 [y/n] (y)?" A
+        read -p "Do you want to remove $1 from ${PROGNAME} profile $2 [y/n] (y)?" A
         if [ "$A" = "y" -o "$A" = "" ]
         then
             path=$(echo $pair | sed 's|/|\\/|g')
-            if [ -f "${ZENV_ROOT}/utils/zbranch/profiles/$2" ]; then
+            if [ -f "${DATA_ROOT}/profiles/$2" ]; then
                 echo $path
-                echo $(sed -e "/^$path$/d" "${ZENV_ROOT}/utils/zbranch/profiles/$2") > ${ZENV_ROOT}/utils/zbranch/profiles/$2
+                echo $(sed -e "/^$path$/d" "${DATA_ROOT}/profiles/$2") > ${DATA_ROOT}/profiles/$2
                 echo "Successfully removed $1 repo from profile $2."
                 exit
             fi
@@ -258,8 +277,8 @@ function show() {
     if [ "$1" != "" ]
     then
         # listing a specific custom profile.
-        repos="$(cat ${ZENV_ROOT}/utils/zbranch/profiles/$1)"
-        echo ""
+        repos="$(cat ${DATA_ROOT}/profiles/$1)"
+        echo
         echo "Showing profile $1"
         echo "----------------------------------------------"
         for repo in $repos
@@ -286,8 +305,8 @@ function show() {
     fi
 
     # showing all profiles
-    echo ""
-    default=$(cat ${ZENV_ROOT}/utils/zbranch/default)
+    echo
+    default=$(cat ${DATA_ROOT}/default)
     echo "DEFAULT PROFILE (You can only checkout to same branches among these repos.)"
 
     for r in $default
@@ -301,16 +320,16 @@ function show() {
             echo - $r - Not a git repo
         fi
     done
-    echo ""
-    echo ""
+    echo
+    echo
     echo "CUSTOM PROFILES"
-    echo ""
-    profiles=$(ls ${ZENV_ROOT}/utils/zbranch/profiles)
+    echo
+    profiles=$(ls ${DATA_ROOT}/profiles)
     for i in $profiles
     do
         echo "- $i"
         # echo "----------------------------------------------"
-        # repos="$(cat ${ZENV_ROOT}/utils/zbranch/profiles/$i)"
+        # repos="$(cat ${DATA_ROOT}/profiles/$i)"
         # for repo in $repos
         # do
         #     IFS=',' read -a arr <<< "$repo"
@@ -326,12 +345,10 @@ function show() {
         #         else
         #             echo ${arr[0]}:${arr[1]} - Not a git repo
         #         fi
-
         #     fi
-
         # done
     done
-    echo ""
+    echo
 }
 
 # function for checking out to a specified branch for all repos in default profile.
@@ -340,8 +357,8 @@ function checkout() {
         checkout_usage
         exit 1
     fi
-    repos=$(cat ${ZENV_ROOT}/utils/zbranch/default)
-    echo ""
+    repos=$(cat ${DATA_ROOT}/default)
+    echo
     failCount=0
     for i in $repos
     do
@@ -356,11 +373,119 @@ function checkout() {
             echo "Switched to $1 on $i"
         fi
         echo "========================="
-        echo ""
+        echo
     done
     if [ "$failCount" != 0 ]; then
         echo "${RED}********* ERROR ON CHECKOUT ************"
         echo "$failCount repos failed to checkout branch $1."
+    fi
+}
+
+# function to get active profile name
+function get_active_profile() {
+    ACTIVE_FILE="${DATA_ROOT}/active_profile"
+    if [ ! -r "${ACTIVE_FILE}" ]; then
+        ACTIVE_NAME='default'
+        echo "${ACTIVE_NAME}" > "${ACTIVE_FILE}"
+    else
+        ACTIVE_NAME=$(cat "${ACTIVE_FILE}")
+        PROFILE_PATH="${DATA_ROOT}/${ACTIVE_NAME}"
+
+        if [ ! -r "${PROFILE_PATH}" ]; then
+            echo "${RED}********* INVALID PROFILE NAME ************"
+            echo "Requested profile no longer found; reverting to default"
+            ACTIVE_NAME='default'
+            echo "${ACTIVE_NAME}" > "${ACTIVE_FILE}"
+        fi
+    fi
+    echo "${ACTIVE_NAME}"
+}
+
+# function to get branch for default profile.
+function get_default_branch() {
+    BRANCH_FILE="${DATA_ROOT}/default_branch"
+    if [ ! -r "${ACTIVE_FILE}" ]; then
+        BRANCH_NAME='develop'
+        echo "${BRANCH_NAME}" > "${BRANCH_FILE}"
+    else
+        BRANCH_NAME=$(cat "${BRANCH_FILE}")
+    fi
+    echo "${BRANCH_NAME}"
+}
+
+# function for pulling on all branches in profile.
+function pull() {
+    ACTIVE_NAME=$(get_active_profile)
+    if [ "${ACTIVE_NAME}" = "default" ]; then
+        PROFILE_PATH="${DATA_ROOT}/default"
+    else
+        PROFILE_PATH="${DATA_ROOT}/profiles/${ACTIVE_NAME}"
+    fi
+
+    REPO_LIST=$(cat "${PROFILE_PATH}")
+    LF_STR="\n"
+    FAIL_LIST=()
+    DEFAULT_BRANCH=$(get_default_branch)
+
+    echo
+    for REPO_LINE in $REPO_LIST
+    do IFS=',' read -a ARR <<< "$REPO_LINE"
+        REPO_NAME="${ARR[0]}"
+        REPO_PATH="${ZENV_WORKSPACE}/${REPO_NAME}"
+
+        echo -n "${GREEN}**** Processing Repository |${REPO_NAME}|"
+        echo " ****${TXTRESET}"
+
+        cd "${REPO_PATH}"
+        if [ "$?" != "0" ]; then
+            FAIL_LIST+=("${RED}Failed to cd to |${REPO_PATH}|${TXTRESET}")
+            continue
+        fi
+
+        USE_BRANCH=$(git status |grep -i '^on branch ' |cut -f3- -d' ')
+        if [ "${ACTIVE_NAME}" = 'default' ]; then
+            TGT_BRANCH="${DEFAULT_BRANCH}"
+        else
+            TGT_BRANCH="${ARR[1]}"
+        fi
+
+        if [ "${TGT_BRANCH}" != "${USE_BRANCH}" ]; then
+            STR_LIST=();
+            STR_LIST+=("${RED}**** WARN - BRANCH DOES NOT MATCH ****")
+            STR_LIST+=("  Repository |${REPO_NAME}|")
+            STR_LIST+=("  Branch     |${USE_BRANCH}|")
+            STR_LIST+=("  Profile    |${ACTIVE_NAME}|")
+            STR_LIST+=("  Branch does not match |${TGT_BRANCH}|")
+            STR_LIST+=("  as defined in active profile. ${TXTRESET}")
+
+            SCRATCH_STR=$(join_list "${LF_STR}" "${STR_LIST[@]}")
+            echo "${FAIL_STR}"
+            echo
+            FAIL_LIST+=("${SCRATCH_STR}")
+        fi
+
+        echo "Pulling branch ${USE_BRANCH} for ${REPO_NAME}"
+        git pull
+
+        if [ "$?" != "0" ]; then
+            STR_LIST=();
+            STR_LIST+=("${RED}**** WARN - PULL FAILED ****")
+            STR_LIST+=("  Repository |${REPO_NAME}|")
+            STR_LIST+=("  Branch     |${USE_BRANCH}|${TXTRESET}")
+
+            SCRATCH_STR=$(join_list "${LF_STR}" "${STR_LIST[@]}")
+            echo "${FAIL_STR}"
+            echo
+            FAIL_LIST+=("${SCRATCH_STR}")
+        fi
+        echo
+    done
+
+    FAIL_COUNT="${#FAIL_LIST[@]}"
+    if [ "$FAIL_COUNT" != 0 ]; then
+        echo -n "${RED}********* ERROR ON PULL ************"
+        join_list "${LF_STR}" "${FAIL_LIST[@]}"
+        echo
     fi
 }
 
@@ -370,8 +495,9 @@ function profile() {
         profile_usage
         exit 1
     fi
-    repos=$(cat ${ZENV_ROOT}/utils/zbranch/profiles/$1)
-    echo ""
+
+    repos=$(cat ${DATA_ROOT}/profiles/$1)
+    echo
     failCount=0
     for repo in $repos
     do
@@ -379,15 +505,14 @@ function profile() {
         echo "Checking out branch ${arr[1]} on ${arr[0]}..."
         echo "-------------------------"
         cd ${ZENV_WORKSPACE}/${arr[0]} && git checkout "${arr[1]}"
-        if [ "$?" != "0" ]
-        then
-            echo "${RED}Failed to checkout branch $1 on $i${TXTRESET}"
+        if [ "$?" != "0" ]; then
+            echo "${RED}Failed to checkout branch $1 on $repo${TXTRESET}"
             ((failCount++))
         else
             echo "Switched to ${arr[1]} on ${arr[0]}"
         fi
         echo "========================="
-        echo ""
+        echo
     done
     if [ "$failCount" != 0 ]; then
         echo "${RED}********* ERROR ON CHECKOUT ************"
@@ -396,9 +521,9 @@ function profile() {
 }
 
 function delete_profile() {
-    rm ${ZENV_ROOT}/utils/zbranch/profiles/$1
+    rm ${DATA_ROOT}/profiles/$1
     [ "$?" != 0 ] && echo "There is no such profile." && exit 1
-    echo "Successfully deleted a profile callsed $1."
+    echo "${PROGNAME}: Successfully deleted a profile ${1}."
 }
 
 # function for creating a custom profile based on current branches. Repos are derived from the default profile.
@@ -406,21 +531,21 @@ function snapshot() {
     read -p "What should be the name of the new custom profile? " name
     if [ "$name" = "" ]
     then
-        echo "Profile name cannot be empty."
+        echo "${PROGRNAME}: ERROR: Profile name cannot be empty."
         exit 1
     fi
 
     if [ "$2" = "" ]
     then
-        ! [ -f ${ZENV_ROOT}/utils/zbranch/profiles/$name ] && touch ${ZENV_ROOT}/utils/zbranch/profiles/$name
-        repos=$(cat ${ZENV_ROOT}/utils/zbranch/default)
+        ! [ -f ${DATA_ROOT}/profiles/$name ] && touch ${DATA_ROOT}/profiles/$name
+        repos=$(cat ${DATA_ROOT}/default)
         for repo in $repos
         do
             cd ${ZENV_WORKSPACE}/$repo
             branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
             if [ "$branch" != "" ]
             then
-                echo $repo,$branch >> ${ZENV_ROOT}/utils/zbranch/profiles/$name
+                echo $repo,$branch >> ${DATA_ROOT}/profiles/$name
             else
                 echo $repo - Not a git repo
             fi
@@ -437,22 +562,24 @@ function snapshot() {
         branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
         if [ "$branch" != "" ]
         then
-            echo $repo,$branch >> ${ZENV_ROOT}/utils/zbranch/profiles/$name
+            echo $repo,$branch >> ${DATA_ROOT}/profiles/$name
         else
             echo $repo - Not a git repo
         fi
     done
     echo "Successfully created a custom profile called $name."
 }
+## END FUNCTIONS
 
-# Usage information when users request for help or supply no parameters
-if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
-    usage
-fi
+## BEGIN MAIN
+PROGNAME=$(basename $0)
 
-mkdir -p ${ZENV_ROOT}/utils/zbranch
-mkdir -p ${ZENV_ROOT}/utils/zbranch/profiles
-! [ -f ${ZENV_ROOT}/utils/zbranch/default ] && touch ${ZENV_ROOT}/utils/zbranch/default
+DATA_ROOT="${ZENV_ROOT}/utils/${PROGNAME}"
+mkdir -p ${DATA_ROOT}
+mkdir -p ${DATA_ROOT}/profiles
+
+! [ -f ${DATA_ROOT}/default ] && touch ${DATA_ROOT}/default
+
 case "$1" in
     "add" )
         add $2 $3 $4
@@ -466,6 +593,9 @@ case "$1" in
     "checkout" )
         checkout $2
         ;;
+    "pull" )
+        pull $2 $3
+        ;;
     "profile" )
         profile $2
         ;;
@@ -475,10 +605,11 @@ case "$1" in
     "snapshot" )
         snapshot "$@"
         ;;
-    "help" )
+    "-h"|"--help"|"help" )
         usage $2
         ;;
     * )
         usage
         ;;
 esac
+## END MAIN
