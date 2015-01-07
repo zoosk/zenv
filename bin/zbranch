@@ -51,14 +51,14 @@ function general_usage() {
     echo
     echo "AVAILABLE COMMANDS"
     echo "------------------"
-    echo "${PROGNAME} add (<repo-name>|<profile-name> <repo-name> [<branch-name>])"
+    echo "${PROGNAME} add <repo-name>|(<profile-name> <repo-name> [<branch-name>])"
     echo "${PROGNAME} checkout <branch-name>"
-    echo "${PROGNAME} delete (<repo-name>|<profile-name> <repo-name>)"
+    echo "${PROGNAME} delete <repo-name>|(<profile-name> <repo-name>)"
     echo "${PROGNAME} delete-profile <profile-name>"
     echo "${PROGNAME} help [<command-name>]"
     echo "${PROGNAME} profile <profile-name>"
     echo "${PROGNAME} show [<profile-name>]"
-    echo "${PROGNAME} snapshot [<profile-name>]"
+    echo "${PROGNAME} snapshot [<repo_name1> <repo_name2> ...]"
     echo
     exit 1
 }
@@ -665,30 +665,35 @@ function show() {
 
     # Show active profile
     if [ "${tgt_profile_name}" == "" ]; then
-        echo -n "${GREEN}SHOW ACTIVE PROFILE${TXTRESET}"
+        echo -n "${GREEN}ACTIVE PROFILE${TXTRESET}"
         echo " |${profile_name}|"
         tgt_profile_name="${profile_name}"
 
     # Show a specific profile
     else
-        echo -n "${GREEN}SHOW REQUESTED PROFILE${TXTRESET}"
+        echo -n "${GREEN}REQUESTED PROFILE${TXTRESET}"
         echo " |${tgt_profile_name}|"
     fi
 
     show_profile_repos "${tgt_profile_name}";
 
-    echo "  ${GREEN}OTHER PROFILES${TXTRESET}"
+    echo "${GREEN}OTHER PROFILES${TXTRESET}"
     if [ $tgt_profile_name != 'default' ]; then
-        echo "    + |default|"
+        echo "  + |default|"
     fi
 
     profile_list=$(ls ${DATA_ROOT}/profiles)
-    for loop_name in $profile_list; do
-        if [ "${loop_name}" == "${tgt_profile_name}" ]; then
-            continue;
-        fi
-        echo "    + |$loop_name|"
-    done
+    if [ "${profile_list}" == "" ]; then
+        echo "  No other profiles defined."
+        echo "  Use '${PROGNAME} snapshot ...' to create or update a profile."
+    else
+        for loop_name in $profile_list; do
+            if [ "${loop_name}" == "${tgt_profile_name}" ]; then
+                continue;
+            fi
+            echo "  + |$loop_name|"
+        done
+    fi
     echo
     exit 0
 }
@@ -700,15 +705,18 @@ function snapshot_usage() {
     echo
     echo "===== ${PROGNAME} snapshot ====="
     echo "${PROGNAME} snapshot [<repo1-name> <repo2-name> ... ]"
-    echo "Create a new profile."
-    echo "When the user provides no argument, the new profile will contain"
-    echo "   the same list the repositories found in the active profile,"
-    echo "   with their current branches."
+    echo "Create or update a profile."
     echo
-    echo "When the user provides a list of repositories, they will be "
-    echo "  added to the new profile with their current branches."
+    echo "When the user provides no arguments, the new or updated "
+    echo "  profile will contain the same list the repositories found "
+    echo "  in the active profile with their current branches."
     echo
-    echo "THE ACTIVE PROFILE IS CHANGED TO THE NEWLY CREATED ONE!"
+    echo "When the user provides a list of repositories, the new or updated "
+    echo "  profile will contain that list with their current branches."
+    echo
+    echo "The user is provided the choice to update the current profile "
+    echo "  or create a new one.  If a new one is created, it becomes the "
+    echo "  active profile."
     echo
     echo "ex) ${PROGNAME} snapshot"
     echo "ex) ${PROGNAME} snapshot zoosk touch cupid"
@@ -719,6 +727,7 @@ function snapshot() {
     local arg_count="$#"
     local profile_name=$(get_active_profile)
     local config_file=$(build_config_path "${profile_name}")
+    local default_branch=$(get_default_branch)
 
     local tgt_profile_name=
     local tgt_config_file=
@@ -731,7 +740,7 @@ function snapshot() {
     local ans=
 
     # Announce intentions
-    echo "${GREEN}CREATE SNAPSHOT for profile${TXTRESET}"
+    echo "${GREEN}SNAPSHOT (create or update a profile)${TXTRESET}"
     echo "  ACTIVE PROFILE is |${profile_name}|"
     echo
 
@@ -742,17 +751,19 @@ function snapshot() {
     echo
 
     # Validate input
-    if [ "${ans}" == "default" ]; then
-        abort 'Profile name cannot be "default"';
-    fi
-
-    if [ "${ans}" = "" ]; then
-        if [ "${profile_name}" == "default" ]; then
-            abort 'Profile name cannot be "default"';
-        fi
+    if [ "${ans}" == "" ]; then
         tgt_profile_name="${profile_name}"
     else
         tgt_profile_name="${ans}"
+    fi
+
+    if [ "${tgt_profile_name}" == "default" ]; then
+        if [ "${profile_name}" == "default" ]; then
+            echo "  DEFAULT profile is using branch ${default_branch}"
+            echo
+        else
+            abort "Cannot update the DEFAULT profile"
+        fi
     fi
 
     # Set vars based on arg count
