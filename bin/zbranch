@@ -1,36 +1,42 @@
 #! /usr/bin/env bash
 # TODO mikem 2014-12-04 These should be set
-# set -e; set -u 
+# set -e; set -u
 
-## BEGIN FUNCTIONS
+### BEGIN FUNCTIONS
 ####################################
 # usage function for all commands. #
 ####################################
 function usage() {
-    case "$1" in
-        "add" )
+    case "${1}" in
+        '' )
+            general_usage
+            ;;
+        'add' )
             add_usage
             ;;
-        "delete" )
-            delete_usage
-            ;;
-        "show" )
-            show_usage
-            ;;
-        "checkout" )
+        'checkout' )
             checkout_usage
             ;;
-        "pull" )
-            pull_usage
+        'delete' )
+            delete_usage
             ;;
-        "profile" )
-            profile_usage
-            ;;
-        "delete-profile" )
+        'delete-profile' )
             delete_profile_usage
             ;;
-        "snapshot" )
+        'profile' )
+            profile_usage
+            ;;
+        'pull' )
+            pull_usage
+            ;;
+        'show' )
+            show_usage
+            ;;
+        'snapshot' )
             snapshot_usage
+            ;;
+        'status' )
+            status_usage
             ;;
         * )
             general_usage
@@ -45,535 +51,777 @@ function general_usage() {
     echo
     echo "AVAILABLE COMMANDS"
     echo "------------------"
-    echo "${PROGNAME} add <repo-name> [profile-name] [branch-name]"
-    echo "${PROGNAME} delete <repo-name> [profile-name] [branch-name]"
-    echo "${PROGNAME} show [profile-name]"
+    echo "${PROGNAME} add <repo-name>|(<profile-name> <repo-name> [<branch-name>])"
     echo "${PROGNAME} checkout <branch-name>"
-    echo "${PROGNAME} profile <profile-name>"
+    echo "${PROGNAME} delete <repo-name>|(<profile-name> <repo-name>)"
     echo "${PROGNAME} delete-profile <profile-name>"
-    echo "${PROGNAME} snapshot [profile-name]"
-    echo "${PROGNAME} help [command-name]"
+    echo "${PROGNAME} help [<command-name>]"
+    echo "${PROGNAME} profile <profile-name>"
+    echo "${PROGNAME} show [<profile-name>]"
+    echo "${PROGNAME} snapshot [<repo_name1> <repo_name2> ...]"
     echo
-    exit
+    exit 1
 }
 
-
+# utlity function to join arrays
 function join_list() { local DELMT=$1; shift; printf "${DELMT}%s" "$@"; }
 
+# utility function to abort
+function abort() {
+    local msg="${1}"
+    echo "${RED}${msg}"
+    echo "Aborting...${TXTRESET}"
+    echo
+    exit 1
+}
+
+# utility function to build profile config file path
+function build_config_path() {
+    local profile_name="${1}";
+    local config_file=
+
+    if [ "${profile_name}" == '' -o "${profile_name}" == 'default' ]; then
+        config_file="${DATA_ROOT}/default"
+        ! [ -f "${config_file}" ] && touch "${config_file}"
+    else
+        config_file="${DATA_ROOT}/profiles/${profile_name}"
+    fi
+
+    echo "${config_file}"
+}
+
+# utility function to set active profile
+function set_active_profile() {
+    local tgt_profile_name="${1}"
+    local active_file="${DATA_ROOT}/active_profile"
+    local config_file=$(build_config_path "${tgt_profile_name}")
+
+    if ! [ -f "${config_file}" ]; then
+        echo "  ${RED}INVALID PROFILE NAME" >&2
+        echo "  Reverting to default profile" >&2
+        config_file=$(build_config_path 'default')
+    fi
+
+    # Get the actual used profile from the config_file path
+    # since it might change it for a number of reasons
+    #
+    profile_name=$(basename "${config_file}")
+
+    echo "${profile_name}" > "${active_file}"
+    echo "${profile_name}"
+}
+
+# utility function to get active profile
+function get_active_profile() {
+    local active_file="${DATA_ROOT}/active_profile"
+    local profile_name=$(cat "${active_file}")
+
+    echo "${profile_name}"
+}
+
+# utility function to get branch for default profile.
+function get_default_branch() {
+    local branch_file="${DATA_ROOT}/default_branch"
+
+    if [ ! -f "${branch_file}" ]; then
+        branch_name='develop'
+        echo "${branch_name}" > "${branch_file}"
+    else
+        branch_name=$(cat "${branch_file}")
+    fi
+    echo "${branch_name}"
+}
+# utility function to set branch for default profile.
+function set_default_branch() {
+    local branch_file="${DATA_ROOT}/default_branch"
+    local branch_name="${1}"
+    if [ "${branch_name}" != "" ]; then
+      echo "${branch_name}" > "${branch_file}"
+    fi
+}
+
+## BEGIN ADD
 function add_usage() {
     echo
     echo "===== ${PROGNAME} add ====="
-    echo "${PROGNAME} add <repo-name> [<profile-name>] [<branch-name>]"
-    echo "Adds a specific repo to a ${PROGNAME} default profile or any custom profile."
-    echo 
+    echo "${PROGNAME} add (<repo-name>|<profile-name> <repo-name> <branch-name>)"
+    echo "Adds a repo to a ${PROGNAME} default profile; OR "
+    echo "Add a repo + branch pair to a custom profile."
+    echo
     echo "ex) ${PROGNAME} add zoosk-core"
-    echo "ex) ${PROGNAME} add zoosk-core core-develop develop"
+    echo "ex) ${PROGNAME} add my_profile zoosk-core develop"
     echo
-    exit
+    exit 1
 }
+function add() {
+    local arg_count="$#"
+    local branch_name=
+    local config_file=
+    local profile_name=
+    local repo_dir=
+    local repo_name=
+    local repo_pair=
+    local ans=
 
-function delete_usage() {
+    # Set vars based on arg count
+    if [ "${arg_count}" == '1' ]; then
+        profile_name=$(get_active_profile)
+        repo_name="${1}"
+    elif [ "${arg_count}" == '2' ]; then
+        profile_name="${1}"
+        repo_name="${2}"
+    elif [ "${arg_count}" == '3' ]; then
+        profile_name="${1}"
+        repo_name="${2}"
+        branch_name="${3}"
+    else
+        add_usage
+        exit 1
+    fi
+
+    # Set validated profile name and config file
+    profile_name=$(set_active_profile "${profile_name}")
+    config_file=$(build_config_path "${profile_name}")
+
+    # Announce intentions
+    echo "${GREEN}ADD repo |${repo_name}| to profile |${profile_name}|${TXTRESET}"
+    echo "  ACTIVE PROFILE is |${profile_name}|"
     echo
-    echo "===== ${PROGNAME} delete ====="
-    echo "${PROGNAME} delete <repo-name> [<profile-name>] [<branch-name>]"
-    echo "Deletes a specific repo from a default profile or custom profile."
-    echo 
-    echo "ex) ${PROGNAME} delete zoosk-core"
-    echo "ex) ${PROGNAME} delete zoosk-core core-develop develop"
-    echo
-    exit
+
+    # Do not re-add a repo
+    if egrep -q "^${repo_name}($|,)" "${config_file}"; then
+        abort "Repo |${repo_name}| is already in profile |${profile_name}|"
+    fi
+
+    # Check repo validity
+    repo_dir="${ZENV_WORKSPACE}/${repo_name}"
+    cd "${repo_dir}"
+    if [ "$?" != "0" ]; then
+        abort "COULD NOT ACCESS |${repo_dir}|"
+    fi
+
+    if [ "${branch_name}" == "" ]; then
+        branch_name=$(git status |grep -i '^on branch ' |cut -f3- -d' ')
+    fi
+
+    # Confirm addition
+    echo -n "Add repo |${repo_name}| to profile |${profile_name}|"
+    read -p " [y/n] (y)? " ans
+    if ! [ "${ans}" == 'y' -o "${ans}" == '' ]; then
+        abort ''
+    fi
+
+    # Complete action
+    if [ "${profile_name}" == 'default' ]; then
+        repo_pair="${repo_name}"
+    else
+        repo_pair="${repo_name},${branch_name}"
+    fi
+
+    echo "${repo_pair}" >> "${config_file}"
+    echo "ADDED ${repo_pair} to profile |${profile_name}|"
+    exit 0
 }
+## END ADD
 
-function show_usage() {
-    echo
-    echo "===== ${PROGNAME} show ====="
-    echo "${PROGNAME} show [<profile-name>]"
-    echo "Lists all profiles and repos that are controlled by ${PROGNAME}"
-    echo
-    echo "ex) ${PROGNAME} show"
-    echo "ex) ${PROGNAME} show core-master"
-    echo
-    exit
-}
-
+## BEGIN CHECKOUT
 function checkout_usage() {
     echo
     echo "===== ${PROGNAME} checkout ====="
-    echo "${PROGNAME} checkout"
-    echo "Checks out repos in the default group to a branch provided."
-    echo 
+    echo "${PROGNAME} checkout <branch-name>"
+    echo "Checks out repos in the active profile all to the same branch."
+    echo
     echo "ex) ${PROGNAME} checkout develop"
     echo "ex) ${PROGNAME} checkout master"
-    exit
+    echo
+    exit 1
 }
+function checkout() {
+    local branch_name="${1}"
+    local profile_name=$(get_active_profile)
+    local config_file=$(build_config_path "${profile_name}")
+    local fail_count=0
+    local lf_str="\n"
 
-function profile_usage() {
+    local ans=
+    local repo_line=
+    local repo_list=
+    local repo_name=
+    local scratch_str=
+    local str_list=
+
+    # Check input
+    if [ "${branch_name}" = "" ]; then
+        checkout_usage
+        exit 1
+    fi
+
+    # Announce intentions
+    echo "${GREEN}CHECKOUT |${branch_name}| for |${profile_name}|${TXTRESET}"
+    show_profile_repos "${profile_name}"
+
+    # Confirm checkout
+    repo_list=$(cat "${config_file}")
     echo
-    echo "===== ${PROGNAME} profile ====="
-    echo "${PROGNAME} profile [<profile-name>]"
-    echo "Checks out repos to specific branches according to a saved profile."
-    echo
-    echo "ex) ${PROGNAME} profile core-master"
-    echo
-    exit
+    read -p "Continue [y/n] (y)? " ans
+    if ! [ "${ans}" == 'y' -o "${ans}" == '' ]; then
+        abort ''
+    fi
+
+    # Execute command
+    for repo_line in $repo_list; do
+        repo_name=$(echo "${repo_line}" |cut -f1 -d,)
+
+        echo "Check out branch ${branch_name} on ${repo_name}"
+        echo "-------------------------"
+        cd "${ZENV_WORKSPACE}/${repo_name}" && git checkout ${branch_name}
+        if [ "$?" != "0" ]; then
+            echo -n "${RED}Failed to checkout branch |${branch_name}|"
+            echo " for repo |${repo_name}|. ${TXTRESET}"
+            ((fail_count++))
+        else
+            echo "Checked out branch |${branch_name}| for repo |${repo_name}|"
+        fi
+        echo "========================="
+        echo
+    done
+
+    # Report errors
+    if [ "${fail_count}" != 0 ]; then
+        str_list=()
+        str_list+=("Failed to checkout |${fail_count}| repos " )
+        str_list+=("  to branch |${branch_name}| using profile " )
+        str_list+=("  |${profile_name}|" )
+        scratch_str=$(join_list "${lf_str}" "${str_list[@]}")
+        abort "${scratch_str}"
+    fi
+
+    echo "Checkout to |${branch_name}| successful for all repos "
+    echo "in the active profile |${profile_name}|"
+
+    if [ "${profile_name}" == "default" ]; then
+        set_default_branch "${branch_name}"
+    fi
+    exit 0
 }
+## END CHECKOUT
 
-function pull_usage() {
+## BEGIN DELETE
+function delete_usage() {
     echo
-    echo "===== ${PROGNAME} pull ====="
-    echo "${PROGNAME} pull"
-    echo "Executes 'git pull' for all ${PROGNAME} repos listed in the active profile."
+    echo "===== ${PROGNAME} delete ====="
+    echo "${PROGNAME} delete (<repo-name>|<profile-name> <repo-name> <branch-name>)"
+    echo "Delete a single repo from a default profile; or "
+    echo "delete a single repo + branch pair from a custom profile"
     echo
-    echo "ex) ${PROGNAME} pull"
+    echo "ex) Delete from the active profile repo 'zoosk-core'"
+    echo "    ${PROGNAME} delete zoosk-core"
+    echo "ex) Delete from 'my_profile' the repo 'zoosk-core'"
+    echo "    ${PROGNAME} delete my_profile zoosk-core"
     echo
-    exit
+    exit 1
 }
+function delete() {
+    local arg_count="$#"
+    local profile_name=$(get_active_profile)
 
+    local ans=
+    local config_file=
+    local repo_name=
+    local tgt_profile_name=
+
+    # Set vars based on arg count
+    if [ "${arg_count}" == '1' ]; then
+        tgt_profile_name="${profile_name}"
+        repo_name="${1}"
+    elif [ "${arg_count}" == '2' ]; then
+        tgt_profile_name="${1}"
+        repo_name="${2}"
+    else
+        delete_usage
+        exit 1
+    fi
+
+    # Announce intentions
+    echo "${GREEN}DELETE REPO |${repo_name}| from |${tgt_profile_name}|${TXTRESET}"
+    echo "  ACTIVE PROFILE is |${profile_name}|"
+    echo
+
+    # Set config file and validated profile name
+    profile_name=$(set_active_profile "${tgt_profile_name}")
+    config_file=$(build_config_path "${profile_name}")
+
+    # Can not remove repo that is not already in profile
+    if ! ( egrep -q "^${repo_name}(,|$)" "${config_file}" ); then
+        abort "Repo |${repo_name}| is not in the |$profile_name| profile."
+    fi
+
+    # Confirm deletion
+    echo -n "Remove repo |${repo_name}| from profile |${profile_name}|"
+    read -p " [y/n] (y)? " ans
+    if ! [ "${ans}" == 'y' -o "${ans}" == '' ]; then
+        abort ''
+    fi
+
+    # Complete action
+    egrep -v "^${repo_name}(,|$)" "${config_file}" > "${config_file}.tmp"
+    mv "${config_file}.tmp" "${config_file}"    
+    echo "DELETED repo |${repo_name}| from profile |${profile_name}|."
+    exit 0
+}
+## END DELETE
+
+## BEGIN DELETE PROFILE
 function delete_profile_usage() {
     echo
     echo "===== ${PROGNAME} delete-profile ====="
     echo "${PROGNAME} delete-profile <profile-name>"
+    echo "Delete a custom profile.  You cannot delete "
+    echo "  the default profile or the active profile."
     echo
     echo "ex) ${PROGNAME} delete-profile core-master"
     echo
-    exit
+    exit 1
+}
+function delete_profile() {
+    local tgt_profile_name="${1}"
+    local tgt_config_file=$(build_config_path "${tgt_profile_name}")
+    local profile_name=$(get_active_profile)
+
+    # Announce intentions
+    echo "${GREEN}DELETE PROFILE ${tgt_profile_name}${TXTRESET}"
+    echo "  ACTIVE PROFILE is |${profile_name}|"
+    echo
+
+    # Check validity of request
+    if [ "${tgt_profile_name}" == '' \
+        -o "${tgt_profile_name}" == 'default' \
+    ]; then
+        abort "Profile |default| cannot be deleted" ;
+    fi
+
+    if [ "${tgt_profile_name}" == "${profile_name}" ]; then
+      abort "Cannot delete active profile"
+    fi
+
+    if [ ! -f "${tgt_config_file}" ]; then
+        abort "Profile |${tgt_profile_name}| does not exist."
+    fi
+
+    # Confirm delete
+    echo -n "Delete profile |${tgt_profile_name}| forever"
+    read -p " [y/n] (y)? " ans
+    if ! [ "${ans}" == 'y' -o "${ans}" == '' ]; then
+        abort ''
+    fi
+
+    # Complete action
+    rm "${tgt_config_file}"
+    if [ "$?" != 0 ]; then
+        abort "Unexpected error removing |${tgt_config_file}|."
+    fi
+    echo "${PROGNAME} DELETED profile |${tgt_profile_name}|."
+}
+## END DELETE PROFILE
+
+## BEGIN PROFILE
+function profile_usage() {
+    echo
+    echo "===== ${PROGNAME} profile ====="
+    echo "${PROGNAME} profile [<profile-name>]"
+    echo "Sets the active profile to the name provided."
+    echo "Checks out the branches for the repos as defined."
+    echo "If no <profile-name> is provided, the default "
+    echo "profile is used."
+    echo
+    echo "ex) ${PROGNAME} profile core-master"
+    echo "ex) ${PROGNAME} profile"
+    echo
+    exit 1
 }
 
+function profile() {
+    local tgt_profile_name="${1}"
+    local default_branch=$(get_default_branch)
+    local profile_name=$(get_active_profile)
+
+    local arr=
+    local branch_name=
+    local config_file=
+    local fail_count=
+    local repo_line=
+    local repo_list=
+    local repo_name=
+
+    # Announce intentions
+    echo "${GREEN}SWITCH PROFILE to |${tgt_profile_name}|${TXTRESET}"
+    echo "  ACTIVE PROFILE is |${profile_name}|"
+    echo
+
+    # Set validated profile name and config file
+    profile_name=$(set_active_profile "${tgt_profile_name}")
+    config_file=$(build_config_path "${profile_name}")
+
+    # Check profile validity
+    if [ "${profile_name}" == "default" ]; then
+        if [ "${tgt_profile_name}" != "default" \
+          -a "${tgt_profile_name}" != "" \
+        ]; then
+            abort "Requested profile |${tgt_profile_name}| not found."
+        fi
+    fi
+
+    repo_list=$(cat "${config_file}")
+
+    echo
+    fail_count=0
+    for repo_line in ${repo_list}; do
+        IFS=',' read -a arr <<< "${repo_line}"
+
+        repo_name="${arr[0]}"
+        if [ "${profile_name}" == 'default' ]; then
+            branch_name="${default_branch}"
+        else
+            branch_name="${arr[1]}"
+        fi
+        echo "Checking out branch |${branch_name}| on repo |${repo_name}|..."
+        echo "-------------------------"
+        cd "${ZENV_WORKSPACE}/${repo_name}" && git checkout "${branch_name}"
+
+        if [ "$?" != "0" ]; then
+            echo -n "${RED}Failed to checkout |${branch_name}|"
+            echo " on repo |${repo_name}|${TXTRESET}"
+            ((fail_count++))
+        fi
+        echo
+    done
+
+    if [ "$fail_count" != 0 ]; then
+        echo "${RED}********* ERROR ON CHECKOUT ************"
+        echo "|${fail_count}| repos failed to checkout their correct branch."
+        echo "Please correct the errors above, and try again.${TXTRESET}"
+        echo
+    fi
+}
+## END DELETE PROFILE
+
+## BEGIN PULL
+function pull_usage() {
+    echo
+    echo "===== ${PROGNAME} pull ====="
+    echo "${PROGNAME} pull"
+    echo "Executes 'git pull' for all ${PROGNAME} repos "
+    echo "  listed in the active profile."
+    echo
+    echo "ex) ${PROGNAME} pull"
+    echo
+    exit 1
+}
+function pull() {
+    local default_branch=$(get_default_branch)
+    local lf_str="\n"
+    local fail_list=()
+    local fail_count=0
+
+    local arr=
+    local config_file=
+    local profile_name=
+    local repo_dir=
+    local repo_line=
+    local repo_list=
+    local scratch_str=
+    local str_list=
+
+
+    # Get validated profile name and config file
+    local profile_name=$(get_active_profile)
+    local config_file=$(build_config_path "${profile_name}")
+
+    repo_list=$(cat "${config_file}")
+
+    # Announce intentions
+    echo "${GREEN}PULL ALL REPOS in |${profile_name}|."
+    echo
+    for repo_line in ${repo_list}; do
+        IFS=',' read -a arr <<< "${repo_line}"
+        repo_name="${arr[0]}"
+        repo_dir="${ZENV_WORKSPACE}/${repo_name}"
+        if [ "${profile_name}" == 'default' ]; then
+            branch_name="${default_branch}"
+        else
+            branch_name="${arr[1]}"
+        fi
+        echo -n "  + |${repo_name}|"
+
+        cd "${repo_dir}"
+        if [ "$?" != "0" ]; then
+            fail_list+=("  ${RED}COULD NOT ACCESS |${repo_dir}|${TXTRESET}")
+            continue
+        fi
+        current_branch=$(git status |grep -i '^on branch ' |cut -f3- -d' ')
+
+        if [ "${branch_name}" != "${current_branch}" ]; then
+            str_list=()
+            str_list+=("  ${RED}BRANCH MISMATCH")
+            str_list+=("  Current branch is |${current_branch}|")
+            str_list+=("  Should be         |${branch_name}|")
+            str_list+=("")
+
+            scratch_str=$(join_list "${lf_str}" "${str_list[@]}")
+            fail_list+=("${scratch_str}")
+
+            echo $scratch_str;
+        fi
+
+        echo "Pulling branch ${current_branch} for ${repo_name}"
+
+        git pull
+        if [ "$?" != "0" ]; then
+            str_list=()
+            str_list+=("  ${RED}PULL FAILED")
+            str_list+=("  Repo |${repo_name}| branch |${current_branch}")
+            str_list+=("${TXTRESET}")
+            str_list+=("")
+
+            scratch_str=$(join_list "${lf_str}" "${str_list[@]}")
+            fail_list+=("${scratch_str}")
+
+            echo "${scratch_str}"
+        fi
+        echo
+    done
+
+    # Report errors
+    fail_count="${#fail_list[@]}"
+    if [ "${fail_count}" != "0" ]; then
+        echo -n "${RED}********* ERROR ON PULL ************"
+        join_list "${lf_str}" "${fail_list[@]}"
+        echo "${TXTRESET}"
+        exit 1
+    fi
+
+    exit 0
+}
+## END PULL
+
+## BEGIN SHOW
+function show_usage() {
+    echo
+    echo "===== ${PROGNAME} show ====="
+    echo "${PROGNAME} show [<profile-name>]"
+    echo "Show the active profile-name and details for <profile-name>."
+    echo "If <profile-name> not provided, show the active profile-name all profiles."
+    echo
+    echo "ex) ${PROGNAME} show"
+    echo "ex) ${PROGNAME} show core-master"
+    echo
+    exit 1
+}
+function show_profile_repos(){
+    local tgt_profile_name="${1}"
+    local default_branch=$(get_default_branch)
+
+    local tgt_config_file=
+    local profile_name=
+    local repo_line=
+    local repo_name=
+    local repo_dir=
+    local branch_name=
+
+    tgt_config_file=$(build_config_path "${tgt_profile_name}")
+    profile_name=$(basename "${tgt_config_file}")
+
+    if ! [ -f "${tgt_config_file}" ]; then
+      abort "|$tgt_profile_name| is not an existing profile"
+    fi
+
+    repo_list="$(cat ${tgt_config_file})"
+    for repo_line in ${repo_list}; do
+        IFS=',' read -a arr <<< "${repo_line}"
+        repo_name="${arr[0]}"
+
+        if [ "${profile_name}" == "default" ]; then
+            branch_name="${default_branch}"
+        else
+            branch_name="${arr[1]}"
+        fi
+        echo -n "    "
+        echo "+ Repo |${repo_name}| branch |${branch_name}|"
+
+        repo_dir="${ZENV_WORKSPACE}/${repo_name}"
+        if ! [ -d "${repo_dir}" -a -x "${repo_dir}" ]; then
+            echo -n "    "
+            echo "${RED}WARN repo dir |${repo_name}| not accessible.${TXTRESET}"
+            continue
+        fi
+    done
+    echo
+}
+function show() {
+    local tgt_profile_name="${1}"
+    local profile_name=$(get_active_profile)
+    local profile_list=
+    local loop_name=
+
+    # Show active profile
+    if [ "${tgt_profile_name}" == "" ]; then
+        echo -n "${GREEN}ACTIVE PROFILE${TXTRESET}"
+        echo " |${profile_name}|"
+        tgt_profile_name="${profile_name}"
+
+    # Show a specific profile
+    else
+        echo -n "${GREEN}REQUESTED PROFILE${TXTRESET}"
+        echo " |${tgt_profile_name}|"
+    fi
+
+    show_profile_repos "${tgt_profile_name}";
+
+    echo "${GREEN}OTHER PROFILES${TXTRESET}"
+    if [ $tgt_profile_name != 'default' ]; then
+        echo "  + |default|"
+    fi
+
+    profile_list=$(ls ${DATA_ROOT}/profiles)
+    if [ "${profile_list}" == "" ]; then
+        echo "  No other profiles defined."
+        echo "  Use '${PROGNAME} snapshot ...' to create or update a profile."
+    else
+        for loop_name in $profile_list; do
+            if [ "${loop_name}" == "${tgt_profile_name}" ]; then
+                continue;
+            fi
+            echo "  + |$loop_name|"
+        done
+    fi
+    echo
+    exit 0
+}
+## END SHOW
+
+
+## BEGIN SNAPSHOT
 function snapshot_usage() {
     echo
     echo "===== ${PROGNAME} snapshot ====="
-    echo "${PROGNAME} snapshot [<repo1-name> <repo2-name>, ... ]"
-    echo "Take a snapshot of current branches for ${PROGNAME} repos"
-    echo "and creates a custom profile."
+    echo "${PROGNAME} snapshot [<repo1-name> <repo2-name> ... ]"
+    echo "Create or update a profile."
+    echo
+    echo "When the user provides no arguments, the new or updated "
+    echo "  profile will contain the same list the repositories found "
+    echo "  in the active profile with their current branches."
+    echo
+    echo "When the user provides a list of repositories, the new or updated "
+    echo "  profile will contain that list with their current branches."
+    echo
+    echo "The user is provided the choice to update the current profile "
+    echo "  or create a new one.  If a new one is created, it becomes the "
+    echo "  active profile."
     echo
     echo "ex) ${PROGNAME} snapshot"
     echo "ex) ${PROGNAME} snapshot zoosk touch cupid"
-    exit
-}
-
-# function for adding a repo to a default profile, or adding repo, branch pair to a custom profile.
-function add() {
-    if [ "$1" == '' ]
-    then
-        add_usage
-        exit
-    fi
-
-    if [ "$2" == '' -o "$3" == '' ]
-    then
-        # profile name not specified. using the default profile.
-        CONFIG="${DATA_ROOT}/default"
-        ! [ -f $CONFIG ] && touch $CONFIG
-        # if the repo is already in the config file
-        if grep -q "$1" "$CONFIG"
-        then
-            echo "Already in the path. Aborting..."
-            exit 0
-        else
-            path="${ZENV_WORKSPACE}/$1"
-            cd $path
-            if [ "$?" != "0" ]
-            then
-                # if there is no such repo..
-                echo "There is no such repo. Aborting..."
-                exit 1
-            fi
-
-            read -p "Do you want to add $1 to ${PROGNAME} [y/n] (y)?" A
-            if [ "$A" = "y" -o "$A" = "" ]
-            then
-                echo "$1" >> "$CONFIG"
-                echo "Successfully added $1 to ${PROGNAME}."
-            else
-                echo "Aborting..."
-                exit
-            fi
-        fi
-    else
-        # using the specified custom profile.
-        CONFIG=${DATA_ROOT}/profiles/$2
-        ! [ -f $CONFIG ] && touch $CONFIG
-        # if the repo is already in the config file
-        if grep -q "$1" "$CONFIG"
-        then
-            echo "Already in the path. Aborting..."
-            exit 0
-        else
-            path="${ZENV_WORKSPACE}/$1"
-            cd $path
-            if [ "$?" != "0" ]
-            then
-                echo "There is no such repo. Aborting..."
-                exit 1
-            fi
-
-            read -p "Do you want to add $1:$3 to ${PROGNAME} profile \"$2\" [y/n] (y)?" A
-            if [ "$A" = "y" -o "$A" = "" ]
-            then
-                echo "$1,$3" >> "$CONFIG"
-                echo "Successfully added $1:$3 to ${PROGNAME} to profile \"$2\"."
-            else
-                echo "Aborting..."
-                exit
-            fi
-        fi
-    fi
-}
-
-# function for deleting a repo from default profile, or repo, branch pair from a custom profile.
-function delete() {
-    if [ "$1" == '' ]
-    then
-        delete_usage
-        exit
-    fi
-
-    # if optional paramters (profile-name and branch-name) are not provided
-    if [ "$2" = "" -o "$3" = "" ]; then
-        # delete from default profile
-        line=$(egrep "^$1\$" "${DATA_ROOT}/default")
-        if [ "$line" = "" ]
-        then
-            echo "This repo is not controlled by ${PROGNAME} or does not exist."
-        else
-            read -p "Do you want to remove $1 from ${PROGNAME} [y/n] (y)?" A
-            if [ "$A" = "y" -o "$A" = "" ]
-            then
-                path=$(echo $1 | sed 's|/|\\/|g')
-                echo $(sed -e "/^$path$/d" "${DATA_ROOT}/default") > ${DATA_ROOT}/default
-                echo "Successfully removed $1 repo from ${PROGNAME}."
-            else
-                echo "Aborting..."
-            fi
-        fi
-        exit
-    fi
-    pair="$1,$3"
-    line=$(egrep "^$pair\$" "${DATA_ROOT}/profiles/$2")
-    if [ "$line" = "" ]
-    then
-        echo "This repo does not exist in the custom profile $2."
-    else
-        read -p "Do you want to remove $1 from ${PROGNAME} profile $2 [y/n] (y)?" A
-        if [ "$A" = "y" -o "$A" = "" ]
-        then
-            path=$(echo $pair | sed 's|/|\\/|g')
-            if [ -f "${DATA_ROOT}/profiles/$2" ]; then
-                echo $path
-                echo $(sed -e "/^$path$/d" "${DATA_ROOT}/profiles/$2") > ${DATA_ROOT}/profiles/$2
-                echo "Successfully removed $1 repo from profile $2."
-                exit
-            fi
-            echo "No such profile exists. Aborting..."
-            exit 1
-        else
-            echo "Aborting..."
-        fi
-    fi
-}
-
-# function for listing repos for all profiles, or repo, branch pairs for an indiviudal custom profile.
-function show() {
-    if [ "$1" != "" ]
-    then
-        # listing a specific custom profile.
-        repos="$(cat ${DATA_ROOT}/profiles/$1)"
-        echo
-        echo "Showing profile $1"
-        echo "----------------------------------------------"
-        for repo in $repos
-        do
-            IFS=',' read -a arr <<< "$repo"
-            cd ${ZENV_WORKSPACE}/${arr[0]}
-            if [ "$?" != "0" ]
-            then
-                echo "There is no $i repo on your workspace."
-            else
-                branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
-                if [ "$branch" != "" ]
-                then
-                    echo ${arr[0]}:${arr[1]} - $branch
-                else
-                    echo ${arr[0]}:${arr[1]} - Not a git repo
-                fi
-
-            fi
-
-        done
-        echo "----------------------------------------------"
-        return
-    fi
-
-    # showing all profiles
     echo
-    default=$(cat ${DATA_ROOT}/default)
-    echo "DEFAULT PROFILE (You can only checkout to same branches among these repos.)"
-
-    for r in $default
-    do
-        cd ${ZENV_WORKSPACE}/$r
-        branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
-        if [ "$branch" != "" ]
-        then
-            echo - $r:$branch
-        else
-            echo - $r - Not a git repo
-        fi
-    done
-    echo
-    echo
-    echo "CUSTOM PROFILES"
-    echo
-    profiles=$(ls ${DATA_ROOT}/profiles)
-    for i in $profiles
-    do
-        echo "- $i"
-        # echo "----------------------------------------------"
-        # repos="$(cat ${DATA_ROOT}/profiles/$i)"
-        # for repo in $repos
-        # do
-        #     IFS=',' read -a arr <<< "$repo"
-        #     cd ${ZENV_WORKSPACE}/${arr[0]}
-        #     if [ "$?" != "0" ]
-        #     then
-        #         echo "There is no $i repo on your workspace."
-        #     else
-        #         branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
-        #         if [ "$branch" != "" ]
-        #         then
-        #             echo ${arr[0]}:${arr[1]} - $branch
-        #         else
-        #             echo ${arr[0]}:${arr[1]} - Not a git repo
-        #         fi
-        #     fi
-        # done
-    done
-    echo
+    exit 1
 }
-
-# function for checking out to a specified branch for all repos in default profile.
-function checkout() {
-    if [ "$1" = "" ]; then
-        checkout_usage
-        exit 1
-    fi
-    repos=$(cat ${DATA_ROOT}/default)
-    echo
-    failCount=0
-    for i in $repos
-    do
-        echo "Checking out branch $1 on $i..."
-        echo "-------------------------"
-        cd ${ZENV_WORKSPACE}/$i && git checkout "$1"
-        if [ "$?" != "0" ]
-        then
-            echo "${RED}Failed to checkout branch $1 on $i${TXTRESET}"
-            ((failCount++))
-        else
-            echo "Switched to $1 on $i"
-        fi
-        echo "========================="
-        echo
-    done
-    if [ "$failCount" != 0 ]; then
-        echo "${RED}********* ERROR ON CHECKOUT ************"
-        echo "$failCount repos failed to checkout branch $1."
-    fi
-}
-
-# function to get active profile name
-function get_active_profile() {
-    ACTIVE_FILE="${DATA_ROOT}/active_profile"
-    if [ ! -r "${ACTIVE_FILE}" ]; then
-        ACTIVE_NAME='default'
-        echo "${ACTIVE_NAME}" > "${ACTIVE_FILE}"
-    else
-        ACTIVE_NAME=$(cat "${ACTIVE_FILE}")
-        PROFILE_PATH="${DATA_ROOT}/${ACTIVE_NAME}"
-
-        if [ ! -r "${PROFILE_PATH}" ]; then
-            echo "${RED}********* INVALID PROFILE NAME ************"
-            echo "Requested profile no longer found; reverting to default"
-            ACTIVE_NAME='default'
-            echo "${ACTIVE_NAME}" > "${ACTIVE_FILE}"
-        fi
-    fi
-    echo "${ACTIVE_NAME}"
-}
-
-# function to get branch for default profile.
-function get_default_branch() {
-    BRANCH_FILE="${DATA_ROOT}/default_branch"
-    if [ ! -r "${ACTIVE_FILE}" ]; then
-        BRANCH_NAME='develop'
-        echo "${BRANCH_NAME}" > "${BRANCH_FILE}"
-    else
-        BRANCH_NAME=$(cat "${BRANCH_FILE}")
-    fi
-    echo "${BRANCH_NAME}"
-}
-
-# function for pulling on all branches in profile.
-function pull() {
-    ACTIVE_NAME=$(get_active_profile)
-    if [ "${ACTIVE_NAME}" = "default" ]; then
-        PROFILE_PATH="${DATA_ROOT}/default"
-    else
-        PROFILE_PATH="${DATA_ROOT}/profiles/${ACTIVE_NAME}"
-    fi
-
-    REPO_LIST=$(cat "${PROFILE_PATH}")
-    LF_STR="\n"
-    FAIL_LIST=()
-    DEFAULT_BRANCH=$(get_default_branch)
-
-    echo
-    for REPO_LINE in $REPO_LIST
-    do IFS=',' read -a ARR <<< "$REPO_LINE"
-        REPO_NAME="${ARR[0]}"
-        REPO_PATH="${ZENV_WORKSPACE}/${REPO_NAME}"
-
-        echo -n "${GREEN}**** Processing Repository |${REPO_NAME}|"
-        echo " ****${TXTRESET}"
-
-        cd "${REPO_PATH}"
-        if [ "$?" != "0" ]; then
-            FAIL_LIST+=("${RED}Failed to cd to |${REPO_PATH}|${TXTRESET}")
-            continue
-        fi
-
-        USE_BRANCH=$(git status |grep -i '^on branch ' |cut -f3- -d' ')
-        if [ "${ACTIVE_NAME}" = 'default' ]; then
-            TGT_BRANCH="${DEFAULT_BRANCH}"
-        else
-            TGT_BRANCH="${ARR[1]}"
-        fi
-
-        if [ "${TGT_BRANCH}" != "${USE_BRANCH}" ]; then
-            STR_LIST=();
-            STR_LIST+=("${RED}**** WARN - BRANCH DOES NOT MATCH ****")
-            STR_LIST+=("  Repository |${REPO_NAME}|")
-            STR_LIST+=("  Branch     |${USE_BRANCH}|")
-            STR_LIST+=("  Profile    |${ACTIVE_NAME}|")
-            STR_LIST+=("  Branch does not match |${TGT_BRANCH}|")
-            STR_LIST+=("  as defined in active profile. ${TXTRESET}")
-
-            SCRATCH_STR=$(join_list "${LF_STR}" "${STR_LIST[@]}")
-            echo "${FAIL_STR}"
-            echo
-            FAIL_LIST+=("${SCRATCH_STR}")
-        fi
-
-        echo "Pulling branch ${USE_BRANCH} for ${REPO_NAME}"
-        git pull
-
-        if [ "$?" != "0" ]; then
-            STR_LIST=();
-            STR_LIST+=("${RED}**** WARN - PULL FAILED ****")
-            STR_LIST+=("  Repository |${REPO_NAME}|")
-            STR_LIST+=("  Branch     |${USE_BRANCH}|${TXTRESET}")
-
-            SCRATCH_STR=$(join_list "${LF_STR}" "${STR_LIST[@]}")
-            echo "${FAIL_STR}"
-            echo
-            FAIL_LIST+=("${SCRATCH_STR}")
-        fi
-        echo
-    done
-
-    FAIL_COUNT="${#FAIL_LIST[@]}"
-    if [ "$FAIL_COUNT" != 0 ]; then
-        echo -n "${RED}********* ERROR ON PULL ************"
-        join_list "${LF_STR}" "${FAIL_LIST[@]}"
-        echo
-    fi
-}
-
-# function for checking out branches according to a specified custom profile.
-function profile() {
-    if [ "$1" = "" ]; then
-        profile_usage
-        exit 1
-    fi
-
-    repos=$(cat ${DATA_ROOT}/profiles/$1)
-    echo
-    failCount=0
-    for repo in $repos
-    do
-        IFS=',' read -a arr <<< "$repo"
-        echo "Checking out branch ${arr[1]} on ${arr[0]}..."
-        echo "-------------------------"
-        cd ${ZENV_WORKSPACE}/${arr[0]} && git checkout "${arr[1]}"
-        if [ "$?" != "0" ]; then
-            echo "${RED}Failed to checkout branch $1 on $repo${TXTRESET}"
-            ((failCount++))
-        else
-            echo "Switched to ${arr[1]} on ${arr[0]}"
-        fi
-        echo "========================="
-        echo
-    done
-    if [ "$failCount" != 0 ]; then
-        echo "${RED}********* ERROR ON CHECKOUT ************"
-        echo "$failCount repos failed to checkout branch $1."
-    fi
-}
-
-function delete_profile() {
-    rm ${DATA_ROOT}/profiles/$1
-    [ "$?" != 0 ] && echo "There is no such profile." && exit 1
-    echo "${PROGNAME}: Successfully deleted a profile ${1}."
-}
-
-# function for creating a custom profile based on current branches. Repos are derived from the default profile.
 function snapshot() {
-    read -p "What should be the name of the new custom profile? " name
-    if [ "$name" = "" ]
-    then
-        echo "${PROGRNAME}: ERROR: Profile name cannot be empty."
-        exit 1
+    local arg_count="$#"
+    local profile_name=$(get_active_profile)
+    local config_file=$(build_config_path "${profile_name}")
+    local default_branch=$(get_default_branch)
+
+    local tgt_profile_name=
+    local tgt_config_file=
+
+    local branch_name=
+    local repo_list=
+    local repo_line=
+    local repo_name=
+    local arr=
+    local ans=
+
+    # Announce intentions
+    echo "${GREEN}SNAPSHOT (create or update a profile)${TXTRESET}"
+    echo "  ACTIVE PROFILE is |${profile_name}|"
+    echo
+
+    # Get target profile name
+    echo "  Please provide a name for the new profile."
+    echo -n "  Press <enter> to update |${profile_name}|."
+    read -p " " ans
+    echo
+
+    # Validate input
+    if [ "${ans}" == "" ]; then
+        tgt_profile_name="${profile_name}"
+    else
+        tgt_profile_name="${ans}"
     fi
 
-    if [ "$2" = "" ]
-    then
-        ! [ -f ${DATA_ROOT}/profiles/$name ] && touch ${DATA_ROOT}/profiles/$name
-        repos=$(cat ${DATA_ROOT}/default)
-        for repo in $repos
-        do
-            cd ${ZENV_WORKSPACE}/$repo
-            branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
-            if [ "$branch" != "" ]
-            then
-                echo $repo,$branch >> ${DATA_ROOT}/profiles/$name
-            else
-                echo $repo - Not a git repo
-            fi
-        done
-        show $name
-        echo "Successfully created a custom profile called $name."
-        exit
-    fi
-
-    repos="${@:2}"
-    for repo in $repos
-    do
-        cd ${ZENV_WORKSPACE}/$repo
-        branch=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
-        if [ "$branch" != "" ]
-        then
-            echo $repo,$branch >> ${DATA_ROOT}/profiles/$name
+    if [ "${tgt_profile_name}" == "default" ]; then
+        if [ "${profile_name}" == "default" ]; then
+            echo "  DEFAULT profile is using branch ${default_branch}"
+            echo
         else
-            echo $repo - Not a git repo
+            abort "Cannot update the DEFAULT profile"
+        fi
+    fi
+
+    # Set vars based on arg count
+    if [ "${arg_count}" == '0' ]; then
+        repo_list=$(cat "${config_file}")
+    else
+        repo_list="${@}"
+    fi
+
+    # Set up target config file
+    tgt_config_file=$(build_config_path "${tgt_profile_name}")
+
+    if [ "${ans}" == "" ]; then
+        # zero-out config file for update
+        echo '' > "${tgt_config_file}"
+    else
+        if [ -f "${tgt_config_file}" ]; then
+            abort "Requested profile |${tgt_profile_name}| already exists"
+        fi
+        touch $tgt_config_file;
+    fi
+
+    for repo_line in ${repo_list}; do
+        repo_name=$(echo "${repo_line}" |cut -f1 -d,)
+
+        cd "${ZENV_WORKSPACE}/${repo_name}"
+        if [ "$?" != "0" ]; then
+            echo "  ${RED}Repo |${repo_name}| not accessible${TXTRESET}"
+        fi
+
+        branch_name=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
+        if [ "${branch_name}" == "" ]; then
+            echo "  ${RED}Repo |${repo_name}| not under git${TXTRESET}"
+        else
+            if [ "${tgt_profile_name}" == 'default' ]; then
+                repo_pair="${repo_name}"
+            else
+                repo_pair="${repo_name},${branch_name}"
+            fi
+
+            echo "${repo_pair}" >> "${tgt_config_file}"
         fi
     done
-    echo "Successfully created a custom profile called $name."
+
+    if [ "${ans}" == "" ]; then
+        echo "${GREEN}UPDATED profile |${tgt_profile_name}|.${TXTRESET}"
+    else
+        echo "${GREEN}CREATED profile |${tgt_profile_name}|.${TXTRESET}"
+    fi
+    show_profile_repos "${tgt_profile_name}"
+    profile_name=$(set_active_profile "${tgt_profile_name}")
+    echo
 }
-## END FUNCTIONS
+## END SNAPSHOT
+### END FUNCTIONS
 
-## BEGIN MAIN
+### BEGIN MAIN
 PROGNAME=$(basename $0)
-
 DATA_ROOT="${ZENV_ROOT}/utils/${PROGNAME}"
 mkdir -p ${DATA_ROOT}
 mkdir -p ${DATA_ROOT}/profiles
@@ -603,7 +851,8 @@ case "$1" in
         delete_profile $2
         ;;
     "snapshot" )
-        snapshot "$@"
+        ARGV_SHIFT=("$@")
+        snapshot "${ARGV_SHIFT[@]:1}" # shift off first arg
         ;;
     "-h"|"--help"|"help" )
         usage $2
@@ -612,4 +861,4 @@ case "$1" in
         usage
         ;;
 esac
-## END MAIN
+### END MAIN
