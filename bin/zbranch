@@ -47,7 +47,7 @@ function usage() {
 function general_usage() {
     echo
     echo "===== ${PROGNAME} ====="
-    echo "Automatic git checkout system for multiple repositories."
+    echo "Zoosk management system for multiple git repositories."
     echo
     echo "AVAILABLE COMMANDS"
     echo "------------------"
@@ -80,9 +80,8 @@ function build_config_path() {
     local profile_name="${1}";
     local config_file=
 
-    if [ "${profile_name}" == '' -o "${profile_name}" == 'default' ]; then
+    if [ -z "${profile_name}" -o "${profile_name}" == 'default' ]; then
         config_file="${DATA_ROOT}/default"
-        ! [ -f "${config_file}" ] && touch "${config_file}"
     else
         config_file="${DATA_ROOT}/profiles/${profile_name}"
     fi
@@ -96,10 +95,13 @@ function set_active_profile() {
     local active_file="${DATA_ROOT}/active_profile"
     local config_file=$(build_config_path "${tgt_profile_name}")
 
-    if ! [ -f "${config_file}" ]; then
-        echo "  ${RED}INVALID PROFILE NAME" >&2
-        echo "  Reverting to default profile" >&2
+    if [ ! -f "${config_file}" ]; then
+        if [ -z "${tgt_profile_name}" ]; then
+            echo "  ${RED}INVALID PROFILE NAME" >&2
+            echo "  Reverting to default profile" >&2
+        fi
         config_file=$(build_config_path 'default')
+        [ ! -f "${config_file}" ] && touch "${config_file}"
     fi
 
     # Get the actual used profile from the config_file path
@@ -114,8 +116,13 @@ function set_active_profile() {
 # utility function to get active profile
 function get_active_profile() {
     local active_file="${DATA_ROOT}/active_profile"
-    local profile_name=$(cat "${active_file}")
+    local profile_name=
 
+    if [ ! -f "${active_file}" ]; then
+        profile_name=$(set_active_profile 'default');
+    else
+        profile_name=$(cat "${active_file}")
+    fi
     echo "${profile_name}"
 }
 
@@ -200,14 +207,14 @@ function add() {
         abort "COULD NOT ACCESS |${repo_dir}|"
     fi
 
-    if [ "${branch_name}" == "" ]; then
+    if [ -z "${branch_name}" ]; then
         branch_name=$(git status |grep -i '^on branch ' |cut -f3- -d' ')
     fi
 
     # Confirm addition
     echo -n "Add repo |${repo_name}| to profile |${profile_name}|"
     read -p " [y/n] (y)? " ans
-    if ! [ "${ans}" == 'y' -o "${ans}" == '' ]; then
+    if ! [ -z "${ans}" -o "${ans}" == 'y' ]; then
         abort ''
     fi
 
@@ -220,6 +227,7 @@ function add() {
 
     echo "${repo_pair}" >> "${config_file}"
     echo "ADDED ${repo_pair} to profile |${profile_name}|"
+    echo
     exit 0
 }
 ## END ADD
@@ -264,7 +272,7 @@ function checkout() {
     repo_list=$(cat "${config_file}")
     echo
     read -p "Continue [y/n] (y)? " ans
-    if ! [ "${ans}" == 'y' -o "${ans}" == '' ]; then
+    if ! [ -z "${ans}" -o "${ans}" == 'y' ]; then
         abort ''
     fi
 
@@ -359,7 +367,7 @@ function delete() {
     # Confirm deletion
     echo -n "Remove repo |${repo_name}| from profile |${profile_name}|"
     read -p " [y/n] (y)? " ans
-    if ! [ "${ans}" == 'y' -o "${ans}" == '' ]; then
+    if ! [ -z "${ans}" -o "${ans}" == 'y' ]; then
         abort ''
     fi
 
@@ -394,7 +402,7 @@ function delete_profile() {
     echo
 
     # Check validity of request
-    if [ "${tgt_profile_name}" == '' \
+    if [ -z "${tgt_profile_name}" \
         -o "${tgt_profile_name}" == 'default' \
     ]; then
         abort "Profile |default| cannot be deleted" ;
@@ -411,7 +419,7 @@ function delete_profile() {
     # Confirm delete
     echo -n "Delete profile |${tgt_profile_name}| forever"
     read -p " [y/n] (y)? " ans
-    if ! [ "${ans}" == 'y' -o "${ans}" == '' ]; then
+    if ! [ -z "${ans}" -o "${ans}" == 'y' ]; then
         abort ''
     fi
 
@@ -631,8 +639,8 @@ function show_profile_repos(){
     tgt_config_file=$(build_config_path "${tgt_profile_name}")
     profile_name=$(basename "${tgt_config_file}")
 
-    if ! [ -f "${tgt_config_file}" ]; then
-      abort "|$tgt_profile_name| is not an existing profile"
+    if [ ! -f "${tgt_config_file}" ]; then
+        abort "Requested profile |${tgt_profile_name}| not found."
     fi
 
     repo_list="$(cat ${tgt_config_file})"
@@ -655,6 +663,11 @@ function show_profile_repos(){
             continue
         fi
     done
+    if [ -z "${repo_list}" ]; then
+        echo "    There are 0 repos in this profile."
+        echo "    Use '${PROGNAME} add' to add repos."
+        echo "    ex) ${PROGNAME} add cupid_js"
+    fi
     echo
 }
 function show() {
@@ -664,26 +677,26 @@ function show() {
     local loop_name=
 
     # Show active profile
-    if [ "${tgt_profile_name}" == "" ]; then
+    if [ -z "${tgt_profile_name}" ]; then
         echo -n "${GREEN}ACTIVE PROFILE${TXTRESET}"
-        echo " |${profile_name}|"
+        echo " is |${profile_name}|"
         tgt_profile_name="${profile_name}"
 
     # Show a specific profile
     else
         echo -n "${GREEN}REQUESTED PROFILE${TXTRESET}"
-        echo " |${tgt_profile_name}|"
+        echo " is |${tgt_profile_name}|"
     fi
 
     show_profile_repos "${tgt_profile_name}";
 
     echo "${GREEN}OTHER PROFILES${TXTRESET}"
-    if [ $tgt_profile_name != 'default' ]; then
+    if [ "${tgt_profile_name}" != 'default' ]; then
         echo "  + |default|"
     fi
 
     profile_list=$(ls ${DATA_ROOT}/profiles)
-    if [ "${profile_list}" == "" ]; then
+    if [ -z "${profile_list}" ]; then
         echo "  No other profiles defined."
         echo "  Use '${PROGNAME} snapshot ...' to create or update a profile."
     else
@@ -751,7 +764,7 @@ function snapshot() {
     echo
 
     # Validate input
-    if [ "${ans}" == "" ]; then
+    if [ -z "${ans}" ]; then
         tgt_profile_name="${profile_name}"
     else
         tgt_profile_name="${ans}"
@@ -776,7 +789,7 @@ function snapshot() {
     # Set up target config file
     tgt_config_file=$(build_config_path "${tgt_profile_name}")
 
-    if [ "${ans}" == "" ]; then
+    if [ -z "${ans}" ]; then
         # zero-out config file for update
         echo '' > "${tgt_config_file}"
     else
@@ -795,7 +808,7 @@ function snapshot() {
         fi
 
         branch_name=$(git branch 2> /dev/null | grep "*" | awk '{print $2}')
-        if [ "${branch_name}" == "" ]; then
+        if [ -z "${branch_name}" ]; then
             echo "  ${RED}Repo |${repo_name}| not under git${TXTRESET}"
         else
             if [ "${tgt_profile_name}" == 'default' ]; then
@@ -808,7 +821,7 @@ function snapshot() {
         fi
     done
 
-    if [ "${ans}" == "" ]; then
+    if [ -z "${ans}" ]; then
         echo "${GREEN}UPDATED profile |${tgt_profile_name}|.${TXTRESET}"
     else
         echo "${GREEN}CREATED profile |${tgt_profile_name}|.${TXTRESET}"
@@ -826,7 +839,7 @@ DATA_ROOT="${ZENV_ROOT}/utils/${PROGNAME}"
 mkdir -p ${DATA_ROOT}
 mkdir -p ${DATA_ROOT}/profiles
 
-! [ -f ${DATA_ROOT}/default ] && touch ${DATA_ROOT}/default
+[ ! -f ${DATA_ROOT}/default ] && touch ${DATA_ROOT}/default
 
 case "$1" in
     "add" )
