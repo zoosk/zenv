@@ -29,3 +29,7 @@ function quit() {
 trap quit EXIT
 
 rake -f "$ZENV_ROOT"/utils/catalograke.rake $*
+
+echo 'Synch up store items, taxes and promotions with CatalogDB on production'
+
+ssh "${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}" "bash /srv/dev${ZENV_DEVID}_catalog-service/current/test/scripts/import/data.import.sh all" 
