@@ -215,6 +215,12 @@ while [ $DONE -eq 0 ]; do
         DONE=1
         ;;
 	    
+    'pipeline' )
+	ZENV_PIPELINE_DEV_MACHINE=`cat ${ZENV_BUILDPROPS} | grep PIPELINE_DEV_MACHINE | awk -F'=' '{print $2}'`
+        ZENV_BUILD_COMMAND="rsync -rql . /srv/dev${ZENV_DEVID}_pipeline/current/. && chmod -R 777 /srv/dev${ZENV_DEVID}_pipeline/current/ && rsync -rql /srv/dev${ZENV_DEVID}_pipeline/current/. ${ZENV_PIPELINE_DEV_MACHINE}:/srv/pipeline/current/"
+        DONE=1
+        ;;
+
 	* )
 	    echo "Couldn't determine the checkout type. Please enter it manually."
 	    echo 'The type should be the name of the svn or git directory, e.g. zoosk or touch_js.'
@@ -248,6 +254,8 @@ export ZENV_BUILDPROPS=${ZENV_BUILDPROPS}
 
 # The command that will be used to build your code. Arguments are appended.
 export ZENV_BUILD_COMMAND=\"${ZENV_BUILD_COMMAND}\"
+
+export ZENV_PIPELINE_DEV_MACHINE="${ZENV_PIPELINE_DEV_MACHINE}"
 
 # The directories that should be synced when deploying via rsync.
 export ZENV_RSYNC_DIRECTORIES=\"${ZENV_RSYNC_DIRECTORIES}\"
