@@ -57,3 +57,7 @@ alias install-test10k='(buildweb install-test10k-fake)'
 
 # Rsync geodbdata (required for install-geolookup-data)
 alias rsync-geodbdata="mkdir -p ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata && rsync -az --progress ${ZENV_LDAP_USERNAME}@buildmaster.sfo2.zoosk.com:/mnt/geodbdata/ ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata/"
+
+# Rsync pipeline
+alias rsync-pipeline="mkdir -p /srv/dev${ZENV_DEVID}_pipeline/current && rsync -rql . /srv/dev${ZENV_DEVID}_pipeline/current/. && chmod -R 777 /srv/dev${ZENV_DEVID}_pipeline/current/ && rsync -rql /srv/dev${ZENV_DEVID}_pipeline/current/. \$(readprop PIPELINE_DEV_MACHINE):/srv/pipeline/current/"
+
