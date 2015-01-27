@@ -36,16 +36,28 @@ for d in ${DIRS}; do
         # For usability, automatically remove /srv/ from the beginning of args
         d="$(echo "$d" | sed 's|^/srv/||')"
     fi
+
+    def_exclude=(
+        certs
+        environment.json
+        log
+        media
+        paypal-certs
+        photoworking
+        server.json
+        working
+    )
+
+    case "$d" in
+    *)
+        dir_exclude=()
+        ;;
+    esac
+
     if [ -e ${ZENV_LOCAL_DEPLOY_DIR}/${d} ]; then
         echo "Rsync ${ZENV_LOCAL_DEPLOY_DIR}/${d} to ${ZENV_DEVSERVER}:/srv/${d}/ at $(date)"
-        rsync -az --delete $ph  --exclude="media" \
-                               --exclude="working" \
-                               --exclude="photoworking" \
-                               --exclude="certs" \
-                               --exclude="log" \
-                               --exclude="environment.json" \
-                               --exclude="server.json" \
-                               --exclude="paypal-certs" \
+        rsync -az --delete $ph \
+            $(for exclude in ${def_exclude[@]} ${dir_exclude[@]}; do echo "--exclude=$exclude "; done) \
             ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
     fi
 done
