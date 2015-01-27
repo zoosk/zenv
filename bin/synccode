@@ -49,6 +49,11 @@ for d in ${DIRS}; do
     )
 
     case "$d" in
+    dev${ZENV_DEVID}_photo-service)
+        dir_exclude=(
+            /shared
+        )
+        ;;
     *)
         dir_exclude=()
         ;;
