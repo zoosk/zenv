@@ -158,7 +158,7 @@ while [ $DONE -eq 0 ]; do
 	    ;;
 
 	'touch_js' )
-	    ZENV_BUILD_COMMAND="./gradlew -Pproperties_file=\${ZENV_BUILDPROPS}"
+	    ZENV_BUILD_COMMAND="./build.sh --properties-file=\${ZENV_BUILDPROPS}"
         ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}/web/www/touch/html"
 	    DONE=1
 	    ;;
