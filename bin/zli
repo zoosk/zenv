@@ -33,7 +33,7 @@ fi
 if [ -z "$ZLI_INSTALLED" ]; then
     cd ${ZENV_ROOT}/utils/zli
     echo 'You need to install zli before using it. If prompted, please type your sudo password below.'
-    sudo python setup.py develop
+    sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future python setup.py develop
 fi
 
 $ZLI_BIN $@
