@@ -24,9 +24,6 @@ fi
 if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'You must run this program from within ZEnv.'
     exit 1
-elif [ -z "$ZENV_CURRENT_WORK" ]; then
-    echoerr 'You must set a workspace before building it.'
-    exit 1
 fi
 
 # Install the dependencies if they are not
