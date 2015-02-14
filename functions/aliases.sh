@@ -7,7 +7,7 @@ alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH i
 # Install not just everything, but everything-everything. Good for new hires and for first time users of their Dev VM
 alias initial-setup='(checksystem && build install && build install-and-build-photo-service && build install-photov3-db && install-geodata && build install-test-500)'
 # Install everything
-alias install-all='(install-most && install-test && install-test-500)'
+alias install-all='(install-most && install-test && install-test-500 && clearmem)'
 # Reinstall everything
 alias reinstall-all='(delete-all && install-all)'
 # Install everything except test data
