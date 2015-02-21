@@ -6,7 +6,7 @@ if [ "$1" == '-h' -o "$1" == '--help' -o "$3" == '' ]; then
     echo "${PROGNAME}: Change the rollout of missions on your dev instance."
     echo "Usage: ${PROGNAME} <mission_name> <product_name> <rollout_percent>"
     echo 'Where product_name is an ID or one of:'
-    echo 'www, touch, touch_tablet, admin, iphone, ipad, android, android_tablet, or messenger'
+    echo 'www, touch, touch_tablet, iphone, ipad, android, android_tablet, kindle, messenger, or all'
     exit 1
 fi
 
@@ -71,6 +71,12 @@ case "$PRODUCT_ID" in
         ;;
     'android_tablet' )
         PRODUCT_ID=17
+        ;;
+    'kindle' )
+        PRODUCT_ID=18
+        ;;
+    'all' )
+        PRODUCT_ID=0
         ;;
 esac
 
