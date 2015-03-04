@@ -31,7 +31,7 @@ if [ "$1" == 'local' ]; then
         TARGETVALUE="$LOCALIP"
     fi
 fi
-echo "Changing apache rewrite to: $TARGETVALUE"
+echo "Changing nginx rewrite to: $TARGETVALUE"
 
-CMD="sudo sed -i 's|http://[-a-zA-Z0-9\.]*:3000|http://$TARGETVALUE:3000|g' /etc/httpd/sites-available/www-zoosk.conf; sudo /etc/init.d/httpd restart"
+CMD="sudo sed -i 's|server [-a-zA-Z0-9\.]*:3000|server $TARGETVALUE:3000|g' /etc/nginx/conf.d/app.conf; sudo /usr/sbin/nginx -s reload"
 ssh -t "$ZENV_LDAP_USERNAME@$ZENV_DEVSERVER" $CMD
