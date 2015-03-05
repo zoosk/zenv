@@ -73,5 +73,19 @@ _tabcomp_testscript() {
 }
 complete -o nospace -F _tabcomp_testscript testscript
 
+
+__tabcomp_unittest() {
+    local cur scripts dirbase
+    if [ "$ZENV_SERVERDIR" != '' ]; then
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        testdir="${ZENV_SERVERDIR}/web/test"
+        files=$(ls -LR ${testdir}/data ${testdir}/includes ${testdir}/suites ${testdir}/api)
+        COMPREPLY=( $(compgen -W "$files" -- ${cur}) )
+    else
+        COMPREPLY=( $(compgen '' -- ${cur}) )
+    fi     
+}
+complete -o nospace -F __tabcomp_unittest unittest
+
 ## zli
 eval "$(_ZLI_COMPLETE=source /usr/local/bin/zli 2>/dev/null)"
