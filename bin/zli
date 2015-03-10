@@ -11,7 +11,7 @@ ZLI_BIN="/usr/local/bin/zli"
 # Usage information
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     # Print the real zli help if it's already installed
-    if [ -z "" ]; then
+    if [ -n "$ZLI_INSTALLED" ]; then
         $ZLI_BIN --help
     else
         echo 'zli: simulate Zoosk user creation, user interactions, query data, and more.'
