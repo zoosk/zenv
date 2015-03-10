@@ -16,4 +16,4 @@ fi
 
 echo "Running unit tests against platform services on your dev instance. This may take a minute to complete."
 URL="http://sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com:5555/zenv/test"
-curl --connect-timeout 60 $URL
+curl --connect-timeout 120 --max-time 180 $URL
