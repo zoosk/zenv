@@ -12,10 +12,11 @@ from os.path import basename
 from os.path import dirname
 from os.path import exists
 from os.path import relpath
-from os.path import splitext
 from pipes import quote
 import re
 import signal
+
+import zenvlib
 
 
 # Settings
@@ -39,19 +40,19 @@ KEY_ADDDEL = 'adddelete'
 KEY_UPDEL = 'updatedelete'
 
 # Excluded file names
-EXCLUDED_FILE_NAMES = set([
+EXCLUDED_FILE_NAMES = {
     BUILD_SETTINGS_FILE,
     'build.xml',
     'Makefile'
-])
+}
 
 
-if 'ZENV_CURRENT_WORK' not in os.environ:
+if zenvlib.environ.current_work is None:
     print 'You must use a workspace before you start autobuild.'
     exit(1)
 
-local_path = os.environ['ZENV_CURRENT_WORK']
-server_path = os.environ['ZENV_SERVERDIR']
+local_path = zenvlib.environ.current_work
+server_path = zenvlib.environ.serverdir
 
 
 def is_excluded_path(path):

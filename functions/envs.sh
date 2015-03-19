@@ -26,6 +26,9 @@ export PS1="(\[${BOLD}${GREEN}\]Z\[${BLUE}\]Env\[${TXTRESET}\]) ${PS1}"
 # Color the output of grep when it's printing to stdout
 export GREP_OPTIONS='--color=auto'
 
+# Make the ZEnv Python library, zenvlib, importable
+export PYTHONPATH="${ZENV_ROOT}:${PYTHONPATH}"
+
 # If you like colored dir listings enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"

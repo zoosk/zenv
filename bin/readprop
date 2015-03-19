@@ -1,61 +1,14 @@
 #! /usr/bin/env python
 
-import os
-import re
-
-
-def readprops(*property_names):
-    """ Read one or more property names from the configuration files of the current workspace. """
-    required_settings = set(property_names)
-    values = {}
-    separator = '='
-
-    def expand_vars(string):
-        return re.sub('\$\{([^}]+)\}', '%(\\1)s', string) % values
-
-    settings_string =''
-    if os.environ['ZENV_BUILDPROPS_COMMON'] != '':
-        with open(os.environ['ZENV_BUILDPROPS_COMMON'], 'r') as fp:
-            settings_string += fp.read()
-
-    settings_string += "\n"
-    
-    with open(os.environ['ZENV_BUILDPROPS'], 'r') as fp:
-        settings_string += fp.read()
-
-    settings = settings_string.split("\n")
-    for line in settings:
-        # Read the setting
-        split = line.split(separator)
-        name = split[0].strip()
-        if len(split) == 1:
-            # The value is empty
-            values[name] = ''
-        else:
-            values[name] = split[1].strip()
-
-    for prop in property_names:
-        if prop not in values:
-            continue
-        # Expand variables
-        old = values[prop]
-        while True:
-            value = expand_vars(old)
-            if value == old:
-                break
-            old = value
-
-        values[prop] = value
-
-    return values
-
+from zenvlib import environ
+from zenvlib.propfiles import readprop
 
 
 if __name__ == '__main__':
     from os.path import basename
     from sys import argv
 
-    if 'ZENV_INITIALIZED' not in os.environ:
+    if not environ.initialized:
         print 'This program only works from within ZEnv.'
         exit(1)
 
@@ -64,16 +17,17 @@ if __name__ == '__main__':
         print '%s: Read one or more build properties from the settings for the current workspace.' % progname
         print 'Usage: %s <property_name>...' % progname
         exit(0)
-    elif 'ZENV_CURRENT_WORK' not in os.environ:
+    elif environ.current_work is None:
         print 'You must select a workspace before using this program.'
         exit(1)
 
-    os.chdir(os.environ['ZENV_CURRENT_WORK'])
-    props = readprops(*argv[1:])
-    exit_code = 1
-    for arg in argv[1:]:
-        if arg in props:
-            exit_code = 0
-            print props[arg]
+    props = [readprop(i) for i in argv[1:]]
+
+    exit_code = 0
+    for value in props:
+        if value is not None:
+            print value
+        else:
+            exit_code = 1
 
     exit(exit_code)
