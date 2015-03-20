@@ -133,7 +133,7 @@ def create_lookup_dicts(sheet):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1:
+    if len(sys.argv) == 1 or sys.argv[1] == '--help':
         progname = os.path.basename(sys.argv[0])
         print '%s: Search for CSS rules that contain the given declarations.' % progname
         print 'Usage: %s product_prefix' % progname
