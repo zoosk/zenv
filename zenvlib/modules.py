@@ -15,7 +15,6 @@ def install_if_needed(*module_names):
             installed_modules.append(module_name)
             print 'You need to install the %s module to run this program. Installing...' % module_name
 
-
             # Install the dependency
             proc = subprocess.Popen('pip install --user %s' % module_name, shell=True)
             proc.wait()

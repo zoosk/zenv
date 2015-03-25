@@ -7,18 +7,18 @@ import subprocess
 import sys
 import time
 
+from zenvlib import environ, colors, cli
 
-if len(sys.argv) > 2 or len(sys.argv) == 2 and (sys.argv[1] == '--help' or sys.argv[1] == '-h'):
-    print 'copy-recent: Copy all files modified in the last day to your dev instance.'
-    print 'Usage: copy-recent [time_range]'
-    print ''
-    print 'Different time ranges can be copied by passing time_range in the format <number><smhdw>.'
-    print 'For example, "2d" is 2 days, "4w" is 4 weeks, and "1h30m" is an hour and a half.'
-    sys.exit(1)
 
-if 'ZENV_INITIALIZED' not in os.environ or 'ZENV_CURRENT_WORK' not in os.environ:
-    print "You must be using a checkout in ZEnv to use this tool."
-    sys.exit(1)
+cli.check_usage(
+    '%P: Copy all files modified in the last day to your dev instance.\n' +
+    'Usage: %P [time_range]\n' +
+    '\n' +
+    'Different time ranges can be copied by passing time_range in the format <number><smhdw>.\n' +
+    'For example, "2d" is 2 days, "4w" is 4 weeks, and "1h30m" is an hour and a half.'
+)
+cli.fail_without_workspace()
+
 
 perf_timer = time.time()
 
@@ -29,52 +29,44 @@ else:
 
 #### Settings
 # The directories to copy files from
-copy_dirs = [
+COPY_DIRS = [
     'finance',
     'tools',
     'web'
 ]
+
 # Regexes that match relative paths that won't be copied
-excluded_patterns = [
+EXCLUDED_PATTERNS = [
     re.compile('ZConfig.php$'),
     re.compile('^web/data'),
     re.compile('^web/www/update')
 ]
 
-# Function to print colored messages if STDOUT is a TTY
-if sys.stdout.isatty():
-    def print_status(message, success):
-        if success:
-            print '\x1b[32m%s\x1b[0m' % message
-        else:
-            print '\x1b[31m%s\x1b[0m' % message
-else:
-    def print_status(message, success):
-        print message
-
 
 # Get environment settings
-work_dir = os.environ['ZENV_CURRENT_WORK']
-target_dir = os.environ['ZENV_SERVERDIR']
+work_dir = environ.current_work
+target_dir = environ.serverdir
+
 
 # Use the find command to get files that were recently modified
 find_args = ['find']
-for dirname in copy_dirs:
+for dirname in COPY_DIRS:
     find_args.append(os.path.join(work_dir, dirname))
 
 find_args.extend(['-mtime', '-' + time_range, '-type', 'f', '-not', '-path', '*.sql'])
-
 recently_changed_files = subprocess.check_output(find_args).split("\n")
 
 if len(recently_changed_files) == 1:  # There is a blank line at the end of find's output
     print 'No files were changed in the specified time period.'
     sys.exit(0)
 
+
 # Go through the files and copy them to their destinations
+copied_files = []
 for filename in recently_changed_files:
     relative_source = filename.replace(work_dir + '/', '')
 
-    if any(re.search(i, relative_source) for i in excluded_patterns):
+    if any(re.search(i, relative_source) for i in EXCLUDED_PATTERNS):
         continue
 
     if len(relative_source) > 0:
@@ -82,17 +74,29 @@ for filename in recently_changed_files:
         print 'Copying %s to %s...' % (relative_source, target_file),
         try:
             shutil.copyfile(filename, target_file)
-            print_status('Done', True)
+            copied_files.append(target_file)
+            print colors.format_string('Done', colors.GREEN)
         except IOError, e:
-            print_status('Failed: %s' % e, False)
+            print colors.format_string('Failed: %s' % e, colors.RED)
             continue
 
 print '\nCopy complete in %f seconds, deploying to your VM...' % (time.time() - perf_timer)
 
+
+# Determine the directory to sync by calculating the common parent of all the changed files
+shared_parent = copied_files[0]
+for s in copied_files:
+    if len(s) < len(shared_parent):
+        shared_parent = shared_parent[:len(s)]
+    if not shared_parent:
+        break
+    for i in range(len(shared_parent)):
+        if shared_parent[i] != s[i]:
+            shared_parent = shared_parent[:i]
+            break
+
 # Sync the files with the dev server
-sync_args = ['synccode']
-sync_args.extend(os.path.join(target_dir, i) for i in copy_dirs)
-subprocess.call(sync_args)
+subprocess.call(['synccode', shared_parent])
 
 # Print the total time taken
 time_taken = time.time() - perf_timer

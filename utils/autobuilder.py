@@ -17,6 +17,7 @@ import re
 import signal
 
 import zenvlib
+from zenvlib import cli
 
 
 # Settings
@@ -47,9 +48,7 @@ EXCLUDED_FILE_NAMES = {
 }
 
 
-if zenvlib.environ.current_work is None:
-    print 'You must use a workspace before you start autobuild.'
-    exit(1)
+cli.fail_without_workspace()
 
 local_path = zenvlib.environ.current_work
 server_path = zenvlib.environ.serverdir

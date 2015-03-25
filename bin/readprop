@@ -1,25 +1,17 @@
 #! /usr/bin/env python
 
-from zenvlib import environ
+from zenvlib import cli
 from zenvlib.propfiles import readprop
 
 
 if __name__ == '__main__':
-    from os.path import basename
     from sys import argv
 
-    if not environ.initialized:
-        print 'This program only works from within ZEnv.'
-        exit(1)
-
-    if len(argv) == 1 or '--help' in argv:
-        progname = basename(argv[0])
-        print '%s: Read one or more build properties from the settings for the current workspace.' % progname
-        print 'Usage: %s <property_name>...' % progname
-        exit(0)
-    elif environ.current_work is None:
-        print 'You must select a workspace before using this program.'
-        exit(1)
+    cli.check_usage(min_args=1, usage=
+        '%P: Read one or more build properties from the settings for the current workspace.\n' +
+        'Usage: %P <property_name>...'
+    )
+    cli.fail_without_workspace()
 
     props = [readprop(i) for i in argv[1:]]
 
