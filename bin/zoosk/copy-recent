@@ -72,13 +72,23 @@ for filename in recently_changed_files:
     if len(relative_source) > 0:
         target_file = os.path.join(target_dir, relative_source)
         print 'Copying %s to %s...' % (relative_source, target_file),
-        try:
-            shutil.copyfile(filename, target_file)
-            copied_files.append(target_file)
-            print colors.format_string('Done', colors.GREEN)
-        except IOError, e:
-            print colors.format_string('Failed: %s' % e, colors.RED)
-            continue
+        while True:
+            try:
+                shutil.copyfile(filename, target_file)
+                copied_files.append(target_file)
+                print colors.format_string('Done', colors.GREEN)
+            except IOError, e:
+                if e.errno == 2:
+                    # This is 'No such file or directory', which we may be able to get around by creating the dir tree
+                    missing_dir = os.path.dirname(target_file)
+                    if not os.path.exists(missing_dir):
+                        print colors.format_string('(Creating missing parent dir %s)' % missing_dir, colors.BLUE),
+                        os.makedirs(missing_dir)
+                        continue
+
+                print colors.format_string('Failed: %s' % e, colors.RED)
+
+            break
 
 print '\nCopy complete in %f seconds, deploying to your VM...' % (time.time() - perf_timer)
 
@@ -91,7 +101,7 @@ for s in copied_files:
         shared_parent = shared_parent[:len(s)]
     if not shared_parent:
         break
-    for i in range(len(shared_parent)):
+    for i in xrange(len(shared_parent)):
         if shared_parent[i] != s[i]:
             shared_parent = shared_parent[:i]
             break
