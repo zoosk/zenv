@@ -18,7 +18,7 @@ def fail_without_workspace():
         sys.exit(1)
 
 
-def check_usage(usage=None, min_args=0):
+def check_usage(usage=None, min_args=0, max_args=None):
     """ If the user passed --help or -h to the program, print the given usage message and exit.
     :param usage_str: The usage message for the program, using '%N' for the program name.
     """
@@ -42,4 +42,8 @@ def check_usage(usage=None, min_args=0):
     # Check the minimum positional args
     if len(sys.argv) - 1 < min_args:
         print usage
-        sys.exit(0)
+        sys.exit(1)
+
+    if max_args is not None and len(sys.argv) - 1 > max_args:
+        print usage
+        sys.exit(1)
