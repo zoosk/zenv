@@ -84,8 +84,9 @@ print '\nCopy complete in %f seconds, deploying to your VM...' % (time.time() - 
 
 
 # Determine the directory to sync by calculating the common parent of all the changed files
-shared_parent = copied_files[0]
+shared_parent = os.path.dirname(copied_files[0]).split('/')
 for s in copied_files:
+    s = os.path.dirname(s).split('/')
     if len(s) < len(shared_parent):
         shared_parent = shared_parent[:len(s)]
     if not shared_parent:
@@ -94,6 +95,8 @@ for s in copied_files:
         if shared_parent[i] != s[i]:
             shared_parent = shared_parent[:i]
             break
+
+shared_parent = '/'.join(shared_parent)
 
 # Sync the files with the dev server
 subprocess.call(['synccode', shared_parent])
