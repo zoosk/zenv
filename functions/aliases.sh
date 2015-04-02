@@ -11,7 +11,7 @@ alias install-all='(install-most && install-test && install-test-500 && clearmem
 # Reinstall everything
 alias reinstall-all='(delete-all && install-all)'
 # Install everything except test data
-alias install-most='(build install-tools install-web install-web-test build-thrift-php-interface generate-payment-service-client install-psyche install-themis && buildweb refresh-live-mission-control-data-from-production)'
+alias install-most='(build install-tools install-web install-web-test build-thrift-php-interface generate-payment-service-client install-psyche && buildweb refresh-live-mission-control-data-from-production)'
 # Install all geodata
 alias install-geodata='(rsync-geodbdata && build install-geoip-data && build install-geolookup-data)'
 # Get rid of all the work files (done using ssh for speed)
