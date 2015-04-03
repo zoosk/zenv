@@ -94,4 +94,6 @@ checkinstalled git
 
 checkinstalled thrift
 
+checkinstalled composer
+
 echo "${GREEN}${BOLD}SUCCESS!${TXTRESET}"
