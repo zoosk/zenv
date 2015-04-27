@@ -1,0 +1,69 @@
+#! /usr/bin/env python
+
+import json
+import webbrowser
+import datetime
+import time
+import os
+import sys
+import re
+import argparse
+
+from subprocess import call
+from zenvlib import environ, cli
+
+
+cli.check_usage(
+    '%P: Sets zconfig value for your environment\n' +
+    'Usage: %P [zconfig_name] [zconfig_value]'
+    , 2, 2
+)
+
+config_name = sys.argv[1]
+config_value = sys.argv[2]
+
+cli.fail_without_workspace()
+
+work_dir = environ.current_work
+os.chdir(work_dir)
+devserver = environ.devserver
+
+call(['scp', devserver+':/srv/zoosk/current/config/ZConfig.php', '.'])
+file_path = work_dir + '/ZConfig.php'
+file_path_write = work_dir + '/ZConfig1.php'
+
+pattern = re.compile(r'\s*const\s*\w+\s*=+\s*\'\w*\';')
+
+found = False
+lineToReplace = False
+replacedLine = False
+with open(file_path) as f:
+    for line in f:
+        if pattern.search(line):
+            words = line.strip().split()
+            if words[1].lower() == config_name.lower():
+                found = True
+                lineToReplace = line
+                replacedLine = re.sub(r"'\w*'",  '\'' + config_value.strip("\'\"") + "\'", lineToReplace)
+
+if found is False:
+    print "Cannot find the ZConfig variable " + config_name
+    os.remove(file_path)
+    sys.exit(1)
+
+
+with open(file_path) as f:
+    with open(file_path_write, "w+") as f1:
+        for line in f:
+            if line != lineToReplace:
+                f1.write(line)
+            else:
+                f1.write(replacedLine)
+
+
+os.remove(file_path)
+os.rename(file_path_write, file_path)
+call(['scp', file_path, devserver+':/srv/zoosk/current/config'])
+os.remove(file_path)
+
+print "Done"
