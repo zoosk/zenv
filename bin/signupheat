@@ -1,0 +1,29 @@
+#!/bin/bash
+
+signupheat() {
+# Changes the line after "userCount < 30" and sets the allowed number of sign ups to 300
+SED="sed -Ei -e '/userCount < 30\)/{N;s/(.*allowed\s+=)\s*[0-9]+/ \1 300/;}' /srv/zoosk/current/web/www/include/velocity_police/velocity_police_ip_signup.php"
+
+# Prints out the newly set value
+CAT="cat /srv/zoosk/current/web/www/include/velocity_police/velocity_police_ip_signup.php | grep 'userCount < 30)' -A 1 -m 3" 
+ssh -t "$ZENV_DEVSERVER" "$SED;$CAT"
+}
+
+# Zenv Statup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo 'You must set a workspace before setting the signup heat'
+    exit 1
+
+# Show help statement
+elif [ "$1" = "--help" ]; then
+    echo -e "     [--help]\n"
+    echo "Sets signupheat to allow up to 300 signups per day"
+    echo "usage: signupheat"
+    exit 1
+fi
+
+signupheat
+
