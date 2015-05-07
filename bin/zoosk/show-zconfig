@@ -25,7 +25,7 @@ devserver = environ.devserver
 call(['scp', devserver+':/srv/zoosk/current/config/ZConfig.php', '.'])
 file_path = work_dir + '/ZConfig.php'
 
-pattern = re.compile(r'\s*const\s*\w+\s*=+\s*\'\w*\';')
+pattern = re.compile(r'\s*const\s*\w+\s*=+\s*\'.*\';')
 
 
 
