@@ -179,7 +179,7 @@ while [ $DONE -eq 0 ]; do
 	    ;;
 
 	'cupid_js' )
-	    ZENV_BUILD_COMMAND="./cupid -Pproperties_file=\${ZENV_BUILDPROPS}"
+	    ZENV_BUILD_COMMAND="./build.sh --properties-file=\${ZENV_BUILDPROPS}"
         ZENV_RSYNC_DIRECTORIES="zoosk/releases/${ZENV_DEVID}"
 	    DONE=1
 	    ;;
