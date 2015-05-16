@@ -25,7 +25,7 @@ if [[ $SCRIPT_NAME == *.php ]]; then
 fi
 
 WEB_TEST=${ZENV_SERVERDIR}/web/test
-files=( $(find ${WEB_TEST}/api ${WEB_TEST}/data ${WEB_TEST}/includes ${WEB_TEST}/suites -type f -iname ${SCRIPT_NAME}*.php) )
+files=( $(find ${WEB_TEST}/api ${WEB_TEST}/data ${WEB_TEST}/includes ${WEB_TEST}/suites -type f -iname ${SCRIPT_NAME}.php) )
 num_results=${#files[@]}
 
 if [ $num_results -eq 0 ]

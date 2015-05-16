@@ -32,7 +32,7 @@ call(['scp', devserver+':/srv/zoosk/current/config/ZConfig.php', '.'])
 file_path = work_dir + '/ZConfig.php'
 file_path_write = work_dir + '/ZConfig1.php'
 
-pattern = re.compile(r'\s*const\s*\w+\s*=+\s*\'\w*\';')
+pattern = re.compile(r'\s*const\s*\w+\s*=+\s*\'.*\';')
 
 found = False
 lineToReplace = False
