@@ -205,7 +205,8 @@ while [ $DONE -eq 0 ]; do
 
     'wordpress-love' )
 	ZENV_RSYNC_DIRECTORIES="wordpress/current"
-	ZENV_BUILD_COMMAND="rsync -rt --exclude=work.properties --exclude=.idea ${ZENV_CURRENT_WORK}/ ${ZENV_LOCAL_DEPLOY_DIR}/${ZENV_RSYNC_DIRECTORIES}/ && synccode"
+	ZENV_BUILD_COMMAND="./build.sh && synccode"
+	ZENV_SERVERDIR="/srv/wordpress/current"
 	DONE=1
 	;;
 
