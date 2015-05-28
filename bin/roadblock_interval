@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+roadblock() {
+ SED="sed -Ei -e 's/(const ROADBLOCK_INTERVAL\s*=)\s*[0-9]+/\1 "$1"/' "$ZENV_SERVERDIR"/web/www/include/roadblock/abstract_roadblock.php"
+ CAT="cat "$ZENV_SERVERDIR"/web/www/include/roadblock/abstract_roadblock.php |grep ROADBLOCK_INTERVAL -m 1"
+ ssh -t "$ZENV_LDAP_USERNAME"@"$ZENV_DEVSERVER" "$SED;$CAT"
+}
+
+input="$1"
+default_value=1
+
+# Zenv Statup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo 'You must set a workspace before setting the roadblock interval'
+    exit 1
+
+# Check if no arguments are specified and use default value in this case
+elif [ "${#input}" -eq 0 ] ;then
+    echo -e "Choosing default value 1 second"
+    input="$default_value"
+
+# Show help statement
+elif [ "$input" = "--help" ]; then
+    echo -e "     [--help]\n"
+    echo "Changes ROADBLOCK_INTERVAL to specified values in number of seconds (defaults to 1)"
+    echo "Usage: roadblock_interval INTEGER"
+    exit 1
+
+# Check if input is a positive integer
+elif [ "${input//[0-9]}" != "" ]; then
+    echo -e "please enter a positive integer as the argument"
+    exit 1
+
+fi
+
+roadblock "$input"
+
