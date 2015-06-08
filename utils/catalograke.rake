@@ -98,6 +98,17 @@ class CatalogRake
         self.print_cmd_output output
   end
 
+  def self.build_test_dependencies(branch)
+
+        branch_path = self.branch_path(branch)
+
+        puts "Building catalog-service test code dependencies."
+
+        output = self.run_cmd "cd #{branch_path}/test; composer install"
+
+        self.print_cmd_output output
+  end
+
   def self.install_alias
     user_home_dir = File.expand_path('~')
         bash_aliases    = File.join(user_home_dir, '/.bash_aliases')
@@ -192,6 +203,8 @@ task :use, :branch do |t, args|
     CatalogRake.svn_checkout branch 
 
     CatalogRake.build_branch branch
+
+    CatalogRake.build_test_dependencies branch
 
     # copy all files under {deploy_dir} into current directory and then synccode
     CatalogRake.set_current_link branch
