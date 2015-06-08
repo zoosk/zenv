@@ -48,8 +48,8 @@ class PayRake
   def self.set_current_link(branch)
   	current_sym = self.current_path
   	branch_path = self.branch_path(branch)
-        deploy_path = self.payment_deploy_path
-        self.run_cmd "rm #{current_sym}; ln -s #{branch_path}/ #{current_sym}; synccode #{deploy_path}"
+    deploy_path = self.payment_deploy_path
+    self.run_cmd "rm #{current_sym}; ln -s #{branch_path}/ #{current_sym}; synccode #{deploy_path}"
   end
 
   def self.branch_exists?(branch)
@@ -80,8 +80,8 @@ class PayRake
   	if 'trunk' == branch
   		output = self.run_cmd "cd #{deploy_path}; svn co https://127.0.0.1:9443/payment-service/trunk/ #{branch_path}"
   	else
-	 		output = self.run_cmd "cd #{deploy_path}; svn co https://127.0.0.1:9443/payment-service/branches/#{branch}/ #{branch_path}"
-	 	end
+	 	output = self.run_cmd "cd #{deploy_path}; svn co https://127.0.0.1:9443/payment-service/branches/#{branch}/ #{branch_path}"
+	end
 
     self.print_cmd_output output
   end
@@ -92,12 +92,22 @@ class PayRake
 
 		puts "Building payment-service project and installing databases."
 
-	        # invoke full catalog-service install, -Dvm=1 notifies build.xml pick vm.properties file instead of dev.properties file
-                output = self.run_cmd "cd #{branch_path}; phing -Dprops=#{self.props_file_path} -Denv=#{environment} -Dvm=1 install"	
+	    # invoke full catalog-service install, -Dvm=1 notifies build.xml pick vm.properties file instead of dev.properties file
+        output = self.run_cmd "cd #{branch_path}; phing -Dprops=#{self.props_file_path} -Denv=#{environment} -Dvm=1 install"
 	
-        	self.print_cmd_output output
+        self.print_cmd_output output
   end
 
+  def self.build_test_dependencies(branch)
+
+        branch_path = self.branch_path(branch)
+
+        puts "Building payment-service test code dependencies."
+
+        output = self.run_cmd "cd #{branch_path}/test; composer install"
+
+        self.print_cmd_output output
+  end
 
   def self.version
   	"1.0"
@@ -163,8 +173,10 @@ task :use, :branch do |t, args|
 	PayRake.svn_checkout branch 
 	
 	PayRake.build_branch branch
-	
-        PayRake.set_current_link branch
+
+    PayRake.build_test_dependencies branch
+
+    PayRake.set_current_link branch
 
 	sec = Time.now.tv_sec - timestamp
 	puts "Done. [#{sec}] sec"
