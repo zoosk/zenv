@@ -4,7 +4,8 @@
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
     echo "${PROGNAME}: restart all platform services on your dev instance"
-    echo "Usage: ${PROGNAME}"
+    echo "Usage: ${PROGNAME} [java]"
+    echo "the java option will re-install java too (rare)"
     exit 1
 fi
 
@@ -13,7 +14,17 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'You must run this program from within ZEnv.'
     exit 1
 fi
-
-echo "Restarting the platform services on your dev instance."
 URL="http://sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com:5555/zenv/reset"
-curl $URL
+if [ $# -ge 1 ]; then
+    if [ "$1" == 'java' ]; then
+	echo "Restarting the platform services and re-installing java on your dev instance."
+	URL="${URL}?java=true"
+	curl -g $URL
+    else
+	echo "$1 is not a valid parameter for this command"
+    fi
+else
+    echo "Restarting the platform services on your dev instance."
+    echo $URL
+    curl $URL
+fi
