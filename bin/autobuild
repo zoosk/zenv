@@ -107,28 +107,7 @@ case "$REPO_TYPE" in
         ;;
 
     'zephyr_css' )
-        # The Zephyr build needs to use the SASS watcher to resolve dependencies, so we need to create its
-        # config using the regular build process if none exists
-        if [ ! -e 'build/config.rb' ]; then
-            echo 'No CSS files currently exist to update. Please run "build compileSass" or "./zephyr compileSass" before running autobuild.'
-            exit 1
-        fi
-        compass watch -c build/config.rb &
-        COMPASS_PID=$!
-        python "${ZENV_ROOT}/utils/autobuilder.py" &
-        WORKER_PID=$!
-        function quit() {
-            kill -2 "$COMPASS_PID"
-            kill "$WORKER_PID"
-        }
-        trap quit EXIT
-        sleep 5
-        if [ "$(kill -0 $COMPASS_PID 2>/dev/null; echo $?)" != '0' ]; then
-            echo 'Compass failed to start. Make sure you have compass installed. If you do not, run:'
-            echo 'sudo gem install --version 0.11.7 compass'
-            echo 'sudo gem install --version 0.9 compass-susy-plugin'
-            exit 1
-        fi
+        build watch
         ;;
 
     * )
