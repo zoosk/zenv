@@ -1,0 +1,225 @@
+#! /usr/bin/env bash
+
+isInCoreCheck=$(grep '<project name="zoosk"' build.xml 2>/dev/null);
+if [ ! "$isInCoreCheck" ]; then
+    echo "You must be in your Zoosk Core directory to run this command (not in $(pwd))."
+    exit 1;
+fi;
+
+
+CUPID_DEV_SERVER_PROP=cupid-dev-server-url
+CUPID_DEV_SERVER_LOCAL_PROP=cupid-dev-server-url-local
+CUPID_DEV_SERVER_LOCAL_ZOOSK_PROP=cupid-dev-server-url-local-zoosk
+
+VMDEV_PROPS_FILE_NAME=vmdev$ZENV_DEVID_PADDED.properties
+
+VMDEV_PROPS_FILE=$ZENV_WORKSPACE/$VMDEV_PROPS_FILE_NAME
+VMDEV_PROPS_FILE_BACKUP1=$ZENV_WORKSPACE/.${VMDEV_PROPS_FILE_NAME}.backup
+VMDEV_PROPS_FILE_BACKUP2=/tmp/${VMDEV_PROPS_FILE_NAME}.backup
+
+JENKINS_CUPID_BUILD_URL_BASE=http://jenkins:8080/view/Cupid/job/cupid-ci-ec2-node
+
+## Just for safety, let's copy the vmdevXXX file to a few places for backup, in case anything goes wrong and we wipe the original (below)
+cp $VMDEV_PROPS_FILE $VMDEV_PROPS_FILE_BACKUP1
+cp $VMDEV_PROPS_FILE $VMDEV_PROPS_FILE_BACKUP2
+
+
+VMDEV_PROPS_FILE_TMP=/tmp/$VMDEV_PROPS_FILE_NAME
+
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Update which Cupid version to use on your Dev"
+    echo
+    echo "Usage: ${PROGNAME} (no args)"
+    echo "  -- updates Cupid to the default of your Core build (usu found in cupidversion.php)"
+    echo
+    echo "Usage: ${PROGNAME} local"
+    echo "  -- updates Cupid to be served locally (usu https://localhost:9811). You MUST have the property '$CUPID_DEV_SERVER_LOCAL_PROP' in your $VMDEV_PROPS_FILE"
+    echo
+    echo "Usage: ${PROGNAME} localzoosk     "
+    echo "  -- updates Cupid to be served locally via the Local Zoosj network, so it is accessible to other developers (usu https://<your-computer-name>.zoosk.local:9811). You MUST have the property '$CUPID_DEV_SERVER_LOCAL_ZOOSK_PROP' in your $VMDEV_PROPS_FILE"
+    echo
+    echo "Usage: ${PROGNAME} <jenkins-build-id> "
+    echo "   -- updates Cupid to the Jenkins cupid-ci-ec2-node build of your choice (e.g. 145 will use the Cupid build found under $JENKINS_CUPID_BUILD_URL_BASE/145"
+    echo
+    echo "Usage: ${PROGNAME} <cupid-branch> <cupid-timestamp>"
+    echo "-- updates Cupid to the build named as the Jenkin's build properties <BRANCH_NAME>-<CUPIDVERSION_ID> (e.g. look for those properties in $JENKINS_CUPID_BUILD_URL_BASE/145"
+    exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo "You must run this program from within ZEnv."
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echo 'You must use a checkout before you can run its scripts.'
+    exit 1
+fi
+
+
+
+
+# capture whether we had/not have the prop enabled ->  to speed things up at the end
+hadCupidDevServePreRun=$(grep -E "^[ \t]*${CUPID_DEV_SERVER_PROP}=" $VMDEV_PROPS_FILE);
+
+
+### I. Use locally served Cupid via your own computer's LocalHost (e.g. https://localhost:9811/)
+
+if [ "$1" == 'local' ]; then
+
+    # remove any "cupid-dev-server-url" prop
+    # find the "*-local" prop and create a "cupid-dev-server-url" from its value
+    cupidUrlProp=$CUPID_DEV_SERVER_LOCAL_PROP
+
+    sed -E \
+        -e "/^[ \t]*${CUPID_DEV_SERVER_PROP}=/d" \
+        -e "/^[ \t]*${cupidUrlProp}=/ {
+            p
+            s/^[ \t]*${cupidUrlProp}=(.+)/${CUPID_DEV_SERVER_PROP}=\\1/
+        }"\
+      $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
+    cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
+
+
+
+    cupidUrlPropValue=$(grep ${cupidUrlProp}= $VMDEV_PROPS_FILE | sed -E -e 's/^.=//')
+    echo && echo
+    echo "Cupid is now locally served via LOCALHOST ($cupidUrlPropValue)";
+    echo && echo
+
+### II. Use locally served Cupid via your own computer's LocalHost BUT THrough Zoosk's local Mac Network
+###    that can be accessed by other developers (e.g. https://ivanv-mbpret15.zoosk.local:9811)
+
+elif [ "$1" == 'localzoosk' ]; then
+
+
+
+    # remove any "cupid-dev-server-url" prop
+    # find the "*-local" prop and create a "cupid-dev-server-url" from its value
+    cupidUrlProp=$CUPID_DEV_SERVER_LOCAL_ZOOSK_PROP
+
+    sed -E \
+        -e "/^[ \t]*${CUPID_DEV_SERVER_PROP}=/d" \
+        -e "/^[ \t]*${cupidUrlProp}=/ {
+            p
+            s/^[ \t]*${cupidUrlProp}=(.+)/${CUPID_DEV_SERVER_PROP}=\\1/
+        }"\
+      $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
+    cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
+
+
+
+    cupidUrlPropValue=$(grep ${cupidUrlProp}= $VMDEV_PROPS_FILE | sed -E -e 's/^.=//')
+    echo && echo
+    echo "Cupid is now locally served via LOCALHOST via Zoosk Local Network ($cupidUrlPropValue)";
+    echo && echo
+
+### III.  If argument #1 is NOT EMPTY, not Local, and not Zoosk Local (i.e. we want a specific Cupid Build ID),
+
+elif [ "$1" != '' ]; then
+
+    ### 1. Get the production CUPID_BASE_URI
+
+    ### a. Make the the CUPID REVISION ID (<branch>-<timestampID>) from:
+
+    ### i. a jenkins build (if argument #2 is EMPTY)
+
+    jenkinsBuildId=''
+    if [ "$2" == '' ]; then
+        jenkinsBuildId=$1
+        jenkinsBuildUrl=$JENKINS_CUPID_BUILD_URL_BASE/$jenkinsBuildId;
+
+        # the output of this is a one-line JSON, which is easy to GREP/SED (XML is NOT)
+        jenkinsBuildInfo=$(curl $jenkinsBuildUrl/api/json 2>/dev/null);
+
+        jenkinsOutoutHasError=$(echo $jenkinsBuildInfo | grep -i error);
+        if [ "$jenkinsOutoutHasError" ]; then
+            echo "Jenkinks Build #$jenkinsBuildId does not exist ($jenkinsBuildUrl) or "
+            echo "  something went wrong with the JSON API: $jenkinsBuildUrl/api/json"
+            exit 1
+        fi;
+
+        # extract the value from {"name":"CUPIDVERSION_ID","value":"1434681036"} => "1434691036"
+        CUPID_TIMESTAMP_ID=$(echo $jenkinsBuildInfo | grep -oE 'CUPIDVERSION_ID[";,]+value[:",]+[^"]+' | sed -E -e 's/.+"([^"]+)$/\1/g');
+
+        #    and  the value from {"name":"BRANCH_NAME","value":"develop"} => "develop"
+        CUPID_BRANCH=$(echo $jenkinsBuildInfo | grep -oE 'BRANCH_NAME[";,]+value[:",]+[^"]+' | sed -E -e 's/.+"([^"]+)$/\1/g');
+    else
+
+    ### ii. or directly from the arguments (#1 is branch, #2 is cupid timestamp ID
+
+        CUPID_BRANCH=$1;
+        CUPID_TIMESTAMP_ID=$2
+    fi;
+
+    CUPID_BUILD_ID="$CUPID_BRANCH-$CUPID_TIMESTAMP_ID"; # develop-123123123
+
+    ### 2. Make the CUPID VERSION file and copy over
+
+    ### a. make the file
+    CUPID_FILE=/tmp/cupidversion.php
+
+    echo '<?php' > $CUPID_FILE;
+    echo "define('CUPID_BASE_URI', 'https://static3zoosk-a.akamaihd.net/$CUPID_BUILD_ID');" >> $CUPID_FILE;
+    echo "define('CUPID_REVISION', '$CUPID_BUILD_ID');" >> $CUPID_FILE;
+
+    ### b. copy to temp deploy folder in local terminal/computer
+    CUPID_FILE_DEPLOY='/srv/zoosk/current/web/www/include/cupid/cupidversion.php';
+    cp $CUPID_FILE $CUPID_FILE_DEPLOY;
+    ### then deploy
+    synccode $(dirname $CUPID_FILE_DEPLOY)
+
+
+    ### 3. Update vmdevXXX.properties file to comment out cupid-dev-server-url=<blah blah>,
+    ###    because the "cupid-dev-server-url" properties variable translates to the PHP constant CUPID_DEV_SERVER_URL
+    ###    which will take precedence over the PHP constant CUPID_BASE_URI:
+    ###       e.g. if you follow the code path of CupidLoaderZooskPlus (in Core), you will see where the precedence logic lives
+    ###       $jsLoader = new CupidLoaderZooskPlus($user, new FrameCssZooskPlus(), CUPID_BASE_URI, CUPID_DEV_SERVER_URL, true);
+
+    # disable any cupid-dev-server-url properties
+    sed -E -e "/^[ \t]*${CUPID_DEV_SERVER_PROP}=/d"  $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
+    cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
+
+
+    echo && echo
+    if [ "$jenkinsBuildId" ]; then
+        echo "Cupid is updated to Jenkins build #$jenkinsBuildId ($JENKINS_CUPID_BUILD_URL_BASE/$jenkinsBuildId): $CUPID_BUILD_ID"
+    else
+        echo "Cupid is now updated to build: $CUPID_BUILD_ID"
+    fi;
+    echo && echo
+
+### IV.  ###################################### IV. Default Core Cupid ######################################
+### Default Cupid for the Current Core Build (i.e. argument #1 is empty)
+
+else
+    CUPID_FILE=./web/www/include/cupid/cupidversion.php
+    CUPID_FILE_DEPLOY='/srv/zoosk/current/web/www/include/cupid/cupidversion.php';
+    cp $CUPID_FILE $CUPID_FILE_DEPLOY;
+    synccode $(dirname $CUPID_FILE_DEPLOY)
+
+    # disable any cupid-dev-server-url properties
+    sed -E -e "/^[ \t]*${CUPID_DEV_SERVER_PROP}=/d"  $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
+    cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE
+    cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
+
+
+    echo && echo
+    echo "Cupid is now updated to the default of the current Core build"
+    echo && echo
+fi;
+
+### ###################################### Finally ######################################
+### Update the properties file + Run Config Install (Web + Psyche) IF we have changed the vmdevXXX.properties
+
+# capture whether we have have the prop enabled after running the script
+hasCupidDevServePostRun=$(grep -o "^[ \t]*${CUPID_DEV_SERVER_PROP}=" $VMDEV_PROPS_FILE);
+
+# if values of "before" and "after" are the same, DO NOT update (takes time), else update
+if [ "$hadCupidDevServePreRun" != "$hasCupidDevServePostRun" ]; then
+
+    echo "Running build targets to reflect the updates to $VMDEV_PROPS_FILE"
+    buildweb install-config
+    build update-psyche-config
+fi;
+
+echo "Done."
