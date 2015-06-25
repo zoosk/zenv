@@ -11,10 +11,10 @@ CUPID_DEV_SERVER_PROP=cupid-dev-server-url
 CUPID_DEV_SERVER_LOCAL_PROP=cupid-dev-server-url-local
 CUPID_DEV_SERVER_LOCAL_ZOOSK_PROP=cupid-dev-server-url-local-zoosk
 
-VMDEV_PROPS_FILE_NAME=vmdev$ZENV_DEVID_PADDED.properties
+VMDEV_PROPS_FILE_NAME=$(basename $ZENV_BUILDPROPS);
 
-VMDEV_PROPS_FILE=$ZENV_WORKSPACE/$VMDEV_PROPS_FILE_NAME
-VMDEV_PROPS_FILE_BACKUP1=$ZENV_WORKSPACE/.${VMDEV_PROPS_FILE_NAME}.backup
+VMDEV_PROPS_FILE=$ZENV_BUILDPROPS
+VMDEV_PROPS_FILE_BACKUP1=$ZENV_WORKSPACE/${VMDEV_PROPS_FILE_NAME}.backup
 VMDEV_PROPS_FILE_BACKUP2=/tmp/${VMDEV_PROPS_FILE_NAME}.backup
 
 JENKINS_CUPID_BUILD_URL_BASE=http://jenkins:8080/view/Cupid/job/cupid-ci-ec2-node
@@ -59,8 +59,7 @@ fi
 
 
 # capture whether we had/not have the prop enabled ->  to speed things up at the end
-hadCupidDevServePreRun=$(grep -E "^[ \t]*${CUPID_DEV_SERVER_PROP}=" $VMDEV_PROPS_FILE);
-
+hadCupidDevServePreRun=$(readprop $CUPID_DEV_SERVER_PROP)
 
 ### I. Use locally served Cupid via your own computer's LocalHost (e.g. https://localhost:9811/)
 
@@ -69,24 +68,21 @@ if [ "$1" == 'local' ]; then
     # remove any "cupid-dev-server-url" prop
     # find the "*-local" prop and create a "cupid-dev-server-url" from its value
     cupidUrlProp=$CUPID_DEV_SERVER_LOCAL_PROP
+    cupidUrlPropValue=$(readprop $cupidUrlProp)
+
+    if [ ! $cupidUrlPropValue ]; then
+        cupidUrlPropValue="https://localhost:9811"
+        echo >> $VMDEV_PROPS_FILE;
+        echo '# Cupid Server, served locally via localhost' >> $VMDEV_PROPS_FILE;
+        echo "$cupidUrlProp=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE;
+        echo >> $VMDEV_PROPS_FILE;
+    fi;
 
     sed -E \
         -e "/^[ \t]*${CUPID_DEV_SERVER_PROP}=/d" \
-        -e "/^[ \t]*${cupidUrlProp}=/ {
-            p
-            s/^[ \t]*${cupidUrlProp}=(.+)/${CUPID_DEV_SERVER_PROP}=\\1/
-        }"\
-      $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
-
-    cupidUrlPropValue=$(grep -E "^[ \t]*${cupidUrlProp}=" $VMDEV_PROPS_FILE_TMP | sed -E -e 's/^.=//')
-    if [ ! $cupidUrlPropValue ]; then
-        cupidUrlPropValue="https://localhost:9811"
-        echo >> $VMDEV_PROPS_FILE_TMP;
-        echo '# Cupid Server, served locally via localhost' >> $VMDEV_PROPS_FILE_TMP;
-        echo "$cupidUrlProp=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE_TMP;
-        echo "${CUPID_DEV_SERVER_PROP}=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE_TMP;
-        echo >> $VMDEV_PROPS_FILE_TMP;
-    fi;
+        -e "/^[ \t]*${cupidUrlProp}=/ a\\
+            ${CUPID_DEV_SERVER_PROP}=${cupidUrlPropValue}"\
+        $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
 
     cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
 
@@ -104,17 +100,7 @@ elif [ "$1" == 'localzoosk' ]; then
     # remove any "cupid-dev-server-url" prop
     # find the "*-local" prop and create a "cupid-dev-server-url" from its value
     cupidUrlProp=$CUPID_DEV_SERVER_LOCAL_ZOOSK_PROP
-
-    sed -E \
-        -e "/^[ \t]*${CUPID_DEV_SERVER_PROP}=/d" \
-        -e "/^[ \t]*${cupidUrlProp}=/ {
-            p
-            s/^[ \t]*${cupidUrlProp}=(.+)/${CUPID_DEV_SERVER_PROP}=\\1/
-        }"\
-      $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
-
-
-    cupidUrlPropValue=$(grep -E "^[ \t]*${cupidUrlProp}=" $VMDEV_PROPS_FILE_TMP | sed -E -e 's/^.=//')
+    cupidUrlPropValue=$(readprop $cupidUrlProp)
 
     if [ ! $cupidUrlPropValue ]; then
         read -p "Please enter your Cupid server URL:" cupidUrlPropValue
@@ -122,12 +108,17 @@ elif [ "$1" == 'localzoosk' ]; then
             echo "You didn't provide any value for your Cupid server URL";
             exit 1;
         fi;
-        echo >> $VMDEV_PROPS_FILE_TMP;
-        echo '# Cupid Server, served locally via custom URL' >> $VMDEV_PROPS_FILE_TMP;
-        echo "$cupidUrlProp=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE_TMP;
-        echo "${CUPID_DEV_SERVER_PROP}=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE_TMP;
-        echo >> $VMDEV_PROPS_FILE_TMP;
+        echo >> $VMDEV_PROPS_FILE;
+        echo '# Cupid Server, served locally via custom URL' >> $VMDEV_PROPS_FILE;
+        echo "$cupidUrlProp=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE;
+        echo >> $VMDEV_PROPS_FILE;
     fi;
+
+    sed -E \
+        -e "/^[ \t]*${CUPID_DEV_SERVER_PROP}=/d" \
+        -e "/^[ \t]*${cupidUrlProp}=/ a\\
+            ${CUPID_DEV_SERVER_PROP}=${cupidUrlPropValue}"\
+        $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
 
     cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
 
@@ -221,7 +212,6 @@ else
 
     # disable any cupid-dev-server-url properties
     sed -E -e "/^[ \t]*${CUPID_DEV_SERVER_PROP}=/d"  $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
-    cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE
     cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
 
 
@@ -231,17 +221,16 @@ else
 fi;
 
 ### ###################################### Finally ######################################
-### Update the properties file + Run Config Install (Web + Psyche) IF we have changed the vmdevXXX.properties
+### Update the properties file + Run Config Install (Web (NOT Psyche!)) IF we have changed the vmdevXXX.properties
 
 # capture whether we have have the prop enabled after running the script
-hasCupidDevServePostRun=$(grep -o "^[ \t]*${CUPID_DEV_SERVER_PROP}=" $VMDEV_PROPS_FILE);
+hasCupidDevServePostRun=$(readprop $CUPID_DEV_SERVER_PROP)
 
 # if values of "before" and "after" are the same, DO NOT update (takes time), else update
 if [ "$hadCupidDevServePreRun" != "$hasCupidDevServePostRun" ]; then
 
     echo "Running build targets to reflect the updates to $VMDEV_PROPS_FILE"
     buildweb install-config
-    build update-psyche-config
 fi;
 
 echo "Done."
