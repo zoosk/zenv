@@ -77,11 +77,19 @@ if [ "$1" == 'local' ]; then
             s/^[ \t]*${cupidUrlProp}=(.+)/${CUPID_DEV_SERVER_PROP}=\\1/
         }"\
       $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
+
+    cupidUrlPropValue=$(grep -E "^[ \t]*${cupidUrlProp}=" $VMDEV_PROPS_FILE_TMP | sed -E -e 's/^.=//')
+    if [ ! $cupidUrlPropValue ]; then
+        cupidUrlPropValue="https://localhost:9811"
+        echo >> $VMDEV_PROPS_FILE_TMP;
+        echo '# Cupid Server, served locally via localhost' >> $VMDEV_PROPS_FILE_TMP;
+        echo "$cupidUrlProp=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE_TMP;
+        echo "${CUPID_DEV_SERVER_PROP}=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE_TMP;
+        echo >> $VMDEV_PROPS_FILE_TMP;
+    fi;
+
     cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
 
-
-
-    cupidUrlPropValue=$(grep ${cupidUrlProp}= $VMDEV_PROPS_FILE | sed -E -e 's/^.=//')
     echo && echo
     echo "Cupid is now locally served via LOCALHOST ($cupidUrlPropValue)";
     echo && echo
@@ -104,11 +112,25 @@ elif [ "$1" == 'localzoosk' ]; then
             s/^[ \t]*${cupidUrlProp}=(.+)/${CUPID_DEV_SERVER_PROP}=\\1/
         }"\
       $VMDEV_PROPS_FILE  > $VMDEV_PROPS_FILE_TMP
+
+
+    cupidUrlPropValue=$(grep -E "^[ \t]*${cupidUrlProp}=" $VMDEV_PROPS_FILE_TMP | sed -E -e 's/^.=//')
+
+    if [ ! $cupidUrlPropValue ]; then
+        read -p "Please enter your Cupid server URL:" cupidUrlPropValue
+        if [ ! $cupidUrlPropValue ]; then
+            echo "You didn't provide any value for your Cupid server URL";
+            exit 1;
+        fi;
+        echo >> $VMDEV_PROPS_FILE_TMP;
+        echo '# Cupid Server, served locally via custom URL' >> $VMDEV_PROPS_FILE_TMP;
+        echo "$cupidUrlProp=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE_TMP;
+        echo "${CUPID_DEV_SERVER_PROP}=$cupidUrlPropValue" >> $VMDEV_PROPS_FILE_TMP;
+        echo >> $VMDEV_PROPS_FILE_TMP;
+    fi;
+
     cp $VMDEV_PROPS_FILE_TMP $VMDEV_PROPS_FILE   # todo: if something went wrong with SED, don't copy (else you will have a bad copy)
 
-
-
-    cupidUrlPropValue=$(grep ${cupidUrlProp}= $VMDEV_PROPS_FILE | sed -E -e 's/^.=//')
     echo && echo
     echo "Cupid is now locally served via LOCALHOST via Zoosk Local Network ($cupidUrlPropValue)";
     echo && echo
