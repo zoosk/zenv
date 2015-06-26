@@ -1,12 +1,5 @@
 #! /usr/bin/env bash
 
-isInCoreCheck=$(grep '<project name="zoosk"' build.xml 2>/dev/null);
-if [ ! "$isInCoreCheck" ]; then
-    echo "You must be in your Zoosk Core directory to run this command (not in $(pwd))."
-    exit 1;
-fi;
-
-
 CUPID_DEV_SERVER_PROP=cupid-dev-server-url
 CUPID_DEV_SERVER_LOCAL_PROP=cupid-dev-server-url-local
 CUPID_DEV_SERVER_LOCAL_ZOOSK_PROP=cupid-dev-server-url-local-zoosk
@@ -29,6 +22,8 @@ VMDEV_PROPS_FILE_TMP=/tmp/$VMDEV_PROPS_FILE_NAME
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
     echo "${PROGNAME}: Update which Cupid version to use on your Dev"
+    echo
+    echo "Usage: ${PROGNAME} -verbose <args> -- print verbose output"
     echo
     echo "Usage: ${PROGNAME} (no args)"
     echo "  -- updates Cupid to the default of your Core build (usu found in cupidversion.php)"
@@ -55,7 +50,18 @@ elif [ -z "$ZENV_CURRENT_WORK" ]; then
     exit 1
 fi
 
+optionIsVerbose=""
 
+# grab all option arguments
+while [ "$1" ]; do
+    optionValue=$(echo "$1" | sed -nE -e 's/^-+(.+)$/\1/p');
+    if [ "$optionValue" = 'verbose' ]; then
+        optionIsVerbose=1
+    else
+        break;
+    fi;
+    shift;
+done;
 
 
 # capture whether we had/not have the prop enabled ->  to speed things up at the end
@@ -221,7 +227,7 @@ else
 fi;
 
 ### ###################################### Finally ######################################
-### Update the properties file + Run Config Install (Web (NOT Psyche!)) IF we have changed the vmdevXXX.properties
+### Update the properties file + Run Config Install (Web AND Psyche!)) IF we have changed the vmdevXXX.properties
 
 # capture whether we have have the prop enabled after running the script
 hasCupidDevServePostRun=$(readprop $CUPID_DEV_SERVER_PROP)
@@ -229,8 +235,14 @@ hasCupidDevServePostRun=$(readprop $CUPID_DEV_SERVER_PROP)
 # if values of "before" and "after" are the same, DO NOT update (takes time), else update
 if [ "$hadCupidDevServePreRun" != "$hasCupidDevServePostRun" ]; then
 
-    echo "Running build targets to reflect the updates to $VMDEV_PROPS_FILE"
-    buildweb install-config
+    echo "Running build targets 'buildweb install-config' and 'build update-psyche-config' to reflect the updates in $VMDEV_PROPS_FILE"
+    if [ "$optionIsVerbose" ]; then
+        buildweb install-config
+        build update-psyche-config
+    else
+        buildweb install-config 2>/dev/null 1>/dev/null
+        build update-psyche-config  2>/dev/null 1>/dev/null
+    fi;
 fi;
 
 echo "Done."
