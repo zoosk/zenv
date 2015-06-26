@@ -232,6 +232,8 @@ fi;
 # capture whether we have have the prop enabled after running the script
 hasCupidDevServePostRun=$(readprop $CUPID_DEV_SERVER_PROP)
 
+buildTargetsOutputFile=""
+
 # if values of "before" and "after" are the same, DO NOT update (takes time), else update
 if [ "$hadCupidDevServePreRun" != "$hasCupidDevServePostRun" ]; then
 
@@ -240,9 +242,22 @@ if [ "$hadCupidDevServePreRun" != "$hasCupidDevServePostRun" ]; then
         buildweb install-config
         build update-psyche-config
     else
-        buildweb install-config 2>/dev/null 1>/dev/null
-        build update-psyche-config  2>/dev/null 1>/dev/null
+        buildTargetsOutputFile=/tmp/cupidswitch.$(date +%s).output
+        echo > $buildTargetsOutputFile
+        buildweb install-config 2>/dev/null 1>>$buildTargetsOutputFile
+        build update-psyche-config  2>/dev/null 1>>$buildTargetsOutputFile
     fi;
 fi;
 
-echo "Done."
+if [ $? -ne 0 ]; then
+    echo "Done, but some errors may have occurred."
+else
+    echo "Done."
+fi;
+
+if [ "$buildTargetsOutputFile" ]; then
+    read -p "Would you like to see the output of the build target files? (y/n):" showBuildTargetOutput
+    if [ $showBuildTargetOutput ]; then
+        less $buildTargetsOutputFile;
+    fi;
+fi;
