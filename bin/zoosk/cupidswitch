@@ -19,13 +19,13 @@ cp $VMDEV_PROPS_FILE $VMDEV_PROPS_FILE_BACKUP2
 
 VMDEV_PROPS_FILE_TMP=/tmp/$VMDEV_PROPS_FILE_NAME
 
-if [ "$1" == '-h' -o "$1" == '--help' ]; then
+if [ "$1" == '-h' -o "$1" == '--help' -o "$1" = "" ]; then
     PROGNAME=$(basename $0)
     echo "${PROGNAME}: Update which Cupid version to use on your Dev"
     echo
     echo "Usage: ${PROGNAME} -verbose <args> -- print verbose output"
     echo
-    echo "Usage: ${PROGNAME} (no args)"
+    echo "Usage: ${PROGNAME} default"
     echo "  -- updates Cupid to the default of your Core build (usu found in cupidversion.php)"
     echo
     echo "Usage: ${PROGNAME} local"
@@ -210,7 +210,7 @@ elif [ "$1" != '' ]; then
 ### IV.  ###################################### IV. Default Core Cupid ######################################
 ### Default Cupid for the Current Core Build (i.e. argument #1 is empty)
 
-else
+elif [ "$1" = "default" ]; then
     CUPID_FILE=./web/www/include/cupid/cupidversion.php
     CUPID_FILE_DEPLOY='/srv/zoosk/current/web/www/include/cupid/cupidversion.php';
     cp $CUPID_FILE $CUPID_FILE_DEPLOY;
