@@ -29,10 +29,10 @@ if [ "$1" == '-h' -o "$1" == '--help' -o "$1" = "" ]; then
     echo "  -- updates Cupid to the default of your Core build (usu found in cupidversion.php)"
     echo
     echo "Usage: ${PROGNAME} local"
-    echo "  -- updates Cupid to be served locally (usu https://localhost:9811). You MUST have the property '$CUPID_DEV_SERVER_LOCAL_PROP' in your $VMDEV_PROPS_FILE"
+    echo "  -- updates Cupid to be served locally (usu https://localhost:9811). It will save that value in '$CUPID_DEV_SERVER_LOCAL_PROP' in your $VMDEV_PROPS_FILE. Feel free to change it manually in the properties file, and re-run 'cupidswitch localzoosk' again."
     echo
     echo "Usage: ${PROGNAME} localzoosk     "
-    echo "  -- updates Cupid to be served locally via the Local Zoosj network, so it is accessible to other developers (usu https://<your-computer-name>.zoosk.local:9811). You MUST have the property '$CUPID_DEV_SERVER_LOCAL_ZOOSK_PROP' in your $VMDEV_PROPS_FILE"
+    echo "  -- updates Cupid to be served locally via the Local Zoosk network, so it is accessible to other developers (usu https://<your-computer-name>.zoosk.local:9811). The script will prompt you to enter a value if it is not '$CUPID_DEV_SERVER_LOCAL_ZOOSK_PROP' in your $VMDEV_PROPS_FILE. Feel free to change that property manually and re-run 'cupidswitch localzoosk' again."
     echo
     echo "Usage: ${PROGNAME} <jenkins-build-id> "
     echo "   -- updates Cupid to the Jenkins cupid-ci-ec2-node build of your choice (e.g. 145 will use the Cupid build found under $JENKINS_CUPID_BUILD_URL_BASE/145"
@@ -63,9 +63,6 @@ while [ "$1" ]; do
     shift;
 done;
 
-
-# capture whether we had/not have the prop enabled ->  to speed things up at the end
-hadCupidDevServePreRun=$(readprop $CUPID_DEV_SERVER_PROP)
 
 ### I. Use locally served Cupid via your own computer's LocalHost (e.g. https://localhost:9811/)
 
@@ -231,24 +228,17 @@ fi;
 ### ###################################### Finally ######################################
 ### Update the properties file + Run Config Install (Web AND Psyche!)) IF we have changed the vmdevXXX.properties
 
-# capture whether we have have the prop enabled after running the script
-hasCupidDevServePostRun=$(readprop $CUPID_DEV_SERVER_PROP)
-
 buildTargetsOutputFile=""
 
-# if values of "before" and "after" are the same, DO NOT update (takes time), else update
-if [ "$hadCupidDevServePreRun" != "$hasCupidDevServePostRun" ]; then
-
-    echo "Running build targets 'buildweb install-config' and 'build update-psyche-config' to reflect the updates in $VMDEV_PROPS_FILE"
-    if [ "$optionIsVerbose" ]; then
-        buildweb install-config
-        build update-psyche-config
-    else
-        buildTargetsOutputFile=/tmp/cupidswitch.$(date +%s).output
-        echo > $buildTargetsOutputFile
-        buildweb install-config 2>/dev/null 1>>$buildTargetsOutputFile
-        build update-psyche-config  2>/dev/null 1>>$buildTargetsOutputFile
-    fi;
+echo "Running build targets 'buildweb install-config' and 'build update-psyche-config' to reflect the updates in $VMDEV_PROPS_FILE"
+if [ "$optionIsVerbose" ]; then
+    buildweb install-config
+    build update-psyche-config
+else
+    buildTargetsOutputFile=/tmp/cupidswitch.$(date +%s).output
+    echo > $buildTargetsOutputFile
+    buildweb install-config 2>/dev/null 1>>$buildTargetsOutputFile
+    build update-psyche-config  2>/dev/null 1>>$buildTargetsOutputFile
 fi;
 
 if [ $? -ne 0 ]; then
@@ -258,8 +248,8 @@ else
 fi;
 
 if [ "$buildTargetsOutputFile" ]; then
-    read -p "Would you like to see the output of the build target files? (y/n):" showBuildTargetOutput
-    if [ $showBuildTargetOutput ]; then
+    read -p "Would you like to see the output of the build target files via 'less' (you can use 'q' to quit out of 'less')? (y/n):" showBuildTargetOutput
+    if [ $showBuildTargetOutput = 'y' ]; then
         less $buildTargetsOutputFile;
     fi;
 fi;
