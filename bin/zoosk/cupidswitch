@@ -39,6 +39,9 @@ if [ "$1" == '-h' -o "$1" == '--help' -o "$1" = "" ]; then
     echo
     echo "Usage: ${PROGNAME} <cupid-branch> <cupid-timestamp>"
     echo "-- updates Cupid to the build named as the Jenkin's build properties <BRANCH_NAME>-<CUPIDVERSION_ID> (e.g. look for those properties in $JENKINS_CUPID_BUILD_URL_BASE/145"
+    echo
+    echo "Usage: ${PROGNAME} url <cupid-server-custom-url>"
+    echo "-- updates Point Cupid to a custom URL (e.g. the output of a jenkins/vmbuild/cupid-one-box build, usu called localtest-<timestamp>)"
     exit 1
 fi
 
@@ -148,7 +151,26 @@ elif [ "$1" = "default" ]; then
     echo && echo
 
 
-### IV.  If argument #1 is NOT EMPTY, not Local, and not Zoosk Local (i.e. we want a specific Cupid Build ID),
+### IV.  If argument #1 is URL
+
+elif [ "$1" = 'url' ]; then
+
+    ### a. make the file
+    CUPID_FILE=/tmp/cupidversion.php
+    url=$2
+
+    echo '<?php' > $CUPID_FILE;
+    echo "define('CUPID_BASE_URI', '$url');" >> $CUPID_FILE;
+    echo "define('CUPID_REVISION', 'localtest');" >> $CUPID_FILE;
+
+    ### b. copy to temp deploy folder in local terminal/computer
+    CUPID_FILE_DEPLOY='/srv/zoosk/current/web/www/include/cupid/cupidversion.php';
+    cp $CUPID_FILE $CUPID_FILE_DEPLOY;
+    ### then deploy
+    synccode $(dirname $CUPID_FILE_DEPLOY)
+
+
+### V.  If argument #1 is NOT EMPTY, not Local, and not Zoosk Local (i.e. we want a specific Cupid Build ID),
 
 elif [ "$1" != '' ]; then
 
