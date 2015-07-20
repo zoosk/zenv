@@ -96,7 +96,7 @@ for mission in mc_data['mission']:
             group = experiment['group_name']
         display_file.write('<tr><td>&nbsp;</td><td style="text-align: right;">'+group+'&nbsp;</td>')
         display_file.write('<td style="text-align: center;">'+str(experiment['rollout'])+'%</td>')
-        extra_info = '&nbsp;&nbsp;&nbsp;<a href="#" class="tooltip">Extra Info<span><div style="color: red;">Released:</div> '+experiment['released']+'<br/><div style="color: red;">Modified:</div> '+experiment['last_modified']+'<br/><div style="color: red;">Whitelist:</div>      '
+        extra_info = '&nbsp;&nbsp;&nbsp;<a href="#" class="tooltip">Extra Info<span><div style="color: red;">Released:</div> '+experiment['released']+'<br/><div style="color: red;">Modified:</div> '+experiment['last_modified']+'<br/><div style="color: red;">Admins:</div> '+("On" if experiment['admins'] else "Off")+'<br/><div style="color: red;">Whitelist:</div>      '
         for whitelist_item in experiment['whitelist']:
             extra_info += str(whitelist_item) + ',<br/>'
         extra_info = extra_info[:-6]
