@@ -53,7 +53,7 @@ alias install-test-500='(buildweb install-test-500)'
 # Install test 2k
 alias install-test2k='(buildweb install-test2k-fake)'
 # Install test 10k
-alias install-test10k='(buildweb install-test10k-fake)'
+alias install-test10k='(buildweb install-test10k-fake-v2)'
 
 # Rsync geodbdata (required for install-geolookup-data)
 alias rsync-geodbdata="mkdir -p ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata && rsync -az --progress ${ZENV_LDAP_USERNAME}@buildmaster.sfo2.zoosk.com:/mnt/geodbdata/ ${ZENV_LOCAL_DEPLOY_DIR}/geodbdata/"
