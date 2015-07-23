@@ -63,6 +63,24 @@ export -f buildweb
 alias build-web=buildweb
 
 ##
+# Build a dev target
+#
+function builddev(){
+    buildgeneric "$ZENV_CURRENT_WORK" -f build_dev.xml $*
+}
+export -f builddev
+alias build-dev=builddev
+
+##
+# Build a data target
+#
+function builddata(){
+    buildgeneric "$ZENV_CURRENT_WORK" -f build_data.xml $*
+}
+export -f builddata
+alias build-data=builddata
+
+##
 # Build a static target
 #
 function buildstatic() {
