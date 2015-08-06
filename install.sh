@@ -28,7 +28,7 @@ if [ -e "$ZENV_SETTINGS" ]; then
     read -p 'You have already installed ZEnv; would you like to reinstall [y/n]? ' TEMP
     if [ "$TEMP" != 'y' ]; then
         exit 0
-    fi    
+    fi
 fi
 
 
@@ -135,11 +135,15 @@ touch ~/.bash_login
 if [ "$(egrep '^alias zenv=.*activate.sh$' ~/.bash_login)" == '' ]; then
     echo "alias zenv=${ZENV_ROOT}/activate.sh" >> ~/.bash_login
 else
-    sed -i '' "s|alias zenv=.*|alias zenv=${ZENV_ROOT}/activate.sh|" ~/.bash_login
+    perl -pi -e "s?alias zenv=.*?alias zenv=${ZENV_ROOT}/activate.sh?" ~/.bash_login
 fi
 
 # Remove all the old work init files just in case something has changed
-find "$ZENV_WORKSPACE" -name work.properties -maxdepth 5 | xargs grep -l ZENV | xargs rm
+WORKPROP_STR=$(\
+  find "${ZENV_WORKSPACE}" -maxdepth 5 -type f -name 'work.properties' \
+  | xargs grep -l ZENV\
+)
+if [ "${WORKPROP_STR}" != "" ]; then rm ${WORKPROP_STR}; fi
 
 # Attempt to make ZEnv start by default
 touch ~/.bash_login
@@ -148,7 +152,7 @@ if [ "$(egrep 'source .*\.zenvrc' ~/.bash_login)" == '' ]; then
     if [ "$TEMP" != 'n' ]; then
 	echo "### BEGIN ZENV INIT
 source '${ZENV_SETTINGS}'
-if [ -z \"\$ZENV_CURRENT_WORK\" -a -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then 
+if [ -z \"\$ZENV_CURRENT_WORK\" -a -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then
     use \$(python -c \"from os import path; print path.relpath('\${PWD}', '\${ZENV_WORKSPACE}')\")
 fi
 ### END ZENV INIT

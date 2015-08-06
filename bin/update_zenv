@@ -11,6 +11,7 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     exit 1
 fi
 
+PLATFORM=$(uname -a |grep -qi linux && echo 'linux' || echo 'osx');
 UPDATE_TEXT=$(cd "${ZENV_ROOT}"; git pull; git submodule update)
 cd $ZENV_ROOT/utils
 if [ ! -d zli ]; then
@@ -23,8 +24,14 @@ TOPLINE="${RED}${BOLD}OMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGO
 BORDER="${RED}${BOLD}OMG${TXTRESET}"
 
 if [ "$(echo "${UPDATE_TEXT}" | grep install.sh)" != '' ]; then
-    sed -i '' "/### BEGIN ZENV INIT/,/### END ZENV INIT/d" ~/.bash_login
-    sed -i '' '/^alias zenv/d' ~/.bash_login
+
+    if [ $PLATFORM = 'osx' ]; then
+        sed -i '' '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' ~/.bash_login
+        sed -i '' '/^alias zenv/d' ~/.bash_login
+    else
+        sed -i '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' ~/.bash_login
+        sed -i '/^alias zenv/d' ~/.bash_login
+    fi
     rm -f "$ZENV_SETTINGS"
     echo $TOPLINE
     echo "$BORDER The ZEnv install process has been updated!                          $BORDER"
