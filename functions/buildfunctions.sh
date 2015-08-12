@@ -25,7 +25,7 @@ function buildgeneric() {
     
     # Rsync the result if: 1) build succeeded, 2) build wasn't run with -l or empty parameter.
     if [ "$RC" -eq 0 ]; then
-        if [ "${1:0:1}" != "-" -a ! -z "$1" ]; then
+        if [ "${1:0:2}" != "-l" -a ! -z "$1" ]; then
             synccode
         fi
     fi
