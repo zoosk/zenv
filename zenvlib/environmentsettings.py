@@ -56,8 +56,10 @@ class EnvironmentSettings(object):
     #: The path to the workspace folder that contains the checkouts.
     workspace = None
 
-    #: The name of the workspace-specific settings file
+    #: The name of the checkout settings file.
     workspace_settings = None
+
+    # Note that other properties will be set on this class based on the actual environment variables that you declare.
 
     def __init__(self):
         env_vars = os.environ

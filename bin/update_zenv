@@ -11,41 +11,20 @@ if [ -z "$ZENV_INITIALIZED" ]; then
     exit 1
 fi
 
-PLATFORM=$(uname -a |grep -qi linux && echo 'linux' || echo 'osx');
-UPDATE_TEXT=$(cd "${ZENV_ROOT}"; git pull; git submodule update)
-cd $ZENV_ROOT/utils
-if [ ! -d zli ]; then
-   git clone git@g.zoosk.com:merrickp/zli.git
-fi
-cd zli
-git pull
+cd "$ZENV_ROOT"
+LAST_REV="$(git rev-parse HEAD)"
+git pull || exit 1
+NEW_REV="$(git rev-parse HEAD)"
 
-TOPLINE="${RED}${BOLD}OMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMGOMG${TXTRESET}"
-BORDER="${RED}${BOLD}OMG${TXTRESET}"
+if [ "$LAST_REV" != "$NEW_REV" ]; then
+    UPDATED_FILES=$(git diff --name-only "$LAST_REV"..)
 
-if [ "$(echo "${UPDATE_TEXT}" | grep install.sh)" != '' ]; then
-
-    if [ $PLATFORM = 'osx' ]; then
-        sed -i '' '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' ~/.bash_login
-        sed -i '' '/^alias zenv/d' ~/.bash_login
-    else
-        sed -i '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' ~/.bash_login
-        sed -i '/^alias zenv/d' ~/.bash_login
+    # If anything in the environment folder has been updated, the update won't apply until a restart
+    if [ "$(echo "$UPDATED_FILES" | egrep '^environment/')" != '' ]; then
+        echo ''
+        echo "${BOLD}##############################################################"
+        echo "#       Your environment variables have been updated!        #"
+        echo "# These changes won't apply until you restart your terminal. #
+        echo "##############################################################${TXTRESET}"
     fi
-    rm -f "$ZENV_SETTINGS"
-    echo $TOPLINE
-    echo "$BORDER The ZEnv install process has been updated!                          $BORDER"
-    echo "$BORDER You will need to reinstall ZEnv for changes to take effect.         $BORDER"
-    echo "$BORDER To do this, restart your terminal and then run:                     $BORDER"
-    printf "$BORDER %-67s ${BORDER}\n" "cd ${ZENV_ROOT}; ./install.sh"
-    echo $TOPLINE
-
-elif [ "$(echo "${UPDATE_TEXT}" | grep 'functions/')" != '' ]; then
-    echo $TOPLINE
-    echo "$BORDER The ZEnv core has been updated!                                     $BORDER"
-    echo "$BORDER You will need to restart your terminal for changes to take effect.  $BORDER"
-    echo $TOPLINE
-    
-else
-    echo "$UPDATE_TEXT"
 fi

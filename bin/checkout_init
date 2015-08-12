@@ -1,0 +1,48 @@
+#! /usr/bin/env python2.7
+
+import os
+from os import path
+import subprocess
+from zenvlib import cli, gitinfo, environ
+
+
+# Startup checks
+cli.check_usage(max_args=0, usage="""%N: Initialize a checkout in the current directory.
+Usage: %N""")
+cli.fail_without_zenv()
+
+# Determine what kind of repo we're in
+repo_type = gitinfo.checkout_type
+
+# Get the correct properties file for the repo
+props_dir = path.join(environ.root, 'properties')
+custom_props_file = path.join(props_dir, '%s.work.properties' % repo_type)
+if not path.exists(custom_props_file):
+    custom_props_file = path.join(props_dir, 'default.work.properties')
+
+with open(custom_props_file, 'r') as fp:
+    props_file_lines = fp.read().split("\n")
+
+# Ask the user to fill in any missing @@ values
+current_dir = os.getcwd()
+print 'Please answer some questions to set up %s before you use it.' % current_dir
+cli.fill_template_properties(props_file_lines)
+
+# Create the properties file
+work_props_file = "#! /usr/bin/env bash\n" + "\n".join(props_file_lines)
+with open(environ.workspace_settings, 'w') as fp:
+    fp.write(work_props_file)
+
+# Run the init script if one is available
+setup_script_dir = path.join(environ.root, 'setupscripts')
+setup_script = path.join(setup_script_dir, '%s.setup.sh' % repo_type)
+if not path.exists(setup_script):
+    setup_script = path.join(setup_script_dir, 'default.setup.sh')
+
+return_code = subprocess.call(['bash', setup_script])
+if return_code != 0:
+    print 'An error in the setup script prevented your checkout from being set up.'
+    os.unlink(environ.workspace_settings)
+    exit(1)
+
+print 'Your checkout is ready for development.'

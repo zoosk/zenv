@@ -21,20 +21,6 @@ case "$ARG" in
         echo 'Usage (change current checkout): use <checkout>'
         ;;
 
-    'build' | 'buildweb' | 'buildstatic' )
-        echo 'build, buildweb, buildstatic: Build files in the current checkout.'
-        echo 'Usage: build <command args>...'
-        echo 'Arguments will be passed to the build process.'
-        ;;
-
-    'devbox' )
-        echo 'devbox: SSH into your dev instance.'
-        ;;
-
-    'dbbox' )
-        echo 'dbbox: Log into your MySQL database.'
-        ;;
-
     'deactivate' )
         echo 'deactivate: Exit ZEnv (also Ctrl+D).'
         echo 'This will exit the current shell, so look out!'
@@ -58,9 +44,6 @@ case "$ARG" in
     '' )
         echo "${BOLD}The current built-in commands are:${TXTRESET}
 use             Change the current checkout.
-build           Build something at the root level.
-buildweb        Build something at the web/ level.
-buildstatic     Build static files.
 deactivate      Exit ZEnv.
 
 ${BOLD}The current utilities are:${TXTRESET}

@@ -119,4 +119,3 @@ case "${NOTIFY_DE}" in
         ;;
 esac
 ## END RUN appropriate desktop command
-

@@ -1,11 +1,14 @@
 #! /usr/bin/env bash
 
+# This file is not called directly when the user types "use"; instead, a function in core.sh loads this
+# file into the environment using the source command.
+
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     echo 'use: Change the current checkout.'
     echo 'Usage (print current checkout): use'
     echo 'Usage (change current checkout): use <checkout>'
     echo 'Directory names should be relative paths from your workspace root to the folder.'
-    echo 'For example, "use touch" or "use cupid/rc-123".'
+    echo 'For example, "use zoosk" or "use closure-compiler".'
     exit 1
 fi
 
@@ -53,7 +56,7 @@ cd $ZENV_CURRENT_WORK
 
 # setup path to look for commands specific to repo type
 REPO_KIND=$(inspect "$PWD" repo_type)
-# if old repo was set, strip its "bin" directory from the path 
+# if old repo was set, strip its "bin" directory from the path
 if [ "$NEED_TO_STRIP_OLD" = "true" ]; then
     export PATH=$(echo $PATH|sed -e "s@$ZENV_ROOT/bin/$OLD_REPO_KIND[:]*@@;s/:$//;")
 fi
@@ -64,8 +67,8 @@ export PATH=$(echo $PATH|sed -e "s|^|$ZENV_ROOT/bin/$REPO_KIND:|")
 if [ -e "$ZENV_WORKSPACE_SETTINGS" ]; then
     source "$ZENV_WORKSPACE_SETTINGS"
 else
-    echo 'This workspace must be initialized before you use it.'
-    work_init
+    echo 'This checkout must be initialized before you use it.'
+    checkout_init
     source "$ZENV_WORKSPACE_SETTINGS"
 fi
-echo "Workspace changed to ${ZENV_CURRENT_WORK}"
+echo "Checkout changed to ${ZENV_CURRENT_WORK}"
