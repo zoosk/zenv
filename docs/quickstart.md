@@ -17,7 +17,7 @@ results of steps 1-3.
    `export FOO=@@echo 'default value'@@`
 
    The stuff between the `@@`s will be evaluated as the default, so you can do
-   stuff like `whoami`.
+   stuff like `$(whoami)`.
 
 2. Copy the file `properties/default.work.properties` to
    `properties/XXX.work.properties`, where `XXX` is the name of the git repo
