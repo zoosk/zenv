@@ -1,0 +1,19 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: determine whether or not platform services are stable on your dev instance"
+    echo "Usage: ${PROGNAME}"
+    exit 1
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+fi
+
+echo "Running unit tests against platform services on your dev instance. This may take a minute to complete."
+URL="http://sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com:5555/zenv/test"
+curl --connect-timeout 120 --max-time 180 $URL

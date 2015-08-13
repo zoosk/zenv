@@ -1,0 +1,119 @@
+#! /usr/bin/env python
+
+try:
+    from fsevents import Observer
+    from fsevents import Stream
+except ImportError:
+    print 'You need to install fsevents to be able to watch for changes. Please run sudo easy_install macfsevents.'
+    exit(1)
+
+import os
+import time
+from threading import Thread
+from os.path import basename
+from os.path import dirname
+from os.path import isdir
+from pipes import quote
+import re
+import shutil
+import signal
+
+
+# Settings
+DEBUG = False
+
+# Events
+UPDATE_EVENT = 0x2
+ADD_EVENT = 0x100
+DELETE_EVENT = 0x200
+
+# Excluded file names
+EXCLUDED_FILE_NAMES = {
+    'build.xml',
+    'Makefile',
+    'ZConfig.php'
+}
+
+
+if 'ZENV_CURRENT_WORK' not in os.environ:
+    print 'You must use a workspace before you start autobuild.'
+    exit(1)
+
+local_path = os.environ['ZENV_CURRENT_WORK']
+server_path = os.environ['ZENV_SERVERDIR']
+
+
+def is_excluded_path(path):
+    return '.svn' in path or '.idea' in path or '/sass-cache' in path or '.git' in path
+
+def is_excluded_filename(name):
+    """ Check if a file should be excluded from builds. """
+    return name.startswith('.') or name.startswith('#') or name.endswith('~') or name in EXCLUDED_FILE_NAMES
+
+rsync_queue = set()
+
+def callback(event):
+    """ Callback function for when a file is changed. """
+    if DEBUG:
+        print 'Caught event %d for %s' % (event.mask, event.name)
+    
+    # Get the name of the changed file
+    filename = basename(event.name)
+
+    if is_excluded_path(event.name) or is_excluded_filename(filename):
+        if DEBUG:
+            print '%s was changed, and is excluded.' % filename
+        return
+
+    # Get the target path by swapping out the local path for the server path
+    target_path = re.sub('^' + local_path, server_path, event.name)
+
+    if event.mask == UPDATE_EVENT or event.mask == ADD_EVENT:
+        # Copy the file to the local /srv and the dev server
+        print 'Copying %s to %s' % (event.name, target_path)
+        try:
+            if isdir(event.name):
+                shutil.copytree(event.name, target_path)
+            else:
+                shutil.copy(event.name, target_path)
+        except Exception, err:
+            print 'Failed to copy %s: %s' % (event.name, err)
+
+    elif event.mask == DELETE_EVENT:
+        # Delete the file from everywhere
+        print 'Deleting %s' % target_path
+        try:
+            if isdir(event.name):
+                shutil.rmtree(target_path)
+            else:
+                os.unlink(target_path)
+        except Exception, err:
+            print 'Failed to delete %s: %s' % (event.name, err)
+
+    rsync_queue.add(dirname(target_path))
+
+def rsync_files(rsync_queue):
+    while True:
+        if len(rsync_queue) > 0:
+            # Remove paths whose parents are also in the queue
+            paths_to_sync = set()
+            previous_path = 'notAnAbsolutePath'
+            for path in sorted(rsync_queue):
+                if not path.startswith(previous_path):
+                    paths_to_sync.add(path)
+                    previous_path = path
+
+            # Run synccode on all the remaining paths
+            for next_dir in paths_to_sync:
+                os.system('synccode %s' % next_dir)
+
+            rsync_queue.clear()
+        time.sleep(1)
+
+sync_thread = Thread(target=rsync_files, args=(rsync_queue,))
+sync_thread.start()
+
+observer = Observer()
+stream = Stream(callback, local_path, file_events=True)
+observer.schedule(stream)
+observer.start()

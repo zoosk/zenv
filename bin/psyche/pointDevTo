@@ -1,0 +1,37 @@
+#! /usr/bin/env bash -e
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' -o "$1" == '' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Change where your dev instance is pointing to for Psyche (itself or your local machine)"
+    echo "Usage: ${PROGNAME} (dev|local <ipaddr>)"
+    exit 1
+fi
+
+LOCALIP=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
+LOCALIPCOUNT=$(echo "$LOCALIP" |wc -l |xargs) # pipe to xargs to remove whitespace
+
+if [ "$1" == 'local' -a "$LOCALIPCOUNT" != '1' -a "$#" != '2' ]; then
+   echo "You must supply an ip address for local:"
+   ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'
+   exit 1
+fi
+
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'This script must be run from within ZEnv.'
+    exit 1
+fi
+
+TARGETVALUE='127.0.0.1'
+
+if [ "$1" == 'local' ]; then
+    if [ "$#" == "2" ]; then
+        TARGETVALUE="$2"
+    else
+        TARGETVALUE="$LOCALIP"
+    fi
+fi
+echo "Changing nginx rewrite to: $TARGETVALUE"
+
+CMD="sudo sed -i 's|server [-a-zA-Z0-9\.]*:3000|server $TARGETVALUE:3000|g' /etc/nginx/conf.d/app.conf; sudo /usr/sbin/nginx -s reload"
+ssh -t "$ZENV_LDAP_USERNAME@$ZENV_DEVSERVER" $CMD

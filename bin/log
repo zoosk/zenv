@@ -1,0 +1,52 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Tail today's apache log or the syslog on your dev VM."
+    echo "Usage (list available logs): ${PROGNAME}"
+    echo "Usage (tail the syslog): ${PROGNAME} syslog"
+    echo "Usage (tail an apache log): ${PROGNAME} log_product_name [log_kind]"
+    echo ''
+    echo "Examples:"
+    echo "Touch error log: ${PROGNAME} t"
+    echo "Web access log: ${PROGNAME} www access"
+    exit 1
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_CURRENT_WORK" ]; then
+    echoerr 'You must use a checkout before looking at its logs.'
+    exit 1
+fi
+
+
+# Create a command to run on the server based on the different arguments this program can take
+if [ "$1" == '' ]; then
+    # Just list the logs
+    echo "${UNDERLINE}Last Update${TXTRESET}    ${UNDERLINE}Log Title${TXTRESET}"
+    MIDDLE="_sfo2-dev-vmdev${ZENV_DEVID_PADDED}_dev${ZENV_DEVID}_"
+    TIME_FORMAT="+%b %d"
+    TODAY="$(date "$TIME_FORMAT")"
+    CMD="ls -lt --time-style='$TIME_FORMAT %H:%M' /var/log/httpd | head -15 | grep \"$TODAY\" | awk '{print \$6, \$7, \$8, \" \", \$9}' | sed -e 's/\.log.*//' -e 's|${MIDDLE}| |'"
+
+elif [ "$1" == 'syslog' ]; then
+    # Tail syslog
+    CMD="tail -f /var/log/messages"
+
+else
+    # Tail an apache log, the 'error' one by default
+    LOGNAME='error'
+    if [ "$2" != "" ]; then
+        LOGNAME="$2"
+    fi
+    FULL_NAME="/var/log/httpd/${1}_sfo2-dev-vmdev${ZENV_DEVID_PADDED}_dev${ZENV_DEVID}_${LOGNAME}.log_$(date '+%Y-%m-%d')"
+    DATE_NAME="${1}.log_$(date '+%Y-%m-%d')"
+    RAW_NAME="/var/log/httpd/${1}.log"
+
+    CMD="if [ -e \"$FULL_NAME\" ]; then tail -f \"${FULL_NAME}\"; elif [ -e \"$DATE_NAME\" ]; then tail -f \"${DATE_NAME}\"; else tail -f \"${RAW_NAME}\"; fi"
+fi
+ssh "$ZENV_DEVSERVER" $CMD
