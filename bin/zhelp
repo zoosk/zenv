@@ -27,14 +27,7 @@ case "$ARG" in
         ;;
 
     'alias' | 'aliases' )
-        # Colorize the aliases file for easy reading
-        sed -e "s/^\(#.*#\)$/${BOLD}${UNDERLINE}\1${TXTRESET}/" \
-            -e "s/^\(#.*[^#]\)$/${BOLD}\1${TXTRESET}/" \
-            -e "s/^alias \([^=]*\)=.*/\1/" \
-             "${ZENV_ROOT}/functions/aliases.sh"
-
         # Print out the git aliases
-        echo ''
         echo "${BOLD}${UNDERLINE}########################## Git aliases (usable with git) ##########################${TXTRESET}"
         grep -A 1 '#' "${ZENV_ROOT}/utils/gitconfig.cfg" | sed -e '/^[^ \t].*/d' \
             -e "s/^ *#\(.*\)/${BOLD}#\1${TXTRESET}/" \
