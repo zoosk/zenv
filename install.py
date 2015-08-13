@@ -29,7 +29,7 @@ with open('properties/global.properties', 'r') as fp:
     props_template_lines = fp.read().split("\n")
 
 
-settings_file_location = environ['HOME'] + '/.zenvrc-generic'
+settings_file_location = environ['HOME'] + '/.zenvrc'
 
 print 'Hello and welcome to ZEnv. Please answer some questions to help set up your dev environment.'
 print "Questions will be presented with default answers in parens. Just hit enter if you don't want to change them."
@@ -71,7 +71,7 @@ props_template_lines.append("""
 ############################## Anything below this line SHOULD NOT BE EDITED!!! ##############################
 
 export PATH="${ZENV_ROOT}/bin:$PATH"
-for i in $(find ${ZENV_ROOT}/functions -name '*.sh'); do
+for i in $(find ${ZENV_ROOT}/environment -name '*.sh'); do
     source $i
 done
 
@@ -99,9 +99,9 @@ if re.search('source .*\.zenvrc', startup_contents) is None:
     if response != 'n':
         startup_contents += """\n
 ### BEGIN ZENV INIT
-source '${ZENV_SETTINGS}'
-if [ -z \"\$ZENV_CURRENT_WORK\" -a -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then
-    use \$(python -c \"from os import path; print path.relpath('\${PWD}', '\${ZENV_WORKSPACE}')\")
+source '""" + settings_file_location + """'
+if [ -z \"$ZENV_CURRENT_WORK\" -a -n \"$(grep -m 1 ZENV \"$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then
+    use $(python -c \"from os import path; print path.relpath('${PWD}', '${ZENV_WORKSPACE}')\")
 fi
 ### END ZENV INIT
 """
@@ -114,10 +114,10 @@ with open(startup_file, 'w') as fp:
 # Run the init script
 setup_script = join(ZENV_ROOT, 'setupscripts', 'global.setup.sh')
 
-return_code = subprocess.call(['bash', setup_script])
+return_code = subprocess.call(['bash', '--login', setup_script])
 if return_code != 0:
     print 'An error in the setup script prevented the installation.'
-    unlink(startup_file)
+    unlink(settings_file_location)
     exit(1)
 
 print '%s %s' % (colors.format_string('<3', colors.RED, colors.BOLD),

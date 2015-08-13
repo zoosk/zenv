@@ -20,22 +20,9 @@ function buildgeneric() {
     fi
     shift  # $* is now the arguments to pass to the build command
     cd $BUILD_DIR
-    (eval $ZENV_BUILD_COMMAND $*)
-    local RC=$?
-    
-    # Rsync the result if: 1) build succeeded, 2) build wasn't run with -l or empty parameter.
-    if [ "$RC" -eq 0 ]; then
-        if [ "${1:0:1}" != "-" -a ! -z "$1" ]; then
-            synccode
-        fi
-    fi
 
-    if [ $RC -eq 0 ]; then
-        (eval $ZENV_COMPLETE_COMMAND)
-    else
-        (eval $ZENV_FAILED_COMMAND)
-    fi
-    
+    "${ZENV_ROOT}/bin/build" $*
+
     cd - 1>/dev/null
     return $RC
 }

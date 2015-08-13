@@ -37,3 +37,6 @@ GIT_CONFIG="${ZENV_ROOT}/utils/gitconfig.cfg"
 if [ "$(which git)" != '' -a "$(git config --get include.path 2>/dev/null | grep "$GIT_CONFIG")" == '' ]; then
     git config --global include.path "$GIT_CONFIG"
 fi
+
+# Fix XAMPP's overwriting of the head function so that scripts don't crash
+alias head=/usr/bin/head
