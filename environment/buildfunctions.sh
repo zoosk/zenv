@@ -20,7 +20,7 @@ function buildgeneric() {
     fi
     shift  # $* is now the arguments to pass to the build command
     cd $BUILD_DIR
-
+    
     "${ZENV_ROOT}/bin/build" $*
 
     cd - 1>/dev/null
