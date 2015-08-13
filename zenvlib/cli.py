@@ -1,4 +1,6 @@
-from os.path import basename
+from os.path import basename, exists, expanduser
+import re
+import subprocess
 import sys
 
 from zenvlib import environ
@@ -47,3 +49,59 @@ def check_usage(usage=None, min_args=0, max_args=None):
     if max_args is not None and len(sys.argv) - 1 > max_args:
         print usage
         sys.exit(1)
+
+
+def fill_template_properties(props_template_lines):
+    """ Fill in the values of @@-delimited values in a template properties file.
+    :param props_template_lines: A list of lines in the file.
+    :return: None; however, the original array will be modified with the new values.
+    """
+    for line_index in xrange(len(props_template_lines)):
+        line = props_template_lines[line_index].rstrip()
+
+        match = re.findall('^export\s*(.*?)=.*@@(.*?)@@', line)
+        if len(match) > 0:
+            # Get the var name and possibly default value
+            var_name, default = match[0]
+
+            # Expand variables in the default value
+            if default != '':
+                default = expand_shell_expr(default)
+
+            # Check for a comment on the line before
+            question = None
+            if line_index != 0:
+                prev_line = props_template_lines[line_index - 1]
+                if prev_line.startswith('#'):
+                    question = 'Enter %s (%s): ' % (prev_line[1:].strip(), default)
+
+            if question is None:
+                question = 'Enter the value for the global %s variable (%s): ' % (var_name, default)
+
+            # Put the user's value into the file
+            print question,
+            value = sys.stdin.readline().rstrip()
+            if value == '':
+                value = default
+
+            props_template_lines[line_index] = re.sub('@@(.*?)@@', value, line)
+
+
+def expand_shell_expr(expression):
+    """ Return an expanded version of the bash variables in a given expression.
+    """
+    return subprocess.check_output(['bash', '-c', 'echo ' + expression]).rstrip()
+
+
+def get_bash_startup_file():
+    """ Determine which startup file bash will use, and return a path to it.
+    :return: The path to the startup file that bash will use, for example to .bash_login or .bash_profile
+    """
+    home = expanduser('~')
+    files = ['.bash_profile', '.bash_login', '.profile']
+    for f in files:
+        if exists(home + '/' + f):
+            return home + '/' + f
+
+    # If no files exist, default to .bash_login since that's commonly used by MacPorts
+    return home + '/.bash_login'

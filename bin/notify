@@ -1,15 +1,121 @@
 #! /usr/bin/env bash
 
-# Startup checks
+## PURPOSE
+#
+# This is a wrapper script around desktop notifications.
+# It supports OSX and Linux (KDE/UNITY/GNOME), and should
+# be easily modified to work on other systems.
+#
+# PLEASE USE ONLY X-PLATFORM SUPPORTED OPTIONS for zenv scripts:
+#               [ -title, -message, -help ]
+# All other options are OSX specific.  We have preserved the OSX
+# behavior as other OSX scripts rely on notify, and we do not want
+# to break them.
+#
+
+## BAIL on errors
+set -e # we can not use set -u as we rely on XDG_CURRENT_DESKTOP
+
+## CHECK envrionment
 if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'You must run this program from within ZEnv.'
     exit 1
 fi
 
-BIN_FILE="${ZENV_ROOT}"/utils/terminal-notifier.app/Contents/MacOS/terminal-notifier
-if [ -n "$1" -a "$(echo "$1" | sed 's/\(.\).*/\1/')" != '-' ]; then
-    # This is not an option, just display the message
-    $BIN_FILE -message "$1"
-else
-    $BIN_FILE "$@"
+NOTIFY_DE="${XDG_CURRENT_DESKTOP}"
+
+## Support OSX EXACTLY as before
+if [ -z "${NOTIFY_DE}" ]; then
+    BIN_FILE="${ZENV_ROOT}"/utils/terminal-notifier.app/Contents/MacOS/terminal-notifier
+    if [ -n "$1" -a "$(echo "$1" | sed 's/\(.\).*/\1/')" != '-' ]; then
+        $BIN_FILE -message "$1"
+    else
+        $BIN_FILE "$@"
+    fi
+    exit $?
 fi
+
+## SET script vars
+NOTIFY_TITLE=''; # Title
+NOTIFY_MSG='';   # Message
+NOTIFY_DWELL=2;  # Residency time
+ARG_STACK=();
+
+## BEGIN SET title and message per options
+while :; do
+    case $1 in
+        -h|--help|-\?)
+           echo "Notify is a zenv cross-platform wrapper for desktop notifications."
+           echo "Only -message and -title options are supported across all platforms."
+           exit 0;
+           ;;
+
+        -title)
+            if [ "${2}" ]; then
+              NOTIFY_TITLE="${2}"
+              shift 2
+              continue
+            else
+              echo "Error, option ${1} requires an argument."
+              exit 1
+            fi
+            ;;
+
+        -message)
+            if [ "${2}" ]; then
+              NOTIFY_MSG="${2}"
+              shift 2
+              continue
+            else
+              echo "Error, option ${2} requires an argument."
+              exit 1
+            fi
+            ;;
+
+        -dwell)
+            if [ "${2}" ]; then
+              let NOTIFY_DWELL="${2}"+0
+              shift 2
+              continue
+            else
+              echo "Error, option ${2} requires an argument."
+              exit 1
+            fi
+            ;;
+
+        # end of all options
+        --)
+            shift
+            break
+            ;;
+        # If no options provided, use the first argument as the message
+        # and the second as the title.
+        *)
+            if [ -z "${NOTIFY_MSG}" ] && [ -z "${NOTIFY_TITLE}" ]; then
+              echo "$@"
+              NOTIFY_MSG="$@"
+              if [ -z "${NOTIFY_MSG}" ]; then exit 0; fi
+            fi
+            break
+            ;;
+    esac
+    shift
+done
+## END SET title and message per options
+
+## BEGIN RUN appropriate desktop command
+case "${NOTIFY_DE}" in
+    KDE)
+        if [ ! -z $(which kdialog) ]; then
+            kdialog --title "${NOTIFY_TITLE:-...}" --passivepopup \
+                "${NOTIFY_MSG:-...}" ${NOTIFY_DWELL:-2}
+        fi
+        ;;
+    *) # Unity, Gnome, etc
+        if [ ! -z $(which notify-send) ]; then
+            notify_send "${NOTIFY_TITLE:-...}"
+                "${NOTIFY_MSG:-...}" -t ${NOTIFY_DWELL:-2}
+        fi
+        ;;
+esac
+## END RUN appropriate desktop command

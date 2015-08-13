@@ -1,10 +1,7 @@
 #! /usr/bin/env bash
 
 # Global environment settings for ZEnv. These settings differ from those in the .zenvrc file because they are
-# mnot specific to a user.
-
-# The name of the workspace settings files. Note that if you change this, it won't rename ones that are already there.
-export ZENV_WORKSPACE_SETTINGS='work.properties'
+# not specific to a user.
 
 # Colors!
 export BOLD="$(tput bold)"

@@ -16,7 +16,7 @@ $(cat ~/.zenvrc)
 trap deactivate EXIT
 echo \"Welcome to ZEnv. \${RED}<3\${TXTRESET}\"
 echo \"For help, type 'zhelp'.\"
-if [ -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then 
+if [ -n \"\$(grep -m 1 ZENV \"\$ZENV_WORKSPACE_SETTINGS\" 2>/dev/null)\" ]; then
     use \$(python -c \"from os import path; print path.relpath('\${PWD}', '\${ZENV_WORKSPACE}')\")
 fi
 "

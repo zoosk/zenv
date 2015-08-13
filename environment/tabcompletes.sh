@@ -10,7 +10,6 @@ _tabcomp_use() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     COMPREPLY=( $(compgen -W "${workspaces}" -- ${cur}) )
 }
-complete -F _tabcomp_use zenv_use
 complete -F _tabcomp_use use
 complete -F _tabcomp_use zbranch
 
