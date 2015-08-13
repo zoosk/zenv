@@ -31,8 +31,12 @@ fi
 
 # Install the dependencies if they are not
 if [ -z "$ZLI_INSTALLED" ]; then
-    cd ${ZENV_ROOT}/utils/zli
     echo 'You need to install zli before using it. If prompted, please type your sudo password below.'
+    cd ${ZENV_ROOT}/utils
+    if [ ! -d zli ]; then
+        git clone git@g.zoosk.com:merrickp/zli.git
+    fi
+    cd zli
     sudo python setup.py develop
 fi
 
