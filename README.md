@@ -80,14 +80,8 @@ instantly becomes available to all parties.
 
 ## Quick Start
 
-If you want to get started immediately with all the fun that ZEnv has to
-offer, follow these simple steps:
+If you just want to get started without doing anything advanced, check out the
+`quickstart.md` file in the docs folder.
 
-1. Modify `properties/global.properties` so that it `export`s variables that
-   you want to be available in the environment.
-2. Run `install.py` to install ZEnv, restarting your terminal afterwards.
-3. `use` a checkout by name to start working in it.
-4. For help at any time, type `zhelp`.
-
-This setup hardly scratches the surface of what's possible with ZEnv. For
+That setup hardly scratches the surface of what's possible with ZEnv. For
 more information on that, check out the docs in the `docs` folder.
