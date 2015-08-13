@@ -24,7 +24,7 @@ if [ "$LAST_REV" != "$NEW_REV" ]; then
         echo ''
         echo "${BOLD}##############################################################"
         echo "#       Your environment variables have been updated!        #"
-        echo "# These changes won't apply until you restart your terminal. #
+        echo "# These changes won't apply until you restart your terminal. #"
         echo "##############################################################${TXTRESET}"
     fi
 fi
