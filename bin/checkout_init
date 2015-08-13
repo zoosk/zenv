@@ -3,7 +3,7 @@
 import os
 from os import path
 import subprocess
-from zenvlib import cli, gitinfo, environ
+from zenvlib import cli, git_info, environ
 
 
 # Startup checks
@@ -12,7 +12,7 @@ Usage: %N""")
 cli.fail_without_zenv()
 
 # Determine what kind of repo we're in
-repo_type = gitinfo.checkout_type
+repo_type = git_info.checkout_type
 
 # Get the correct properties file for the repo
 props_dir = path.join(environ.root, 'properties')
@@ -39,7 +39,7 @@ setup_script = path.join(setup_script_dir, '%s.setup.sh' % repo_type)
 if not path.exists(setup_script):
     setup_script = path.join(setup_script_dir, 'default.setup.sh')
 
-return_code = subprocess.call(['bash', setup_script])
+return_code = subprocess.call(['bash', '-c', 'source %s && bash %s' % (environ.workspace_settings, setup_script)])
 if return_code != 0:
     print 'An error in the setup script prevented your checkout from being set up.'
     os.unlink(environ.workspace_settings)
