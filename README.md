@@ -1,14 +1,40 @@
 # ZEnv
 
-ZEnv is an environment manager for programming. It is based on the idea that a
-busy developer must work on several different repositories, and that each
-repository has its own build process, dev tools, and environment variables.
+ZEnv is a coding environment manager for programmers. It allows you to keep
+your shell environment in source control, thereby keeping everyone in sync and
+allowing access to shared dev tools, aliases, and more.
 
-ZEnv automatically manages the user's `$PATH` and other environment variables
-so that developers can maintain a clean, sensible environment regardless of
-how many codebases they have to work with.
+## Features
 
-## Example 1: Building someone else's repo
+### Developer setup
+
+ZEnv requires that developers install it before using it. When this happens,
+you can write arbitrary code that might install software dependencies, set up
+git configuration, and create any directories needed for working. Never slog
+through a complicated onboarding process again!
+
+### Sharing dev tools
+
+ZEnv allows the creation and sharing of any number of tools for making work
+easier. Need to make sure all your developers have access to a linter or test
+runner? Just add it to the `bin` folder and check in.
+
+### Shell startup
+
+In addition to dev tools, you can add arbitrary code that will run on your
+developers' machines whenever they start a terminal. This allows you to share
+build aliases, environment variables, and much more.
+
+### Multiple projects
+
+Sometimes you'll need to work with multiple checkouts of different projects,
+each with their own set of requirements. ZEnv supports changing the set of
+available dev tools and environment variables depending on what you want to
+work on at the time.
+
+## Examples
+
+### Example 1: Building someone else's repo
 
 Let's say you're an enterprising iOS developer working at a new company. You've
 been hired to work on the app, but there's a completely separate team that
@@ -48,7 +74,7 @@ Wow! So, what happened?
   up by its owners that specifies what command this should be.
 
 
-## Example 2: Sharing command aliases
+### Example 2: Sharing command aliases
 
 It's happened to everyone. You're over at a coworker's computer, and they type
 some command you've never seen before. The screen lights up with the text of
@@ -66,7 +92,7 @@ the glory of ASCII Star Wars. And hopefully your coworker will add their alias
 too.
 
 
-## Example 3: Creating dev tools
+### Example 3: Creating dev tools
 
 The `build` command is nice, but it's one of the only commands that ZEnv
 provides. Instead of trying to think of everything, ZEnv gives you a new `bin`
@@ -80,14 +106,8 @@ instantly becomes available to all parties.
 
 ## Quick Start
 
-If you want to get started immediately with all the fun that ZEnv has to
-offer, follow these simple steps:
+If you just want to get started without doing anything advanced, check out the
+`quickstart.md` file in the docs folder.
 
-1. Modify `properties/global.properties` so that it `export`s variables that
-   you want to be available in the environment.
-2. Run `install.py` to install ZEnv, restarting your terminal afterwards.
-3. `use` a checkout by name to start working in it.
-4. For help at any time, type `zhelp`.
-
-This setup hardly scratches the surface of what's possible with ZEnv. For
+That setup hardly scratches the surface of what's possible with ZEnv. For
 more information on that, check out the docs in the `docs` folder.

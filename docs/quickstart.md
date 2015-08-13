@@ -32,7 +32,7 @@ results of steps 1-3.
 5. `git clone` your repository into the place that you told the install script
    that you have your checkouts.
 
-6. `use XXX`, where `XXX` is the name of the repo you just cloned.
+6. `use XXX`, where `XXX` is the folder name of the repo you just cloned.
 
 7. Repeat steps 5 & 6 for each repository you want to work with.
 
