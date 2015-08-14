@@ -16,8 +16,8 @@ alias install-most='(build install-tools install-web install-web-test install-ps
 alias install-geodata='(rsync-geodbdata && build install-geoip-data && build install-geolookup-data)'
 # Get rid of all the work files (done using ssh for speed)
 alias delete-all='(if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to delete its files."; else rm -rf ${ZENV_SERVERDIR}/* 2>/dev/null && synccode ${ZENV_SERVERDIR}; fi)'
-# Get rid of all the database info
-alias delete-db='(build truncate-all)'
+# Get rid of all the database info [we need to run this on the dev vm]
+alias delete-db='(testscript data/truncate_all.php --batch)'
 
 ##########################  INDIVIDUAL PROJECT BUILD ALIASES  ##########################
 # Install the API code
