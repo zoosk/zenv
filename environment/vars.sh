@@ -40,6 +40,9 @@ export GREP_OPTIONS='--color=auto'
 # Make the ZEnv Python library, zenvlib, importable
 export PYTHONPATH="${ZENV_ROOT}:${PYTHONPATH}"
 
+# Allow checking for linux/osx
+export ZENV_PLATFORM=$(uname -a |grep -qi linux && echo 'linux' || echo 'osx')
+
 # If you like colored dir listings enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"

@@ -39,12 +39,12 @@ function deactivate() {
 # Uninstall ZEnv.
 #
 function uninstall_zenv() {
-    local STARTUP_FILE='~/.bash_profile'
+    local STARTUP_FILE="${HOME}/.bash_profile"
     if [ ! -e "$STARTUP_FILE" ]; then
-        STARTUP_FILE='~/.bash_login'
+        STARTUP_FILE="${HOME}/.bash_login"
     fi
     if [ ! -e "$STARTUP_FILE" ]; then
-        STARTUP_FILE='~/.profile'
+        STARTUP_FILE="${HOME}/.profile"
     fi
     if [ ! -e "$STARTUP_FILE" ]; then
         echo 'Could not determine where your settings are stored.'
@@ -53,7 +53,7 @@ function uninstall_zenv() {
 
     read -p 'This will delete all your checkout configuration. Are you sure you want to continue [y/n]? ' TEMP
     if [ "$TEMP" == 'y' ]; then
-        if [ $PLATFORM = 'osx' ]; then
+        if [ "$ZENV_PLATFORM" = 'osx' ]; then
             sed -i '' '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' "$STARTUP_FILE"
             sed -i '' '/^alias zenv/d' "$STARTUP_FILE"
         else
