@@ -11,7 +11,7 @@ ZLI_BIN="/usr/local/bin/zli"
 # Usage information
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     # Print the real zli help if it's already installed
-    if [ -z "" ]; then
+    if [ -n "$ZLI_INSTALLED" ]; then
         $ZLI_BIN --help
     else
         echo 'zli: simulate Zoosk user creation, user interactions, query data, and more.'
@@ -24,9 +24,6 @@ fi
 if [ -z "$ZENV_INITIALIZED" ]; then
     echo 'You must run this program from within ZEnv.'
     exit 1
-elif [ -z "$ZENV_CURRENT_WORK" ]; then
-    echoerr 'You must set a workspace before building it.'
-    exit 1
 fi
 
 # Install the dependencies if they are not
@@ -37,7 +34,7 @@ if [ -z "$ZLI_INSTALLED" ]; then
         git clone git@g.zoosk.com:merrickp/zli.git
     fi
     cd zli
-    sudo python setup.py develop
+    sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future python setup.py develop
 fi
 
 $ZLI_BIN $@
