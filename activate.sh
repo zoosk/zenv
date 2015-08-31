@@ -11,7 +11,7 @@ if [ ! -e ~/.zenvrc ]; then
 fi
 
 # Build the subshell init out of your current bash login file and the ZEnv settings file, adding an auto-workspace init
-INIT="$(cat ~/.bash_login)
+INIT="$( ([[ -f ~/.bash_profile ]] && cat ~/.bash_profile) || ([[ -f ~/.bash_login ]] && cat ~/.bash_login) || ([[ -f ~/.profile ]] && cat ~/.profile) )
 $(cat ~/.zenvrc)
 trap deactivate EXIT
 echo \"Welcome to ZEnv. \${RED}<3\${TXTRESET}\"
