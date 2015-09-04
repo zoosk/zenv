@@ -55,7 +55,7 @@ export WORK="$NEW_WORK"  # Backwards compatibility
 cd $ZENV_CURRENT_WORK
 
 # setup path to look for commands specific to repo type
-REPO_KIND=$(inspect "$PWD" repo_type)
+REPO_KIND=$(inspect "$PWD" repo_type 2>/dev/null)
 # if old repo was set, strip its "bin" directory from the path
 if [ "$NEED_TO_STRIP_OLD" = "true" ]; then
     export PATH=$(echo $PATH|sed -e "s@$ZENV_ROOT/bin/$OLD_REPO_KIND[:]*@@;s/:$//;")
