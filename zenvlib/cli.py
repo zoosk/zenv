@@ -1,4 +1,5 @@
 from os.path import basename, exists, expanduser
+import pipes
 import re
 import subprocess
 import sys
@@ -84,7 +85,7 @@ def fill_template_properties(props_template_lines):
             if value == '':
                 value = default
 
-            props_template_lines[line_index] = re.sub('@@(.*?)@@', value, line)
+            props_template_lines[line_index] = re.sub('@@(.*?)@@', pipes.quote(value), line)
 
 
 def expand_shell_expr(expression):
