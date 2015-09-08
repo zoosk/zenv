@@ -4,7 +4,7 @@
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
     echo "${PROGNAME}: Watch for changes to files and build them automatically."
-    echo 'Note: this command currently only functions for Zephyr and some subsets of zoosk core repos.'
+    echo 'See docs/autobuild.md for an explanation on how to set up your repo for this.'
     echo "Usage: ${PROGNAME}"
     exit 0
 fi

@@ -114,7 +114,7 @@ def callback(event):
                     if DEBUG:
                         print 'Found a variable declaration: %s = %s' % (env_name, env_value)
                     continue
-                
+
                 elif line.startswith(KEY_COMMENT):
                     if DEBUG:
                         print 'Found a comment: %s' % line
