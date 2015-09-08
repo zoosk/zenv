@@ -16,6 +16,13 @@ LAST_REV="$(git rev-parse HEAD)"
 git pull || exit 1
 NEW_REV="$(git rev-parse HEAD)"
 
+cd "$ZENV_ROOT/utils"
+if [ ! -d zli ]; then
+   git clone git@g.zoosk.com:merrickp/zli.git
+fi
+cd zli
+git pull
+
 if [ "$LAST_REV" != "$NEW_REV" ]; then
     UPDATED_FILES=$(git diff --name-only "$LAST_REV"..)
 
