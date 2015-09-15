@@ -50,8 +50,8 @@ alias install-payments='(build install-and-build-payment-service)'
 alias install-test='(build install-web-test)'
 # Install test 500
 alias install-test-500='(build install-test-500)'
-# Install test 2k
-alias install-test2k='(build install-test2k-fake)'
+# Install test 1k
+alias install-test1k='(build install-test1k)'
 # Install test 10k
 alias install-test10k='(build install-test10k-fake)'
 
