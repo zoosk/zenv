@@ -1,13 +1,9 @@
 #! /usr/bin/env python
 import os
-import fnmatch
 import re
 import sys
 
-from zenvlib import environ, colors, modules
-
-modules.install_if_needed('tinycss')
-import tinycss
+from zenvlib import colors, css, environ
 
 
 #: The amount that dimensions are allowed to vary and still be considered a match
@@ -21,15 +17,6 @@ modifier_chars = {
     '+',
     '-'
 }
-
-
-def sizeof_fmt(num, suffix='B'):
-    """ Format a number of bytes in a file size. """
-    for unit in ['','K','M','G','T','P','E','Z']:
-        if abs(num) < 1024.0:
-            return "%3.1f%s%s" % (num, unit, suffix)
-        num /= 1024.0
-    return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
 def decl_matches(decl, prop, value):
@@ -61,42 +48,6 @@ def decl_matches(decl, prop, value):
             return True
 
     return False
-
-
-def load_combined_stylesheet(product_prefix):
-    """ Combine all the stylesheets for the given product into a single Stylesheet object. """
-    # Get all the files for the given product
-    css_dir = os.path.join(environ.current_work, 'build', 'css')
-    if not os.path.exists(css_dir):
-        print 'You must build before searching.'
-        sys.exit(1)
-
-    css_files = [os.path.join(dirpath, f) for dirpath, dirnames, files in os.walk(css_dir) for f in fnmatch.filter(files, '%s*.css' % product_prefix) if '.gz' not in f]
-
-    total_size = 0
-    for filename in css_files:
-        total_size += os.path.getsize(filename)
-
-    print 'Loading %s of CSS from %d files...' % (sizeof_fmt(total_size), len(css_files)),
-    sys.stdout.flush()
-
-    combined_contents = []
-    for filename in css_files:
-        with open(filename, 'r') as fp:
-            combined_contents.append(fp.read())
-
-    combined_contents = "\n".join(combined_contents)
-
-
-    # Parse the CSS file
-    parser = tinycss.make_parser('page3')
-    #sheet = parser.parse_stylesheet_file('build/css/admin.css')
-    sheet = parser.parse_stylesheet(combined_contents)
-
-    print 'Done.'
-    print 'Loaded %d CSS rule declarations' % len(sheet.rules)
-
-    return sheet
 
 
 def create_lookup_dicts(sheet):
@@ -141,7 +92,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Load in all the rules
-    sheet = load_combined_stylesheet(sys.argv[1])
+    sheet = css.load_css_from_dir(os.path.join(environ.current_work, 'build', 'css'), sys.argv[1], True)
     decls_by_selector, selectors_by_decl = create_lookup_dicts(sheet)
 
     # Loop until the user hits Ctrl+C
