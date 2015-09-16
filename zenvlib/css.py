@@ -10,8 +10,8 @@ install_if_needed('tinycss')
 import tinycss
 
 
-class_declaration_regex = re.compile("class=[\"']([^\"']+)[\"']")
-ng_class_regex = re.compile("[\"']([^\"'])[\"']\s*:")
+class_declaration_regex = re.compile("class=(\"([^\"]+)\"|'([^']+)')")
+ng_class_regex = re.compile("[\"']([^\"']+)[\"']\s*:")
 
 
 def load_css_from_dir(dirname, prefix='', verbose=False):
@@ -78,7 +78,7 @@ def classes_used_in_file(filename):
     :return set: The classes that were used.
     """
     with open(filename, 'r') as fp:
-        class_exprs = re.findall(class_declaration_regex, fp.read())
+        class_exprs = [i[1] for i in re.findall(class_declaration_regex, fp.read())]
 
     used_classes = set()
     for decl in class_exprs:
