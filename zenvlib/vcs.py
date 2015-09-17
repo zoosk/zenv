@@ -27,7 +27,8 @@ class GitInfo(object):
         try:
             # Checkout type
             proc_output = subprocess.check_output(['git', 'remote', '-v'], stderr=subprocess.PIPE)
-            matches = re.findall('.*/([^/.]+)?(\.git)?\s*\(fetch\)', proc_output)
+            url = re.findall('(\S+)\s+\(fetch\)', proc_output)[0]
+            matches = re.findall('.*?([^/.]+)/?(\.git)?$', url)
             if len(matches) > 0:
                 self.checkout_type = matches[0][0]
 
