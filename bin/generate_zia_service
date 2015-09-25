@@ -4,7 +4,7 @@
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
     echo "${PROGNAME}: generate a new zia service"
-    echo "Usage: ${PROGNAME} product Product toolsVersion appFolder"
+    echo "Usage: ${PROGNAME} product Product toolsVersion devId mysqlDBName mysqlDBSuffix useSequentialWorkflow appFolder"
     echo "requires Maven 3 and Java 7"
     echo "see https://f.corp.zoosk.com/default.asp?W2377 for more information"
     exit 1
@@ -17,32 +17,27 @@ if [ -z "$ZENV_INITIALIZED" ]; then
 fi
 
 # make sure we have the right parameters
-if [ "$#" -lt 4 ]
+if [ "$#" -lt 9 ]
 then
-    PROGNAME=$(basename $0)
-    echo "${PROGNAME}: generate a new zia service"
-    echo "Usage: ${PROGNAME} product Product toolsVersion appFolder"
-    echo "requires Maven 3 and Java 7"
-    echo "see https://f.corp.zoosk.com/default.asp?W2377 for more information"
+    wget http://nexus.sfo2.zoosk.com:8081/nexus/service/local/repositories/releases/content/gen_zia_service-0.0.4.jar
+    java -jar gen_zia_service-0.0.4.jar
     exit 1
 fi
 product=$1
 productName=$2
 toolsVersion=$3
-appFolder=$4
+devId=$4
+mysqlDBName=$5
+mysqlDBSuffix=$6
+useSequentialWorkflow=$7
+cassandraDBName=$8
+appFolder=$9
 if [ -d "$appFolder" ] 
 then
 	cd $appFolder
 	mkdir $product
-	mvn archetype:generate -DinteractiveMode=true -DarchetypeRepository=http://nexus.sfo2.zoosk.com:8081/nexus/content/repositories/releases -DarchetypeCatalog=http://nexus.sfo2.zoosk.com:8081/nexus/content/repositories/releases/archetype-catalog.xml -DarchetypeGroupId=com.zoosk.service -DarchetypeArtifactId=zia-archetype -DgroupId=com.zoosk.service -DartifactId=$product -Dpackage=com.zoosk.service.${product} -Dversion=0.1.0-SNAPHOT -Dproduct=$product -DproductName=$productName -DtoolsVersion=$toolsVersion
+	mvn archetype:generate -DinteractiveMode=false -DarchetypeGroupId=com.zoosk.service -DarchetypeArtifactId=zia-archetype -DarchetypeVersion=0.0.4 -DgroupId=com.zoosk.service -DartifactId=$product -Dpackage=com.zoosk.service.${product} -Dversion=0.1.0-SNAPHOT -Dproduct=$product -DproductName=$productName -DtoolsVersion=$toolsVersion -DdevId=$devId -DmysqlDBName=$mysqlDBName -DmysqlDBSuffix=$mysqlDBSuffix -DuseSequentialWorkflow=$useSequentialWorkflow -DcassandraDBName=$cassandraDBName
 	cd $product
-	mv src/main/java/com/zoosk/service/${product}/GlennService.java src/main/java/com/zoosk/service/${product}/${productName}Service.java
-	mv src/main/java/com/zoosk/service/${product}/handler/impl/GlennRequestHandler.java src/main/java/com/zoosk/service/${product}/handler/impl/${productName}RequestHandler.java
-	mv src/main/java/com/zoosk/service/${product}/handler/operation/BasicGlennOperation.java src/main/java/com/zoosk/service/${product}/handler/operation/Basic${productName}Operation.java
-	mv src/main/java/com/zoosk/service/${product}/handler/IGlennBaseHandler.java src/main/java/com/zoosk/service/${product}/handler/I${productName}BaseHandler.java
-	mv src/main/java/com/zoosk/service/${product}/handler/operation/GetGlennOperation.java src/main/java/com/zoosk/service/${product}/handler/operation/Get${productName}Operation.java
-	mv src/main/java/com/zoosk/service/${product}/handler/operation/PutGlennOperation.java src/main/java/com/zoosk/service/${product}/handler/operation/Put${productName}Operation.java
-	mv src/test/java/com/zoosk/service/${product}/handler/operation/GlennOperationTest.java src/test/java/com/zoosk/service/${product}/handler/operation/${productName}OperationTest.java
 	mvn clean compile install
 else
 	echo "either $appFolder does not exist or is not a directory"
