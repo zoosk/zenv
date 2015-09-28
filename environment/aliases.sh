@@ -51,7 +51,7 @@ alias install-test='(build install-web-test)'
 # Install test 500
 alias install-test-500='(build install-test-500)'
 # Install test 1k
-alias install-test1k='(build install-test1k)'
+alias install-test1k='(builddev install-test1k)'
 # Install test 10k
 alias install-test10k='(build install-test10k-fake)'
 
