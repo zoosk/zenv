@@ -4,16 +4,23 @@ alias devbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH 
 # Log into your database
 alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH into its database."; else mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass); fi'
 ##########################  BATCH BUILD ALIASES  ##########################
+##
+## IMPORTANT NOTE: do not add logic to these aliases!
+## Logic belongs in the build files themselves (otherwise changing logic relies on devs calling update_zenv)
+## Aliases should only call 1 build target (but can also call other non-build stuff)
+##
+###########################################################################
+
 # Install not just everything, but everything-everything. Good for new hires and for first time users of their Dev VM
 alias initial-setup='(checksystem && build install && build install-and-build-photo-service && build install-photov3-db && install-geodata && build install-test1k)'
 # Install everything
-alias install-all='(install-most && install-test1k && clearmem)'
+alias install-all='(build install-all && clearmem)'
 # Reinstall everything
 alias reinstall-all='(delete-all && install-all)'
 # Install everything except test data
-alias install-most='(build install-tools install-web install-web-test install-psyche install-themis && buildweb refresh-live-mission-control-data-from-production)'
+alias install-most='(build install-most)'
 # Install all geodata
-alias install-geodata='(rsync-geodbdata && build install-geoip-data && build install-geolookup-data)'
+alias install-geodata='(rsync-geodbdata && build install-geo-data)'
 # Get rid of all the work files (done using ssh for speed)
 alias delete-all='(if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to delete its files."; else rm -rf ${ZENV_SERVERDIR}/* 2>/dev/null && synccode ${ZENV_SERVERDIR}; fi)'
 # Get rid of all the database info [we need to run this on the dev vm]
@@ -42,7 +49,7 @@ alias install-admin='(buildweb install-web-admin)'
 alias install-autoloaders='(buildweb install-autoloaders)'
 
 # Install the mission control
-alias install-mission-control='(buildweb install-config refresh-live-mission-control-data-from-production)'
+alias install-mission-control='(buildweb install-mission-control)'
 
 # Install the payment service
 alias install-payments='(build install-and-build-payment-service)'
