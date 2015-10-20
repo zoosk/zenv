@@ -71,6 +71,38 @@ class PayRake
     self.print_cmd_output output
   end
 
+  def self.git_update(branch,stash_mode)
+        branch_path = self.branch_path(branch)
+	puts "Git: Updating payment-service branch[#{branch}]. This may take a minute."
+	
+	#stash name = time
+	#time = Time.now.getutc.to_i
+
+	if(0 == stash_mode)
+		puts "Updating with stash_mode 0, your changes (if any) will be on the stash stack and will not be included in the build"
+		output = self.run_cmd "cd #{branch_path}; git fetch --all ; git stash ; git checkout #{branch} ; git pull;"
+	elsif(1 == stash_mode)
+	 	puts "Updating with stash_mode 1, you will have to manually drop stash entry after apply"
+		output = self.run_cmd "cd #{branch_path}; git fetch --all ; git stash | grep 'No local changes to save' && (git checkout #{branch} && git pull) || (git checkout #{branch} && git pull && git stash apply)"
+	elsif(2 == stash_mode)
+		puts "Updating with stash_mode 2, stash will be automatically popped after update"
+		output = self.run_cmd "cd #{branch_path}; git fetch --all ; git stash | grep 'No local changes to save' && (git checkout #{branch} && git pull) || (git checkout #{branch} && git pull && git stash pop)"
+	end
+
+    self.print_cmd_output output
+  end
+
+  def self.git_clone(branch)
+        deploy_path = self.payment_deploy_path
+        branch_path = self.branch_path(branch)
+
+        puts "Git: Cloning Payment-Service Branch[#{branch}]. This may take a minute. Thank you for your patience."
+
+        output = self.run_cmd "cd #{deploy_path}; git clone https://g.zoosk.com/Payment/payment-service/ --branch #{branch} #{branch_path}"
+
+    self.print_cmd_output output
+  end
+
   def self.svn_checkout(branch)
   	deploy_path = self.payment_deploy_path
   	branch_path = self.branch_path(branch)
@@ -129,7 +161,8 @@ class PayRake
 	end
 
 	def self.branch_path(branch)
-		File.join(PAY_DEPLOY_TARGET, "/#{branch}")
+		#File.join(PAY_DEPLOY_TARGET, "/#{branch}")
+		File.join(PAY_DEPLOY_TARGET, "/pay2rake_git")
 	end
 
   def self.current_path
@@ -151,27 +184,41 @@ end
 #####################################################################
   
 desc 'SVN checkout/update branch, point current symbolic link to branch, generate config files, and builds payment databases (e.g. payrake use[trunk] )'
-task :use, :branch do |t, args|
+#task :use, :branch do |t, args|
+task :use, [:branch, :stash_mode] do |t, args|
 
 	if !args[:branch]
 		puts "Branch required but not specified - (e.g. payrake use[trunk] )"
 		next	# effectively a return in a ruby block
 	end
 
+	if !args[:stash_mode]
+		puts "stash mode not selected, using default (0)"
+		puts "options (0 = stash payment changes do not pop/apply, changes not included in build"
+		puts "         1 = stash payment changes + 'apply' before build (manual cleanup of stash)"
+		puts "         2 = stash payment changes + 'pop' before build"
+		stash_mode = 0
+	else 
+		stash_mode = args[:stash_mode].to_i
+	end
 	timestamp   = Time.now.tv_sec
 
-	branch = args[:branch].downcase.strip  
+	#branch = args[:branch].downcase.strip  
+	branch = args[:branch].strip
 
+        puts "Using branch #{branch}, stash_mode #{stash_mode}"	
 	PayRake.unlink_current
 	
 	# Always delete the target path
 	if PayRake.branch_exists?( branch )
-		PayRake.delete_branch branch 
+		PayRake.git_update(branch,stash_mode)
+#		PayRake.delete_branch branch 
+	else 
+		PayRake.git_clone branch
 	end
 
-	# Fresh checout
-	PayRake.svn_checkout branch 
-	
+	# Fresh checkout
+	#PayRake.svn_checkout branch 
 	PayRake.build_branch branch
 
     PayRake.build_test_dependencies branch
