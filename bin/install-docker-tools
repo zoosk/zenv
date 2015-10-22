@@ -1,0 +1,69 @@
+#!/bin/bash
+
+set -e
+
+DOCKER_VERSION=1.6.2
+CRANE_VERSION=2.1.0
+
+BUILD_CACHE_DIR="${HOME}/.zooskbuild"
+DOCKER_BIN="${BUILD_CACHE_DIR}/docker/${DOCKER_VERSION}/docker"
+CRANE_BIN="${BUILD_CACHE_DIR}/crane/${CRANE_VERSION}/crane"
+
+# Get the current platform
+case "$(uname -s)" in
+    Darwin* )
+        DOCKER_PLATFORM='Darwin'
+        CRANE_PLATFORM='darwin'
+        ;;
+    Linux )
+        DOCKER_PLATFORM='Linux'
+        CRANE_PLATFORM='linux'
+        ;;
+    * )
+        echo >&2 "Platform "$(uname -s)" not recognized, aborting"
+        exit 1
+        ;;
+esac
+
+# Get the current architecture
+case "$(uname -m)" in
+    x86_64 )
+        # This matches x86_64, x64, amd64, etc
+        DOCKER_ARCH='x86_64'
+        CRANE_ARCH='amd64'
+        ;;
+    * )
+        echo >&2 "Architecture "$(uname -s)" not recognized, aborting"
+        exit 1
+        ;;
+esac
+
+
+function main() {
+    if [ ! -x  "$DOCKER_BIN" ]; then
+        echo "Downloading docker ${DOCKER_VERSION}..."
+        atomic_install \
+            "https://get.docker.com/builds/${DOCKER_PLATFORM}/${DOCKER_ARCH}/docker-${DOCKER_VERSION}" \
+            "$DOCKER_BIN"
+    fi
+
+    if [ ! -x  "$CRANE_BIN" ]; then
+        echo "Downloading crane ${CRANE_VERSION}..."
+        atomic_install \
+            "https://github.com/michaelsauter/crane/releases/download/v${CRANE_VERSION}/crane_${CRANE_PLATFORM}_${CRANE_ARCH}" \
+            "$CRANE_BIN"
+    fi
+}
+
+function atomic_install() {
+    url="$1"
+    dest_file="$2"
+    dest_dir=$(dirname "$dest_file")
+    mkdir -p "$dest_dir"
+    download_tmp="${dest_dir}/"$(TMPDIR="$dest_dir" mktemp download.XXXXX)
+    /usr/bin/curl -sSL -o "$download_tmp" "$url"
+    chmod +x "$download_tmp"
+    mv "$download_tmp" "$dest_file"
+}
+
+main
