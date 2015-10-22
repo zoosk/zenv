@@ -9,8 +9,23 @@ BUILD_CACHE_DIR="${HOME}/.zooskbuild"
 DOCKER_BIN="${BUILD_CACHE_DIR}/docker/${DOCKER_VERSION}/docker"
 CRANE_BIN="${BUILD_CACHE_DIR}/crane/${CRANE_VERSION}/crane"
 
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Wraps docker cli tools to control containers on your dev vm"
+    echo
+    echo "Calling vm-docker <args> will pass args to docker with \$DOCKER_HOST"
+    echo "set to communicate with the docker daemon on your dev vm."
+    echo
+    echo "Calling vm-crane <args> will pass args to crane.  Crane will be configured"
+    echo "with a yaml file describing containers to run in the dev environment."
+    echo
+    echo "Usage: ${PROGNAME} <args>"
+    exit 0
+fi
+
 if [ -z "$ZENV_DEVID_PADDED" -o -z "$ZENV_ROOT" ]; then
-    echo >&2 "You must use zenv workspace with a DEVID configured before running $0."
+    echo >&2 "You must use a zenv workspace with a DEVID configured before running $0."
     exit 1
 fi
 

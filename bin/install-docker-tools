@@ -9,6 +9,17 @@ BUILD_CACHE_DIR="${HOME}/.zooskbuild"
 DOCKER_BIN="${BUILD_CACHE_DIR}/docker/${DOCKER_VERSION}/docker"
 CRANE_BIN="${BUILD_CACHE_DIR}/crane/${CRANE_VERSION}/crane"
 
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Installs docker and related tools into ${BUILD_CACHE_DIR}"
+    echo
+    echo "These tools are used by zenv to run containers on your dev vm."
+    echo
+    echo "Usage: ${PROGNAME}"
+    exit 0
+fi
+
 # Get the current platform
 case "$(uname -s)" in
     Darwin* )
@@ -28,7 +39,6 @@ esac
 # Get the current architecture
 case "$(uname -m)" in
     x86_64 )
-        # This matches x86_64, x64, amd64, etc
         DOCKER_ARCH='x86_64'
         CRANE_ARCH='amd64'
         ;;
