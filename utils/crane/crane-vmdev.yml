@@ -13,7 +13,7 @@ containers:
       #  - /srv
       volumes-from:
         - facts-ccportal
-      env: ["DEV_ID=${$ZENV_DEVID}"]
+      env: ["DEV_ID=${ZENV_DEVID}"]
       env-file: [
         "${ZENV_ROOT}/utils/crane/zoosk-domain-sfo2.env"
       ]
