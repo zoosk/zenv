@@ -4,7 +4,7 @@ containers:
   ccportal-dev:
     image: d.zoosk.com/ccportal
     run:
-      publish: ["11610:443"]
+      publish: ["11611:443"]
       add-host:
         - "zia-auth:172.17.42.1"
         - "api-internal:172.17.42.1"
