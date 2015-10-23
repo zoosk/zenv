@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -e
+
+DOCKER_VERSION=1.6.2
+CRANE_VERSION=2.1.0
+
+BUILD_CACHE_DIR="${HOME}/.zooskbuild"
+DOCKER_BIN="${BUILD_CACHE_DIR}/docker/${DOCKER_VERSION}/docker"
+CRANE_BIN="${BUILD_CACHE_DIR}/crane/${CRANE_VERSION}/crane"
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Wraps docker cli tools to control containers on your dev vm"
+    echo
+    echo "Calling vm-docker <args> will pass args to docker with \$DOCKER_HOST"
+    echo "set to communicate with the docker daemon on your dev vm."
+    echo
+    echo "Calling vm-crane <args> will pass args to crane.  Crane will be configured"
+    echo "with a yaml file describing containers to run in the dev environment."
+    echo
+    echo "Usage: ${PROGNAME} <args>"
+    exit 0
+fi
+
+if [ -z "$ZENV_DEVID_PADDED" -o -z "$ZENV_ROOT" ]; then
+    echo >&2 "You must use a zenv workspace with a DEVID configured before running $0."
+    exit 1
+fi
+
+if [ ! -x "$DOCKER_BIN" -o ! -x "$CRANE_BIN" ]; then
+    echo >&2 "Docker tools are not installed... please run install-docker-tools"
+    exit 1
+fi
+
+export DOCKER_TLS_VERIFY=
+export DOCKER_HOST=tcp://sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com:2375
+
+case "$0" in
+    *vm-crane )
+        # crane exec's docker from the PATH, so put our docker bin dir first
+        export PATH=$(dirname "$DOCKER_BIN")":${PATH}"
+        export CRANE_CONFIG="${ZENV_ROOT}/utils/crane/crane-vmdev.yml"
+
+        exec "$CRANE_BIN" "$@"
+        ;;
+    *vm-docker )
+        exec "$DOCKER_BIN" "$@"
+        ;;
+    * )
+        echo >&2 "Unknown alias: $0"
+        exit 1
+        ;;
+esac
