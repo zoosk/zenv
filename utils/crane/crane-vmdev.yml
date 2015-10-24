@@ -1,14 +1,15 @@
 containers:
   facts-ccportal:
     image: factable.internal.zoosk.com/dev-ccportal
-  ccportal-dev:
+    rm:
+      volumes: true
+  ccportal:
     image: d.zoosk.com/ccportal
     run:
       publish: ["11611:443"]
       add-host:
         - "zia-auth:172.17.42.1"
         - "api-internal:172.17.42.1"
-      # TODO following volume _should_ be for ccportal dev mode only
       volume:
        - /srv
       volumes-from:
@@ -18,3 +19,5 @@ containers:
         "${ZENV_ROOT}/utils/crane/zoosk-domain-sfo2.env"
       ]
       detach: true
+    rm:
+      volumes: true
