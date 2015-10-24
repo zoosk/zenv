@@ -8,9 +8,9 @@ containers:
       add-host:
         - "zia-auth:172.17.42.1"
         - "api-internal:172.17.42.1"
-      # following volume is for dev mode
-      # volume:
-      #  - /srv
+      # TODO following volume _should_ be for ccportal dev mode only
+      volume:
+       - /srv
       volumes-from:
         - facts-ccportal
       env: ["DEV_ID=${ZENV_DEVID}"]
