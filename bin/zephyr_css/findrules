@@ -25,8 +25,11 @@ def decl_matches(decl, prop, value):
         return False
 
     value_css = decl.value.as_css()
-    dim_value = decl.value[0].value
-    dim_unit = decl.value[0].unit
+    try:
+        dim_value = decl.value[0].value
+        dim_unit = decl.value[0].unit
+    except AttributeError, e:
+        return False
 
     if value_css == value:
         return True

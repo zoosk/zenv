@@ -11,7 +11,7 @@ import tinycss
 
 
 class_declaration_regex = re.compile("class=(\"([^\"]+)\"|'([^']+)')")
-ng_class_regex = re.compile("[\"']([^\"']+)[\"']\s*:")
+ng_class_regex = re.compile("[\"']([^\"']+)\\?[\"']\s*:")
 
 
 def load_css_from_dir(dirname, prefix='', verbose=False):
@@ -83,7 +83,7 @@ def classes_used_in_file(filename):
     used_classes = set()
     for decl in class_exprs:
         decl = decl.strip()
-        if decl.startswith('{lb}'):
+        if decl.startswith('{lb}') or decl.startswith('{\\\'') or decl.startswith('{"'):
             # ng-class declaration; class names are in quotes
             used_classes.update(re.findall(ng_class_regex, decl))
         else:
