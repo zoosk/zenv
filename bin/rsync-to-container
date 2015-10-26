@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# This breaks if sudo is configured to require a TTY, which is the default on CentOS.
+# Until we fix it in CFE, run this on your dev VM:
+#
+# echo 'Defaults!/usr/bin/rsync !requiretty' | sudo tee /etc/sudoers.d/10_docker_rsync
+
+set -e
+
+# Usage information
+usage="Usage: ${PROGNAME} [<rsync options>...] <src> <container> <volume> <subpath>"
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: Rsync files into a container volume on your dev vm"
+    echo
+    echo "$usage"
+    echo
+    echo "<src>       - source files to sync or an rsync wildcard, like \"dir/\"."
+    echo "<container> - destination container name or id"
+    echo "<volume>    - volume path in the container"
+    echo "<subpath>   - destination subpath, use / to copy to the volume root"
+    exit 0
+fi
+
+if [[ $# -lt 4 ]]; then
+    echo >&2 "$usage"
+    exit 1
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+elif [ -z "$ZENV_DEVSERVER" ]; then
+    echoerr 'You must use a workspace with a ZENV_DEVSERVER configured.'
+    exit 1
+fi
+
+# slice args 1..-3 from $@ while preserving spaces in the args
+rsync_args=("${@:1:$(($# - 3))}")
+container=${*: -3:1}
+volume=${*: -2:1}
+subpath=${*: -1:1}
+
+inspect_json=$(vm-docker inspect "$container")
+
+volume_dir=$(echo $inspect_json | \
+    python -c 'import sys, json; \
+        print next(iter(hp for cp, hp in json.load(sys.stdin)[0]["Volumes"].iteritems() if cp == "'"${volume}"'"), "")')
+
+if [ -z "$volume_dir" ]; then
+    echoerr "Couldn't find volume path for $volume in $container"
+    exit 1
+fi
+
+rsync --rsync-path="sudo rsync" \
+    "${rsync_args[@]}" \
+    "${ZENV_DEVSERVER}:${volume_dir}${subpath}"
