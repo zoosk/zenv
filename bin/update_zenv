@@ -24,7 +24,8 @@ cd zli
 git pull
 
 if [ "$LAST_REV" != "$NEW_REV" ]; then
-    UPDATED_FILES=$(git diff --name-only "$LAST_REV"..)
+    cd "$ZENV_ROOT"
+    UPDATED_FILES=$(git diff --name-only "${LAST_REV}..")
 
     # If anything in the environment folder has been updated, the update won't apply until a restart
     if [ "$(echo "$UPDATED_FILES" | egrep '^environment/')" != '' ]; then
