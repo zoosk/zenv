@@ -1,14 +1,10 @@
 #! /usr/bin/env bash
 
-#alias devbox='if [ -z "$ZENV_CURRENT_WORK" ];
-#then echo "Set a workspace to SSH into its dev instance."; else ssh "${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}"; fi'
-
 # Startup checks
 if [ -z "$ZENV_INITIALIZED" ]; then
 	echo 'You must run this program from within ZEnv.'
 	exit 1
 fi
-
 
 # Usage Information
 if [ "$1" == '--help' -o "$1" == '-h' ]; then
@@ -24,6 +20,7 @@ fi
 # Ssh to personal VM is no aregument is specified
 if [ "$1" == '' ]; then
     ssh "${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}"
+    exit 0
 fi
 
 # Opens the FogBugz wiki with a list of VMs numbers and their owners
@@ -32,25 +29,17 @@ if [ "$1" == "--list" ]; then
     exit 1
 fi
 
-# Store user's input and prepare argument for padding
+# Store user's input and prepare argument for paddingf
 dev_num="$1"
 # determine amount of digits in the argument
 length=${#dev_num}
 
 # Check if user input is an integer
-
-# regex='^[0-9]+$'
-
-# if [[ $dev_num  =~ $regex ]]; then
-#     echo "Oops '$dev_num' is not a valid devID, please enter a number."
-#     echo "regex is '$regex'"
-#     exit 1
-# fi
-
-# if [[ "$1" !=~ "^[0-9]+$" ]]; then
-#     echo "Oops '$dev_num' is not a valid devID, please enter a number."
-#     exit 1
-# fi
+if [[ $dev_num =~ ^[a-z]+$ ]]; then
+    echo "Opps, '$dev_num' is not a valid dev number, please enter a number (eg. '74')."
+    echo ""
+    exit 1
+fi
 
 # Logic in place with the assumption that VMs will not contain more than 3 digits
 if [ $length -eq 1 ]; then
