@@ -14,7 +14,7 @@ if [ "$1" == '--help' -o "$1" == '-h' ]; then
     echo "Where devID is the non-padded number of the VM you want to ssh to (ex: '74')."
     echo "Not providing an argument will default to your personal VM"
     echo "Use --list to open a list of Zoosk VMs"
-    exit 1
+    exit 0
 fi
 
 # Ssh to personal VM is no aregument is specified
@@ -26,7 +26,7 @@ fi
 # Opens the FogBugz wiki with a list of VMs numbers and their owners
 if [ "$1" == "--list" ]; then
     open 'https://f.corp.zoosk.com/default.asp?W550'
-    exit 1
+    exit 0
 fi
 
 # Store user's input and prepare argument for paddingf
@@ -35,7 +35,7 @@ dev_num="$1"
 length=${#dev_num}
 
 # Check if user input is an integer
-if [[ $dev_num =~ ^[a-z]+$ ]]; then
+if [[ $dev_num =~ ^[a-zA-Z]+$ ]]; then
     echo "Opps, '$dev_num' is not a valid dev number, please enter a number (eg. '74')."
     echo ""
     exit 1
@@ -45,17 +45,18 @@ fi
 if [ $length -eq 1 ]; then
     dev_num=00${dev_num}
     ssh "${ZENV_LDAP_USERNAME}@www${dev_num}.sfo2.zoosk.com"
-    exit 1
+    exit 0
 
 elif [ $length -eq 2 ]; then
     dev_num=0${dev_num}
     ssh "${ZENV_LDAP_USERNAME}@www${dev_num}.sfo2.zoosk.com"
-    exit 1
+    exit 0
 
-elif [$length -eq 3 ]; then
+elif [ $length -eq 3 ]; then
     ssh "${ZENV_LDAP_USERNAME}@www${dev_num}.sfo2.zoosk.com"
-    exit 1
-# Throw an error if the devId is longe than 3 digits
+    exit 0
+
+# Throw an error if the devID is longer than 3 digits
 elif [ $length -ge 4 ]; then
     echo "Oops: A devID can't be more than 3 digits"
     exit 1
