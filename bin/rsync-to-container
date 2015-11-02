@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This breaks if sudo is configured to require a TTY, which is the default on CentOS.
-# Until we fix it in CFE, run this on your dev VM:
+# The docker_vmdev bundle in CFE will fix this automatically.  If for some reason it doesn't, run:
 #
 # echo 'Defaults!/usr/bin/rsync !requiretty' | sudo tee /etc/sudoers.d/10_docker_rsync
 
