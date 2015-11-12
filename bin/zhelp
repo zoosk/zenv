@@ -40,11 +40,6 @@ case "$ARG" in
         echo 'This will exit the current shell, so look out!'
         ;;
 
-    'build' )
-        echo 'build: Run a build command specific to your current checkout.'
-        echo "This command's usage differs depending on what checkout you're using."
-        ;;
-
     'alias' | 'aliases' )
         # Print out the git aliases
         echo "${BOLD}${UNDERLINE}########################## Git aliases (usable with git) ##########################${TXTRESET}"
