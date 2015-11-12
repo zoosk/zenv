@@ -17,14 +17,14 @@
 #   limitations under the License.
 
 # Libraries
-try:
-    from watchdog.observers import Observer
-    from watchdog.events import FileSystemEventHandler
 
-except ImportError:
-    print ('You need to install watchdog to be able to watch for changes. ' +
-      'Please run sudo easy_install watchdog')
-    exit(1)
+import zenvlib
+from zenvlib import cli, modules
+
+modules.install_if_needed('watchdog')
+
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 import os
 from os.path import basename
@@ -35,14 +35,8 @@ from pipes import quote
 import time
 import re
 
-import zenvlib
-from zenvlib import cli
-
 # Env check
-if 'ZENV_CURRENT_WORK' not in os.environ:
-    print 'You must use a workspace before you start autobuild.'
-    exit(1)
-
+cli.fail_without_workspace()
 
 # Settings
 BUILD_SETTINGS_FILE = 'autobuild_settings'
@@ -66,17 +60,16 @@ EXCLUDED_FILE_NAMES = {
     'Makefile'
 }
 
-cli.fail_without_workspace()
-
 # Work paths
 LOCAL_PATH = zenvlib.environ.current_work
     # In the future, we may have a need for...
     # SERVER_PATH = os.environ['ZENV_SERVERDIR']
 
+
 # Check if a file should be excluded from builds
 def is_excluded_path(path, file_name):
     """Determine if a path is disallowed from processing"""
-    return(
+    return (
         file_name.startswith('.') or
         file_name.startswith('#') or
         file_name.endswith('~') or
@@ -86,7 +79,8 @@ def is_excluded_path(path, file_name):
         '.idea' in path or
         '/sass-cache' in path or
         '.git' in path
-      )
+    )
+
 
 def process_change(change_type, path):
     """ Utility to sync vm when a file is changed. """
@@ -109,8 +103,7 @@ def process_change(change_type, path):
     #
     extra_dirs = []
     settings_dir = dirname(path)
-    while (not exists(settings_dir + '/' + BUILD_SETTINGS_FILE)
-      and settings_dir != '/'):
+    while not exists(settings_dir + '/' + BUILD_SETTINGS_FILE) and settings_dir != '/':
         extra_dirs.insert(0, basename(settings_dir) + '/')
         settings_dir = dirname(settings_dir)
 
@@ -124,11 +117,11 @@ def process_change(change_type, path):
 
     # Get the kind of rules_to_run that we are looking for
     if change_type == 'modified':
-        rules_to_run = set([KEY_ALL, KEY_UPDATE, KEY_ADDUP, KEY_UPDEL])
+        rules_to_run = {KEY_ALL, KEY_UPDATE, KEY_ADDUP, KEY_UPDEL}
     elif change_type == 'created':
-        rules_to_run = set([KEY_ALL, KEY_ADD, KEY_ADDUP, KEY_ADDDEL])
+        rules_to_run = {KEY_ALL, KEY_ADD, KEY_ADDUP, KEY_ADDDEL}
     elif change_type == 'deleted':
-        rules_to_run = set([KEY_ALL, KEY_DELETE, KEY_ADDDEL, KEY_UPDEL])
+        rules_to_run = {KEY_ALL, KEY_DELETE, KEY_ADDDEL, KEY_UPDEL}
     else:
         print 'OH GOD AN UNHANDLED CHANGE TYPE'
         return
@@ -150,14 +143,13 @@ def process_change(change_type, path):
 
                 envs.append('%s=%s' % (env_name, env_value))
                 if DEBUG:
-                    print ('Found variable declaration |%s| = |%s|'
-                        % (env_name, env_value))
+                    print ('Found variable declaration |%s| = |%s|' % (env_name, env_value))
                 continue
 
             elif line.startswith(KEY_COMMENT):
+                # This is a comment (wow, so meta!)
                 if DEBUG:
                     print 'Found comment |%s|' % line
-                # This is a comment
                 continue
 
             elif re.match(r'^\S', line):
@@ -167,8 +159,7 @@ def process_change(change_type, path):
                 rule = line.rstrip("\n")
                 if not re.search(rule, file_name):
                     if DEBUG:
-                        print ('Rule |%s| does not match file |%s|'
-                          % (rule, file_name))
+                        print ('Rule |%s| does not match file |%s|' % (rule, file_name))
                     continue
 
                 matched_rule = rule
@@ -203,9 +194,7 @@ def process_change(change_type, path):
                     # last postion is file_ptr.tell()
                     rule_line = file_ptr.readline()
                     rule_contents = []
-                    while (re.match('^' + indent + indent, rule_line)
-                        and rule_line != "\n"
-                    ):
+                    while re.match('^' + indent + indent, rule_line) and rule_line != "\n":
                         rule_contents.append(rule_line.strip())
                         # last postion is file_ptr.tell()
                         rule_line = file_ptr.readline()
@@ -228,8 +217,7 @@ def process_change(change_type, path):
             print 'No matching rule found for file |%s|.' % file_name
             return
         elif DEBUG:
-            print ('Matched rule |%s| for file |%s|'
-                % (matched_rule, file_name))
+            print ('Matched rule |%s| for file |%s|' % (matched_rule, file_name))
 
         # Check the changed file_name against each of the regexes from
         # the settings file
@@ -244,8 +232,6 @@ def process_change(change_type, path):
         match_groups['0'] = relpath(path, settings_dir)
         commands = re.sub(r'\$\{([0-9]+)\}', '%(\\1)s',
             re.sub(r'\$([0-9]+)', '%(\\1)s', commands)) % match_groups
-        # commands = re.sub(r'\$\{([0-9]+)\}', r'%(\\1)s',
-        #    re.sub(r'\$([0-9]+)', r'%(\\1)s', commands)) % match_groups
 
         # Add the inherited ZEnv variables
         inherited_envs = '; '.join('%s=%s' %
@@ -266,6 +252,7 @@ def process_change(change_type, path):
         os.system(('cd %s; ' % settings_dir) + full_program)
         print "Build complete.\n"
 
+
 def on_changed(event):
     """Handle handler for fsevents.
     This is separate from process_change so that may be used independently.
@@ -280,6 +267,7 @@ def on_changed(event):
             return
 
     return process_change(change_type, path)
+
 
 if __name__ == '__main__':
     OBSERVER = Observer()
