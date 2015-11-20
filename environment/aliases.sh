@@ -1,6 +1,4 @@
 ##########################  UTILITY ALIASES  ##########################
-# Log into your dev instance
-alias devbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH into its dev instance."; else ssh "${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}"; fi'
 # Log into your database
 alias dbbox='if [ -z "$ZENV_CURRENT_WORK" ]; then echo "Set a workspace to SSH into its database."; else mysql -h ${ZENV_DBIP} -u root -p$(readprop dev_rootdbpass); fi'
 ##########################  BATCH BUILD ALIASES  ##########################
