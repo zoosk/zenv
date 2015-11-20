@@ -21,8 +21,16 @@ EOF
 
 function exitWithList() {
         # Opens the FogBugz wiki with a list of VMs numbers and their owners.
-        open 'https://f.corp.zoosk.com/default.asp?W550'
-        exit "$?"
+        if [ -n "$(which open)" ]; then
+            open 'https://f.corp.zoosk.com/default.asp?W550'
+            exit "$?"
+        elif [ -n "$(which xdg-open)" ]; then
+            xdg-open 'https://f.corp.zoosk.com/default.asp?W550'
+            exit "$?"
+        else
+            echo 'https://f.corp.zoosk.com/default.asp?W550'
+            exit "$?"
+        fi
 }
 
 function main() {
@@ -60,11 +68,9 @@ function main() {
                 exit "$?"
             else
                 exitWithError "Oops: A devID can't be more than 3 digits."
-                exit "$?"
             fi
         else
             exitWithError "Oops, '$1' is not a valid dev number, please enter a number (eg. '74')."
-            exit "$?"
         fi
 }
 
