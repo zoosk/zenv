@@ -46,8 +46,8 @@ else
         REPO_KIND=$(echo "$URL" | sed -E 's|.*https?://[^/]+/([^/]*)/.*|\1|')
         BRANCH=$(echo "$URL" | egrep --only-matching 'URL: .*' | sed 's|.*/||')
     elif [ -e .git ]; then
-        REPO_KIND=$(git remote -v | egrep -m 1 '\(fetch\)$' | awk '{print $2}' | perl -pi -e 's|.*?([^/.]+)/?(\.git)?$|\1|')
-        BRANCH=$(git branch | egrep '^\*' | awk '{print $2}')
+        REPO_KIND=$(python -c 'from zenvlib import git_info; print git_info.checkout_type')
+        BRANCH=$(python -c 'from zenvlib import git_info; print git_info.branch')
     else
         echoerr "There is no checkout in $PWD"
         exit 1
