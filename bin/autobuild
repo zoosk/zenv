@@ -1,5 +1,20 @@
 #! /usr/bin/env bash
 
+#   Copyright 2015 Zoosk, Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+
 # Usage information
 if [ "$1" == '-h' -o "$1" == '--help' ]; then
     PROGNAME=$(basename $0)
@@ -20,18 +35,21 @@ fi
 
 cd "$ZENV_CURRENT_WORK"
 
-REPO_TYPE=$(inspect "$PWD" repo_type 2>/dev/null)
+PLATFORM=$(uname -a |grep -qi linux && echo 'linux' || echo 'osx');
 
-# Fail if the user doesn't have the mac developer tools installed
-if [ "$(which clang)" == '' ]; then
-    echoerr 'You must have the Xcode command line tools installed to run the automatic builder.'
-    echoerr 'http://docwiki.embarcadero.com/RADStudio/XE4/en/Installing_the_Xcode_Command_Line_Tools_on_a_Mac'
-    exit 1
+if [ $"{PLATFORM}" = 'osx' ]; then
+    # Fail if the user doesn't have the mac developer tools installed
+    if [ "$(which clang)" == '' ]; then
+        echoerr 'You must have the Xcode command line tools installed to run the automatic builder.'
+        echoerr 'http://docwiki.embarcadero.com/RADStudio/XE4/en/Installing_the_Xcode_Command_Line_Tools_on_a_Mac'
+        exit 1
+    fi
 fi
-# Automatically install MacFSEvents when you try to run this without it
-if [ "$(python -c 'import fsevents' 2>/dev/null; echo $?)" == '1' ]; then
-    echoerr 'You need to install MacFSEvents to use the automatic builder. If prompted, please type your sudo password below to install it.'
-    sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future easy_install macfsevents || exit 1
+
+# Automatically install watchdog when you try to run this without it
+if [ "$(python -c 'import watchdog' 2>/dev/null; echo $?)" == '1' ]; then
+    echoerr 'You need to install watchdog to use the automatic builder. If prompted, please type your sudo password below to install it.'
+    sudo ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future easy_install watchdog || exit 1
     echo -e "---------------------------------------------------------\n"
 fi
 
@@ -42,14 +60,14 @@ case "$REPO_TYPE" in
         ;;
 
     * )
-        python "${ZENV_ROOT}/utils/autobuilder.py" &
-        WORKER_PID=$!
-        echo 'These directories are now being watched for changes:'
-        find "$ZENV_CURRENT_WORK" -name autobuild_settings | xargs -n 1 dirname
-        function quit() {
-            kill "$WORKER_PID"
-        }
-        trap quit EXIT
+python "${ZENV_ROOT}/utils/autobuilder.py" &
+WORKER_PID=$!
+echo 'These directories are now being watched for changes:'
+find "$ZENV_CURRENT_WORK" -name autobuild_settings | xargs -n 1 dirname
+function quit() {
+    kill "$WORKER_PID"
+}
+trap quit EXIT
         ;;
 
 esac

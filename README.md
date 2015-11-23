@@ -34,7 +34,38 @@ work on at the time.
 
 ## Examples
 
-### Example 1: Building someone else's repo
+
+### Example 1: Creating dev tools
+
+The `build` command is nice, but it's one of the only commands that ZEnv
+provides. Instead of trying to think of everything, ZEnv gives you a new `bin`
+folder and says "go." So let's say you've decided to write a linter for your
+codebase. You've created an executable file called `lintit`, and you want
+your team to start linting their code too.
+
+All you need to do is add your file to the `bin` folder in ZEnv, and the linter
+instantly becomes available to all parties.
+
+
+### Example 2: Sharing command aliases
+
+It's happened to everyone. You're over at a coworker's computer, and they type
+some command you've never seen before. The screen lights up with the text of
+five or six commands all running at once, commands that you've been manually
+typing like a chump. Wouldn't it be great if you had that alias too?
+
+Luckily for you, ZEnv can load whatever you want into your environment when you
+start your terminal. So, you can go into ZEnv's `environment` folder and add
+aliases.sh with this in it:
+
+    alias starwars="telnet towel.blinkenlights.nl"
+
+After you check in your changes, both you and your coworkers can benefit from
+the glory of ASCII Star Wars. And hopefully your coworker will add their alias
+too.
+
+
+### Example 3: Building someone else's repo
 
 Let's say you're an enterprising iOS developer working at a new company. You've
 been hired to work on the app, but there's a completely separate team that
@@ -72,36 +103,6 @@ Wow! So, what happened?
 - `build` is a ZEnv command that runs a build command appropriate to whatever
   checkout you're currently in. Each checkout has a properties file that's set
   up by its owners that specifies what command this should be.
-
-
-### Example 2: Sharing command aliases
-
-It's happened to everyone. You're over at a coworker's computer, and they type
-some command you've never seen before. The screen lights up with the text of
-five or six commands all running at once, commands that you've been manually
-typing like a chump. Wouldn't it be great if you had that alias too?
-
-Luckily for you, ZEnv can load whatever you want into your environment when you
-start your terminal. So, you can go into ZEnv's `environment` folder and add
-aliases.sh with this in it:
-
-    alias starwars="telnet towel.blinkenlights.nl"
-
-After you check in your changes, both you and your coworkers can benefit from
-the glory of ASCII Star Wars. And hopefully your coworker will add their alias
-too.
-
-
-### Example 3: Creating dev tools
-
-The `build` command is nice, but it's one of the only commands that ZEnv
-provides. Instead of trying to think of everything, ZEnv gives you a new `bin`
-folder and says "go." So let's say you've decided to write a linter for your
-codebase. You've created an executable file called `lintit`, and you want
-your team to start linting their code too.
-
-All you need to do is add your file to the `bin` folder in ZEnv, and the linter
-instantly becomes available to all parties.
 
 
 ## Quick Start

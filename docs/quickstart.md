@@ -25,7 +25,7 @@ results of steps 1-3.
    that file in the same way as #1, but for properties specific to that kind of
    checkout. Make sure to change `ZENV_BUILD_COMMAND`.
 
-3. Repeat #2 for each checkout you want to work with.
+3. Repeat #2 for each git repository you want to work with.
 
 4. Run `python install.py` and answer the questions.
 
@@ -39,4 +39,4 @@ results of steps 1-3.
 
 ## Using ZEnv daily
 
-`use <checkout_name>` to swap between checkouts.
+Run `use <checkout_name>` to swap between checkouts.

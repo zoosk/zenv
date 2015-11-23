@@ -1,10 +1,26 @@
 #! /usr/bin/env python2.7
 
+#   Copyright 2015 Zoosk, Inc
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+
 ##
 # This is the installation file for ZEnv. It will create the ~/.zenvrc file with all of the user's settings
 # defined in it.
 #
 
+from distutils import spawn
 from os import environ, unlink
 from os.path import dirname, realpath, join
 import re
@@ -23,6 +39,14 @@ ZENV_ROOT = dirname(realpath(__file__))
 if environ['PWD'] != ZENV_ROOT:
     print 'Please run the install script from the directory containing it.'
     exit(1)
+
+# Make sure we have our bash dependencies available
+bash_deps = [
+    'bash', 'sed', 'which', 'find', 'git'
+]
+for dependency in bash_deps:
+    if not spawn.find_executable(dependency):
+        print 'You are missing the "%s" command, which is a dependency of ZEnv. Please install it before continuing.' % dependency
 
 # Read in the template global properties file
 with open('properties/global.properties', 'r') as fp:
