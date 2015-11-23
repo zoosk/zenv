@@ -20,6 +20,7 @@
 # defined in it.
 #
 
+from distutils import spawn
 from os import environ, unlink
 from os.path import dirname, realpath, join
 import re
@@ -38,6 +39,14 @@ ZENV_ROOT = dirname(realpath(__file__))
 if environ['PWD'] != ZENV_ROOT:
     print 'Please run the install script from the directory containing it.'
     exit(1)
+
+# Make sure we have our bash dependencies available
+bash_deps = [
+    'bash', 'sed', 'which', 'find', 'git'
+]
+for dependency in bash_deps:
+    if not spawn.find_executable(dependency):
+        print 'You are missing the "%s" command, which is a dependency of ZEnv. Please install it before continuing.' % dependency
 
 # Read in the template global properties file
 with open('properties/global.properties', 'r') as fp:
