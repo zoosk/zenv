@@ -37,6 +37,13 @@ fi
 export DOCKER_TLS_VERIFY=
 export DOCKER_HOST=tcp://sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com:2375
 
+generate_zoosk_domain_env_file () {
+  sed 's/${ZENV_DEVID_PADDED}/'"${ZENV_DEVID_PADDED}"'/g' $1 > $2
+}
+
+# generates the zoosk domain env file from the template file. The generated env file is passed in to the docker containers
+generate_zoosk_domain_env_file "${ZENV_ROOT}/utils/crane/zoosk-domain-sfo2.env.template"  "${ZENV_ROOT}/utils/crane/zoosk-domain-sfo2.env"
+
 case "$0" in
     *vm-crane )
         # crane exec's docker from the PATH, so put our docker bin dir first
