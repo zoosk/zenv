@@ -27,7 +27,7 @@ containers:
     rm:
       volumes: true
   themis:
-    image: d.zoosk.com/themis:v321
+    image: d.zoosk.com/themis:v400
     run:
       publish: ["11610:80"]
       add-host:
