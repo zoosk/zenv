@@ -66,26 +66,3 @@ for d in ${DIRS}; do
             ${ZENV_LOCAL_DEPLOY_DIR}/${d}/ ${ZENV_LDAP_USERNAME}@${ZENV_DEVSERVER}:/srv/${d}/
     fi
 done
-
-# name of the container should match the name of the project repo
-# When we later support containers for multiple branches, we will need to append the branch name to the container something like container-name/branch-name
-container=$(basename ${ZENV_CURRENT_WORK})
-
-# if docker rsync directory is specified and a docker container exists, then preform rsync to the docker container
-if [ ! -z "$ZENV_RSYNC_DOCKER_DIRECTORIES"  -a "$(vm-docker inspect $container 2>/dev/null)" != "[]" ]; then
-  for d in $ZENV_RSYNC_DOCKER_DIRECTORIES; do
-    if [ "$(echo "$d" | egrep '^/srv/')" != '' ]; then
-        # For usability, automatically remove /srv/ from the beginning of args
-        d="$(echo "$d" | sed 's|^/srv/||')"
-    fi
-
-   IFS=':' read -ra DIRS <<< "$d"
-
-   # rsync from remote directory to docker conatiner. At some point, we should directly rsync to docker container from local machine,
-   # instead of rsyncing from local machine -> remote machine -> docker containter
-   if ( ssh $ZENV_DEVSERVER "[ -d /srv/${DIRS[0]} ]" ); then
-     echo "Rsync $ZENV_DEVSERVER:/srv/${DIRS[0]} to '$container' docker container"
-     rsync-to-container -av "/srv/${DIRS[0]}/"  "$container" "/srv" "/${DIRS[1]}"
-   fi
-  done
-fi
