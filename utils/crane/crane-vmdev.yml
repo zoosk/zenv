@@ -31,7 +31,7 @@ containers:
     run:
       publish: ["11610:80"]
       add-host:
-        - "admin-core:172.17.42.1"
+        - "admin-core.internal:172.17.42.1"
       volume:
          - /srv
       volumes-from:
