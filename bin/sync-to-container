@@ -28,7 +28,7 @@ if [ "$1" == "-v" ]; then
 fi
 
 if [ "$1" != '' ]; then
-    DIRS="$*"
+    DIRS="$@"
 else
     DIRS="${ZENV_RSYNC_DOCKER_DIRECTORIES}"
 fi
@@ -38,11 +38,10 @@ container=$(basename ${ZENV_CURRENT_WORK})
 
 if [ "$(vm-docker inspect $container 2>/dev/null)" != "[]" ]; then
   for d in ${DIRS}; do
-      echo $d
-      IFS=':' read -ra DIRS <<< "$d"
-      if [ -e ${DIRS[0]} ]; then
-        echo "Rsync ${DIRS[0]} to '$container' docker container"
-        rsync-to-container -av $ph "${DIRS[0]}"  "$container" "/srv" "/${DIRS[1]}"
-      fi
+    IFS=':' read -ra DIR <<< "$d"
+    if [ -e ${DIR[0]} ]; then
+      echo "Rsync ${DIR[0]} to '$container' docker container"
+      rsync-to-container -av $ph "${DIR[0]}"  "$container" "/srv" "/${DIR[1]}"
+    fi
   done
 fi
