@@ -22,3 +22,24 @@ containers:
       detach: true
     rm:
       volumes: true
+  facts-themis:
+    image: factable.internal.zoosk.com/dev-themis
+    rm:
+      volumes: true
+  themis:
+    image: d.zoosk.com/themis:v400
+    run:
+      publish: ["11610:80"]
+      add-host:
+        - "admin-core.internal:172.17.42.1"
+      volume:
+         - /srv
+      volumes-from:
+        - facts-themis
+      env: ["DEV_ID=${ZENV_DEVID}"]
+      env-file: [
+          "${ZENV_ROOT}/utils/crane/zoosk-domain-sfo2.env"
+      ]
+      detach: true
+    rm:
+      volumes: true
