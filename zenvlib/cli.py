@@ -81,7 +81,9 @@ def fill_template_properties(props_template_lines):
 
             # Expand variables in the default value
             if default != '':
-                default = expand_shell_expr(default)
+                # include variables rendered in previous lines as environment
+                env = [l for l in props_template_lines[:line_index] if l.startswith('export')]
+                default = expand_shell_expr(default, env)
 
             # Check for a comment on the line before
             question = None
@@ -102,10 +104,11 @@ def fill_template_properties(props_template_lines):
             props_template_lines[line_index] = re.sub('@@(.*?)@@', pipes.quote(value), line)
 
 
-def expand_shell_expr(expression):
+def expand_shell_expr(expression, env=[]):
     """ Return an expanded version of the bash variables in a given expression.
     """
-    return subprocess.check_output(['bash', '-c', 'echo ' + expression]).rstrip()
+    cmd = '; '.join(env + ['echo ' + expression])
+    return subprocess.check_output(['bash', '-c', cmd]).rstrip()
 
 
 def get_bash_startup_file():
