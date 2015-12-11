@@ -36,6 +36,7 @@ fi
 
 export DOCKER_TLS_VERIFY=
 export DOCKER_HOST=tcp://sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com:2375
+export DB_ENV="${DB_ENV-dev}"
 
 generate_zoosk_domain_env_file () {
   sed 's/${ZENV_DEVID_PADDED}/'"${ZENV_DEVID_PADDED}"'/g' $1 > $2
