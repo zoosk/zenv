@@ -71,3 +71,5 @@ if [ ! -e "$ZENV_BUILDPROPS" ]; then
             -i '' "$ZENV_BUILDPROPS"
     fi
 fi
+
+update_properties
