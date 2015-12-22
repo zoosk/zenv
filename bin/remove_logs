@@ -1,0 +1,20 @@
+#! /usr/bin/env bash
+
+# Usage information
+if [ "$1" == '-h' -o "$1" == '--help' ]; then
+    PROGNAME=$(basename $0)
+    echo "${PROGNAME}: remove log files from dev instance"
+    echo "Usage: ${PROGNAME}"
+    exit 1
+fi
+
+# Startup checks
+if [ -z "$ZENV_INITIALIZED" ]; then
+    echo 'You must run this program from within ZEnv.'
+    exit 1
+fi
+URL="http://sfo2-dev-vmdev${ZENV_DEVID_PADDED}.sfo2.zoosk.com:5555/zenv/clean"
+echo "Freeing up disk space by removing log files."
+echo $URL
+curl $URL
+
