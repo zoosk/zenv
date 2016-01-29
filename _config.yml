@@ -10,10 +10,10 @@ title: ZENv
 email: opensource@zoosk.com
 description: > # this means to ignore newlines until "baseurl:"
   Bringing ZEN to your dev environment
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://www.zoosk.com" # the base hostname & protocol for your site
-twitter_username: jekyllrb
-github_username:  jekyll
+baseurl: "/platform/zenv" # the subpath of your site, e.g. /blog
+url: "https://g.zoosk.com" # the base hostname & protocol for your site
+twitter_username:
+github_username:
 
 # Build settings
 markdown: kramdown
