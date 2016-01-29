@@ -1,0 +1,138 @@
+body, h1, h2, h3, h4, h5, h6,
+p, blockquote, pre, hr,
+dl, dd, ol, ul, figure {
+    margin: 0;
+    padding: 0;
+}
+
+h2 {
+    font-size: 2em;
+    font-weight: 300;
+}
+
+a {
+    &:link {
+        text-decoration: none;
+        color: $lightTextColor;
+    }
+
+    &:visited {
+        text-decoration: none;
+        color: $lightTextColor;
+    }
+
+    &:hover {
+        text-decoration: none;
+        color: $lightTextColor;
+    }
+
+    &:active {
+        text-decoration: none;
+        color: $lightTextColor;
+    }
+}
+
+body {
+    background-color: $backgroundColor;
+    font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-weight: 300;
+    color: $mainTextColor;
+
+    .bold {
+        font-weight: 600;
+        color: $mainTextColor;
+    }
+
+    .page-content {
+        margin-left: auto;
+        margin-right: auto;
+        width: 1000px;
+        height: 100%;
+
+        .wrapper {
+            margin-left: 10%;
+            margin-right: 10%;
+            position: relative;
+            top: -1050px;
+        }
+    }
+
+    .hero-image {
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+        top: -120px;
+        background-image: url("/images/zenv_net7.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        max-width: 1600px;
+        min-width: 1000px;
+        height: 1000px;
+        display: inline-block;
+        z-index: -2;
+    }
+
+    @include radial-gradient(lighten($backgroundColor, 5%), $backgroundColor);
+}
+
+.button {
+    @include button($backgroundColor, $lightTextColor);
+
+}
+
+
+// HOME PAGE
+.home {
+    .tagline {
+        font-size: 2em;
+        margin-top: 100px;
+        text-align: center;
+
+        .download-zenv {
+            color: $lightTextColor;
+            font-size: 0.8em;
+            margin-top: 30px;
+        }
+    }
+
+
+
+    .about-blurb {
+        margin-top: 200px;
+        margin-right: 10%;
+        margin-left: 10%;
+        text-align: center;
+
+        .blurb-title {
+            margin-bottom: 30px;
+        }
+    }
+}
+
+
+// HEADER TEMPLATE
+
+header {
+    height: 100px;
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+    color: $lightTextColor;
+    font-size: 12px;
+
+    .logo {
+        height: 100px;
+    }
+
+    .categories {
+        float: right;
+        width: 50%;
+        padding-top: 40px;
+
+        .category-item {
+            float: left;
+            padding-right: 10%;
+        }
+    }
+}
