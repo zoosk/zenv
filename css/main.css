@@ -1,0 +1,125 @@
+body, h1, h2, h3, h4, h5, h6,
+p, blockquote, pre, hr,
+dl, dd, ol, ul, figure {
+  margin: 0;
+  padding: 0; }
+
+h2 {
+  font-size: 2em;
+  font-weight: 300; }
+
+a:link {
+  text-decoration: none;
+  color: #949494; }
+a:visited {
+  text-decoration: none;
+  color: #949494; }
+a:hover {
+  text-decoration: none;
+  color: #949494; }
+a:active {
+  text-decoration: none;
+  color: #949494; }
+
+body {
+  background-color: #e9eff4;
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-weight: 300;
+  color: #585858;
+  background: -moz-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%, #fafbfd), color-stop(100%, #e9eff4));
+  background: -webkit-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background: -o-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background: -ms-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background: radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background-color: #fafbfd; }
+  body .bold {
+    font-weight: 600;
+    color: #585858; }
+  body .page-content {
+    margin-left: auto;
+    margin-right: auto;
+    width: 1000px;
+    height: 100%; }
+    body .page-content .wrapper {
+      margin-left: 10%;
+      margin-right: 10%;
+      position: relative;
+      top: -1050px; }
+  body .hero-image {
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    top: -120px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    max-width: 1600px;
+    min-width: 1000px;
+    height: 1000px;
+    display: inline-block;
+    z-index: -2; }
+
+.button {
+  display: inline-block;
+  outline: none;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  padding: .5em 3em .55em;
+  -webkit-border-radius: 0.2em;
+  -moz-border-radius: 0.2em;
+  border-radius: 0.2em;
+  -webkit-box-shadow: 0 5px 35px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0 5px 35px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 35px rgba(0, 0, 0, 0.2);
+  background: #e9eff4;
+  background: -webkit-gradient(linear, left top, left bottom, from(white), to(#e9eff4));
+  background: -moz-linear-gradient(top, white, #e9eff4);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#e9eff4'); }
+  .button:hover {
+    text-decoration: none;
+    background: #e7eff6;
+    background: -webkit-gradient(linear, left top, left bottom, from(#e8eff5), to(#d8e3ec));
+    background: -moz-linear-gradient(top, #e8eff5, #d8e3ec);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#e8eff5', endColorstr='#d8e3ec'); }
+  .button:active {
+    position: relative;
+    top: 1px;
+    color: #e7eff6;
+    background: -webkit-gradient(linear, left top, left bottom, from(#e7eff6), to(white));
+    background: -moz-linear-gradient(top, #e7eff6, white);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#e7eff6', endColorstr='white'); }
+
+.home .tagline {
+  font-size: 2em;
+  margin-top: 100px;
+  text-align: center; }
+  .home .tagline .download-zenv {
+    color: #949494;
+    font-size: 0.8em;
+    margin-top: 30px; }
+.home .about-blurb {
+  margin-top: 200px;
+  margin-right: 10%;
+  margin-left: 10%;
+  text-align: center; }
+  .home .about-blurb .blurb-title {
+    margin-bottom: 30px; }
+
+header {
+  height: 100px;
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+  color: #949494;
+  font-size: 12px; }
+  header .logo {
+    height: 100px; }
+  header .categories {
+    float: right;
+    width: 50%;
+    padding-top: 40px; }
+    header .categories .category-item {
+      float: left;
+      padding-right: 10%; }
