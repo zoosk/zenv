@@ -33,10 +33,15 @@ a {
 }
 
 body {
-    background-color: $backgroundColor;
+    //background-color: $backgroundColor;
+    //background-image: url("/images/Zenv_bakground-01.png"); // THIS IS DEFINED IN THE HTML
+    //background-size: contain;
+    //background-repeat: no-repeat;
     font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     font-weight: 300;
     color: $mainTextColor;
+    max-width: 1600px;
+    min-width: 1000px;
 
     .bold {
         font-weight: 600;
@@ -44,10 +49,20 @@ body {
     }
 
     .page-content {
+        background-image: url("/images/Zenv_bakground-02.png"); // THIS IS DEFINED IN THE HTML
+        background-size: contain;
+        background-repeat: no-repeat;
         margin-left: auto;
         margin-right: auto;
         width: 1000px;
         height: 100%;
+        margin-top: -20px;
+
+        .gradient-buffer {
+            @include gradient(white, $alphaColor);
+            height: 100px;
+            display: block;
+        }
 
         .wrapper {
             margin-left: 10%;
@@ -72,7 +87,7 @@ body {
         z-index: -2;
     }
 
-    @include radial-gradient(lighten($backgroundColor, 5%), $backgroundColor);
+    //@include radial-gradient(lighten($backgroundColor, 5%), $backgroundColor);
 }
 
 .button {
@@ -85,7 +100,6 @@ body {
 .home {
     .tagline {
         font-size: 2em;
-        margin-top: 100px;
         text-align: center;
 
         .download-zenv {
@@ -98,7 +112,7 @@ body {
 
 
     .about-blurb {
-        margin-top: 200px;
+        margin-top: 150px;
         margin-right: 10%;
         margin-left: 10%;
         text-align: center;

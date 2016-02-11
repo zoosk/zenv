@@ -4,10 +4,10 @@
     <title>ZENv</title>
     <description>Bringing ZEN to your dev environment
 </description>
-    <link>https://g.zoosk.com/pages/platform/zenv/</link>
-    <atom:link href="https://g.zoosk.com/pages/platform/zenv/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 28 Jan 2016 17:51:47 -0800</pubDate>
-    <lastBuildDate>Thu, 28 Jan 2016 17:51:47 -0800</lastBuildDate>
+    <link>https://g.zoosk.com/</link>
+    <atom:link href="https://g.zoosk.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Thu, 11 Feb 2016 13:36:01 -0800</pubDate>
+    <lastBuildDate>Thu, 11 Feb 2016 13:36:01 -0800</lastBuildDate>
     <generator>Jekyll v3.1.0</generator>
     
       <item>
@@ -28,8 +28,8 @@
 
 </description>
         <pubDate>Thu, 28 Jan 2016 10:37:31 -0800</pubDate>
-        <link>https://g.zoosk.com/pages/platform/zenv/jekyll/update/2016/01/28/welcome-to-jekyll.html</link>
-        <guid isPermaLink="true">https://g.zoosk.com/pages/platform/zenv/jekyll/update/2016/01/28/welcome-to-jekyll.html</guid>
+        <link>https://g.zoosk.com/jekyll/update/2016/01/28/welcome-to-jekyll.html</link>
+        <guid isPermaLink="true">https://g.zoosk.com/jekyll/update/2016/01/28/welcome-to-jekyll.html</guid>
         
         
         <category>jekyll</category>
