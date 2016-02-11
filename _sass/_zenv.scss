@@ -10,6 +10,11 @@ h2 {
     font-weight: 300;
 }
 
+h3 {
+    font-size: 1.5em;
+    font-weight: 300;
+}
+
 a {
     &:link {
         text-decoration: none;
@@ -60,7 +65,7 @@ body {
 
         .gradient-buffer {
             @include gradient(white, $alphaColor);
-            height: 100px;
+            height: 130px;
             display: block;
         }
 
@@ -68,26 +73,17 @@ body {
             margin-left: 10%;
             margin-right: 10%;
             position: relative;
-            top: -1050px;
+            margin-top: -50px;
         }
     }
+}
 
-    .hero-image {
-        margin-left: auto;
-        margin-right: auto;
-        position: relative;
-        top: -120px;
-        //background-image: url("/images/zenv_net7.png"); // THIS IS DEFINED IN THE HTML
-        background-size: contain;
-        background-repeat: no-repeat;
-        max-width: 1600px;
-        min-width: 1000px;
-        height: 1000px;
-        display: inline-block;
-        z-index: -2;
-    }
+.right {
+    float:right;
+}
 
-    //@include radial-gradient(lighten($backgroundColor, 5%), $backgroundColor);
+.left {
+    float:left;
 }
 
 .button {
@@ -95,6 +91,58 @@ body {
 
 }
 
+.section {
+    margin-right: 10%;
+    margin-left: 10%;
+    margin-top: 50px;
+}
+
+.code-box {
+    border: 1px solid darken($borderColor, 5%);
+    width: 48%;
+    @include box-shadow(0px, 0px, 20px, darken($backgroundColor, 10%), $inset: false);
+    display: inline-block;
+
+    .code-header {
+        @include center-text();
+        @include gradient(lighten($backgroundColor, 5%), $backgroundColor);
+        padding: 10px;
+        color: $lightTextColor;
+        border-bottom: 1px solid darken($borderColor, 5%);
+    }
+
+    .code-content {
+        color: $mainTextColor;
+        font-family: Andale Mono, monospace;  line-height: 1em;
+        font-size:13px;
+        min-height:130px;
+        background: darken($backgroundColor, 5%);
+        padding: 10px;
+    }
+}
+
+.code-instructions {
+    color: $lightTextColor;
+    width: 48%;
+    display: inline-block;
+}
+
+.bottom-section {
+    margin-top: 150px;
+    border-color: lighten($lightTextColor, 35%);
+    @include radial-gradient(lighten($backgroundColor, 5%), $backgroundColor);
+
+    .about-blurb {
+        margin-top: -80px;
+        margin-right: 10%;
+        margin-left: 10%;
+        text-align: center;
+
+        .blurb-title {
+            margin-bottom: 30px;
+        }
+    }
+}
 
 // HOME PAGE
 .home {
@@ -109,18 +157,6 @@ body {
         }
     }
 
-
-
-    .about-blurb {
-        margin-top: 150px;
-        margin-right: 10%;
-        margin-left: 10%;
-        text-align: center;
-
-        .blurb-title {
-            margin-bottom: 30px;
-        }
-    }
 }
 
 

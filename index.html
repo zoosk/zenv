@@ -2,15 +2,19 @@
 layout: default
 ---
 
-<div class="home">
+<div class="wrapper">
+    <div class="home">
 
-    <div class="tagline">
-        Bring peace to all dev environments.
-        <div>
-            <span class="download-zenv button">Download ZENv</span>
+        <div class="tagline">
+            Bring peace to all dev environments.
+            <div>
+                <span class="download-zenv button">Download ZENv</span>
+            </div>
         </div>
     </div>
-
+</div>
+<div class="bottom-section">
+    <div class="gradient-buffer"></div>
     <div class="about-blurb">
         <h2 class="blurb-title">
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam massa mi,
@@ -19,5 +23,45 @@ layout: default
         ZEnv is a coding environment manager for programmers. It allows you to keep your shell environment in source control, thereby keeping everyone in sync and allowing access to shared dev tools, aliases, and more.
     </div>
 
-    <div class="code-examples"></div>
+    <div class="section">
+        <div class="code-box">
+            <div class="code-header">
+                A Typical Build
+            </div>
+            <div class="code-content">
+                <p>robink$ cd db_backend</p>
+                <p>robink$ phing -logger -Dprops=../myprops</p>
+                <p>...</p>
+                <p>robink$ cd ../app_frontend</p>
+                <p>robink$ make</p>
+                <p>...</p>
+            </div>
+        </div>
+        <div class="code-instructions right">
+            <h3>
+                Look a frame with some codes.
+            </h3>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="code-box">
+            <div class="code-header">
+                With ZENv
+            </div>
+            <div class="code-content">
+                <p>robink$ use db_backend</p>
+                <p>robink$ build</p>
+                <p>...</p>
+                <p>robink$ use app_frontend</p>
+                <p>robink$ build</p>
+                <p>...</p>
+            </div>
+        </div>
+        <div class="code-instructions left">
+            <h3>
+                More codes!
+            </h3>
+        </div>
+    </div>
 </div>
