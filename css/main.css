@@ -29,7 +29,7 @@ body {
   font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-weight: 300;
   color: #204851;
-  max-width: 1600px; }
+  min-width: 1000px; }
   body .bold {
     font-weight: 600;
     color: #204851; }
