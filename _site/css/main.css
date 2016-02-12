@@ -35,7 +35,6 @@ body {
     font-weight: 600;
     color: #204851; }
   body .page-content {
-    background-image: url("/images/Zenv_bakground-02.png");
     background-size: contain;
     background-repeat: no-repeat;
     margin-left: auto;
