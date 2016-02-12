@@ -8,6 +8,10 @@ h2 {
   font-size: 2em;
   font-weight: 300; }
 
+h3 {
+  font-size: 1.5em;
+  font-weight: 300; }
+
 a:link {
   text-decoration: none;
   color: #949494; }
@@ -22,42 +26,40 @@ a:active {
   color: #949494; }
 
 body {
-  background-color: #e9eff4;
   font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-weight: 300;
-  color: #585858;
-  background: -moz-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%, #fafbfd), color-stop(100%, #e9eff4));
-  background: -webkit-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background: -o-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background: -ms-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background: radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background-color: #fafbfd; }
+  color: #204851;
+  max-width: 1600px;
+  min-width: 1000px; }
   body .bold {
     font-weight: 600;
-    color: #585858; }
+    color: #204851; }
   body .page-content {
+    background-image: url("/images/Zenv_bakground-02.png");
+    background-size: contain;
+    background-repeat: no-repeat;
     margin-left: auto;
     margin-right: auto;
     width: 1000px;
-    height: 100%; }
+    height: 100%;
+    margin-top: -20px; }
+    body .page-content .gradient-buffer {
+      background: -webkit-gradient(linear, left top, left bottom, from(white), to(rgba(255, 255, 255, 0)));
+      background: -moz-linear-gradient(top, white, rgba(255, 255, 255, 0));
+      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='rgba(255, 255, 255, 0)');
+      height: 130px;
+      display: block; }
     body .page-content .wrapper {
       margin-left: 10%;
       margin-right: 10%;
       position: relative;
-      top: -1050px; }
-  body .hero-image {
-    margin-left: auto;
-    margin-right: auto;
-    position: relative;
-    top: -120px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    max-width: 1600px;
-    min-width: 1000px;
-    height: 1000px;
-    display: inline-block;
-    z-index: -2; }
+      margin-top: -50px; }
+
+.right {
+  float: right; }
+
+.left {
+  float: left; }
 
 .button {
   display: inline-block;
@@ -90,21 +92,67 @@ body {
     background: -moz-linear-gradient(top, #e7eff6, white);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#e7eff6', endColorstr='white'); }
 
+.section {
+  margin-right: 10%;
+  margin-left: 10%;
+  margin-top: 50px; }
+
+.code-box {
+  border: 1px solid #c7d6e3;
+  width: 48%;
+  -webkit-box-shadow: 0px 0px 20px #c7d6e3;
+  -moz-box-shadow: 0px 0px 20px #c7d6e3;
+  box-shadow: 0px 0px 20px #c7d6e3;
+  display: inline-block; }
+  .code-box .code-header {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    background: -webkit-gradient(linear, left top, left bottom, from(#fafbfd), to(#e9eff4));
+    background: -moz-linear-gradient(top, #fafbfd, #e9eff4);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#fafbfd', endColorstr='#e9eff4');
+    padding: 10px;
+    color: #949494;
+    border-bottom: 1px solid #c7d6e3; }
+  .code-box .code-content {
+    color: #204851;
+    font-family: Andale Mono, monospace;
+    line-height: 1em;
+    font-size: 13px;
+    min-height: 130px;
+    background: #d8e3ec;
+    padding: 10px; }
+
+.code-instructions {
+  color: #949494;
+  width: 48%;
+  display: inline-block; }
+
+.bottom-section {
+  margin-top: 150px;
+  border-color: #ededed;
+  background: -moz-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%, #fafbfd), color-stop(100%, #e9eff4));
+  background: -webkit-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background: -o-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background: -ms-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background: radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
+  background-color: #fafbfd; }
+  .bottom-section .about-blurb {
+    margin-top: -80px;
+    margin-right: 10%;
+    margin-left: 10%;
+    text-align: center; }
+    .bottom-section .about-blurb .blurb-title {
+      margin-bottom: 30px; }
+
 .home .tagline {
   font-size: 2em;
-  margin-top: 100px;
   text-align: center; }
   .home .tagline .download-zenv {
     color: #949494;
     font-size: 0.8em;
     margin-top: 30px; }
-.home .about-blurb {
-  margin-top: 200px;
-  margin-right: 10%;
-  margin-left: 10%;
-  text-align: center; }
-  .home .about-blurb .blurb-title {
-    margin-bottom: 30px; }
 
 header {
   height: 100px;
