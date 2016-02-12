@@ -34,20 +34,20 @@ body {
   body .bold {
     font-weight: 600;
     color: #204851; }
+  body .gradient-buffer {
+    background: -webkit-gradient(linear, left top, left bottom, from(white), to(rgba(255, 255, 255, 0)));
+    background: -moz-linear-gradient(top, white, rgba(255, 255, 255, 0));
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='rgba(255, 255, 255, 0)');
+    height: 130px;
+    display: block; }
   body .page-content {
     background-size: contain;
     background-repeat: no-repeat;
     margin-left: auto;
     margin-right: auto;
     width: 1000px;
-    height: 100%;
+    height: 400px;
     margin-top: -20px; }
-    body .page-content .gradient-buffer {
-      background: -webkit-gradient(linear, left top, left bottom, from(white), to(rgba(255, 255, 255, 0)));
-      background: -moz-linear-gradient(top, white, rgba(255, 255, 255, 0));
-      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='rgba(255, 255, 255, 0)');
-      height: 130px;
-      display: block; }
     body .page-content .wrapper {
       margin-left: 10%;
       margin-right: 10%;
@@ -128,22 +128,21 @@ body {
   display: inline-block; }
 
 .bottom-section {
-  margin-top: 150px;
   border-color: #ededed;
-  background: -moz-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(0%, #fafbfd), color-stop(100%, #e9eff4));
-  background: -webkit-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background: -o-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background: -ms-radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background: radial-gradient(center, circle cover, #fafbfd 0%, #e9eff4 100%);
-  background-color: #fafbfd; }
-  .bottom-section .about-blurb {
-    margin-top: -80px;
-    margin-right: 10%;
-    margin-left: 10%;
-    text-align: center; }
-    .bottom-section .about-blurb .blurb-title {
-      margin-bottom: 30px; }
+  background: -webkit-gradient(linear, left top, left bottom, from(#fafbfd), to(#e9eff4));
+  background: -moz-linear-gradient(top, #fafbfd, #e9eff4);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#fafbfd', endColorstr='#e9eff4'); }
+  .bottom-section .wrapper {
+    width: 1000px;
+    margin-right: auto;
+    margin-left: auto; }
+    .bottom-section .wrapper .about-blurb {
+      margin-top: -150px;
+      margin-right: 10%;
+      margin-left: 10%;
+      text-align: center; }
+      .bottom-section .wrapper .about-blurb .blurb-title {
+        margin-bottom: 30px; }
 
 .home .tagline {
   font-size: 2em;
