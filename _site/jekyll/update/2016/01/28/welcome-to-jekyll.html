@@ -13,7 +13,7 @@
   <link rel="canonical" href="https://g.zoosk.com/jekyll/update/2016/01/28/welcome-to-jekyll.html">
   <link rel="alternate" type="application/rss+xml" title="ZENv" href="https://g.zoosk.com/feed.xml">
   <style type="text/css">
-    .page-content {
+    .page-content.hero {
       background-image : url("/images/Zenv_bakground-02.png");
     }
   </style>
@@ -23,19 +23,19 @@
   <body>
 
     <header class="site-header">
-  <span><img class="logo" src="images/ZENV_brand_logo_only2.png" /></span>
+  <span><img class="logo" src="/images/ZENV_brand_logo_only2.png" /></span>
   <div class="categories">
     <span class="category-item"><a href="/">Home</a></span>
-    <span class="category-item"><a href="/">Getting Started</a></span>
-    <span class="category-item"><a href="/about/">About</a></span>
-    <span class="category-item bold"><a class="bold" href="/">GitHub Project</a></span>
+    <span class="category-item"><a href="/examples">Examples</a></span>
+    <span class="category-item"><a href="/docs/quickstart/">Docs</a></span>
+    <span class="category-item bold"><a class="bold" target="_blank" href="https://g.zoosk.com/platform/zenv">GitHub Project</a></span>
   </div>
 </header>
 
 
 
 
-    <div class="page-content">
+    <div class="page-content hero">
       <span class="gradient-buffer"></span>
         <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
@@ -71,60 +71,70 @@
     <div class="wrapper">
         <div class="about-blurb">
             <h2 class="blurb-title">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam massa mi,
+                ZENv is a coding environment manager for programmers.
             </h2>
 
-            ZEnv is a coding environment manager for programmers. It allows you to keep your shell environment in source control, thereby keeping everyone in sync and allowing access to shared dev tools, aliases, and more.
+            It allows you to keep your shell environment in source control, thereby keeping everyone in sync and allowing access to shared dev tools, aliases, and more.
         </div>
 
         <div class="section">
             <div class="code-box">
                 <div class="code-header">
-                    A Typical Build
+                    Terminal
                 </div>
                 <div class="code-content">
-                    <p>robink$ cd db_backend</p>
-                    <p>robink$ phing -logger -Dprops=../myprops</p>
+                    <p>my_terminal$ cd db_backend</p>
+                    <p>my_terminal$ phing -logger -Dprops=../myprops</p>
                     <p>...</p>
-                    <p>robink$ cd ../app_frontend</p>
-                    <p>robink$ make</p>
+                    <p>&nbsp;</p>
+                    <p>&nbsp;</p>
+                    <p>my_terminal$ cd ../app_frontend</p>
+                    <p>my_terminal$ make</p>
                     <p>...</p>
                 </div>
             </div>
             <div class="code-instructions right">
                 <h3>
-                    Look a frame with some codes.
+                    The Old Way
                 </h3>
+                <p>
+                    Each project has a unique set of commands to build which require developers to understand each build system and those respective capabilities.
+                </p>
             </div>
         </div>
 
         <div class="section">
             <div class="code-box">
                 <div class="code-header">
-                    With ZENv
+                    <span class="green">ZENv</span>
                 </div>
                 <div class="code-content">
-                    <p>robink$ use db_backend</p>
-                    <p>robink$ build</p>
+                    <p><span class="green">ZENv</span>$ use db_backend</p>
+                    <p><span class="green">ZENv</span>$ build</p>
                     <p>...</p>
-                    <p>robink$ use app_frontend</p>
-                    <p>robink$ build</p>
+                    <p>&nbsp;</p>
+                    <p>&nbsp;</p>
+                    <p><span class="green">ZENv</span>$ use app_frontend</p>
+                    <p><span class="green">ZENv</span>$ build</p>
                     <p>...</p>
                 </div>
             </div>
             <div class="code-instructions left">
                 <h3>
-                    More codes!
+                    Add <span class="bold">ZENv</span> to your Dev Environment
                 </h3>
+                <p>
+                    With ZENv, there's no need to spend time figuring out the subtleties of each project's build system.  Just build!
+                </p>
             </div>
         </div>
     </div>
 </div>
 
     <footer class="site-footer">
-
-
-
+    <div class="categories">
+        <span><img class="logo" src="/images/ZENV_brand_logo_only2.png" /></span>
+    </div>
 </footer>
 
 

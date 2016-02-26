@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Installation</title>
+  <meta name="description" content="Bringing ZEN to your dev environment
+">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="https://g.zoosk.com/docs/installation/">
+  <link rel="alternate" type="application/rss+xml" title="ZENv" href="https://g.zoosk.com/feed.xml">
+  <style type="text/css">
+    .page-content.hero {
+      background-image : url("/images/Zenv_bakground-02.png");
+    }
+  </style>
+</head>
+
+
+  <body class="page">
+
+    <header class="site-header">
+  <span><img class="logo" src="/images/ZENV_brand_logo_only2.png" /></span>
+  <div class="categories">
+    <span class="category-item"><a href="/">Home</a></span>
+    <span class="category-item"><a href="/examples">Examples</a></span>
+    <span class="category-item"><a href="/docs/quickstart/">Docs</a></span>
+    <span class="category-item bold"><a class="bold" target="_blank" href="https://g.zoosk.com/platform/zenv">GitHub Project</a></span>
+  </div>
+</header>
+
+
+
+
+    <div class="page-content docs">
+        <div class="doc-category">
+            <div class="docs">
+               <ul class="doc-list">
+                  <li>
+                     <a href="/docs/quickstart/">Quick Start</a>
+                  </li>
+                  <li>
+                     <a href="/docs/autobuild/">Autobuild</a>
+                  </li>
+                  <li>
+                     <a href="/docs/checkouts/">Checkouts</a>
+                  </li>
+                  <li>
+                     <a href="/docs/environment/">Environment</a>
+                  </li>
+                  <li>
+                     <a href="/docs/installation/">Installation</a>
+                  </li>
+                  <li>
+                     <a href="/docs/variables/">Environment Variables</a>
+                  </li>
+               </ul>
+
+                <div class="doc-content">
+                    <h1 id="zenv-installation">ZEnv Installation</h1>
+
+<p>This document will guide you through how to install ZEnv, and also how to
+modify the installation process.</p>
+
+<h2 id="what-does-it-do">What does it do?</h2>
+
+<p>When you install ZEnv, it will create a <code class="highlighter-rouge">.zenvrc</code> file in your home directory.
+This file is a regular bash script that’s imported into your environment on
+startup. It contains all of the global variables that won’t change between
+checkouts. You might want to put things here like the developer’s username.</p>
+
+<p>After the install process is complete, users will need to restart their shells
+to get into ZEnv.</p>
+
+<h2 id="how-do-i-use-it">How do I use it?</h2>
+
+<p>The <code class="highlighter-rouge">.zenvrc</code> file is created using one of the properties file templates in the
+<code class="highlighter-rouge">properties</code> directory, namely the <code class="highlighter-rouge">global.properties</code> file. During a simple
+install, that file will be copied directly into <code class="highlighter-rouge">~/.zenvrc</code>. You can edit that
+file to change the global properties included in developers’ environments.</p>
+
+<p>Once you’ve modified that file, you can install ZEnv by running
+<code class="highlighter-rouge">python install.py</code>.</p>
+
+<h3 id="environment-variable-customization">Environment Variable Customization</h3>
+
+<p>The file isn’t always copied directly. You can use the template placeholder
+syntax to cause the installation process to ask the user to fill in some
+properties for you. For example, this line</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>export ZENV_USER_NAME=@@$(whoami)@@
+</code></pre>
+</div>
+
+<p>means that the value of ZENV_USER_NAME must be filled in. The default value
+for the question will be the result of <code class="highlighter-rouge">$(whoami)</code>. So, a user named robink
+would see a line like this during his install process:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>Enter the value for the ZENV_USER_NAME global variable (robink): 
+</code></pre>
+</div>
+
+<p>You can also customize the questions asked by adding comments, like so:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code># your user name
+export ZENV_USER_NAME=@@$(whoami)@@
+</code></pre>
+</div>
+
+<p>This produces the prompt:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>Enter your user name (robink): 
+</code></pre>
+</div>
+
+<p>If the user then answered that their name was “TheRobinator”, their global
+properties file would end up containing:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>export ZENV_USER_NAME=TheRobinator
+</code></pre>
+</div>
+
+<h3 id="install-process-customization">Install Process Customization</h3>
+
+<p>The install process can also have arbitrary code appended to it. To do this,
+modify the <code class="highlighter-rouge">global.setup.sh</code> file in the <code class="highlighter-rouge">setupscripts</code> directory. This code
+will run just after the regular install completes, and gives you an opportunity
+to abort the process if everything isn’t to your liking by exiting with a
+nonzero exit code.</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+    <div class="categories">
+        <span><img class="logo" src="/images/ZENV_brand_logo_only2.png" /></span>
+    </div>
+</footer>
+
+
+  </body>
+
+</html>

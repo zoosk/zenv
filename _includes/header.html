@@ -1,9 +1,9 @@
 <header class="site-header">
-  <span><img class="logo" src="images/ZENV_brand_logo_only2.png" /></span>
+  <span><img class="logo" src="{{prepend: site.baseurl}}/images/ZENV_brand_logo_only2.png" /></span>
   <div class="categories">
     <span class="category-item"><a href="/">Home</a></span>
-    <span class="category-item"><a href="/">Getting Started</a></span>
-    <span class="category-item"><a href="/about/">About</a></span>
-    <span class="category-item bold"><a class="bold" href="/">GitHub Project</a></span>
+    <span class="category-item"><a href="/examples">Examples</a></span>
+    <span class="category-item"><a href="/docs/quickstart/">Docs</a></span>
+    <span class="category-item bold"><a class="bold" target="_blank" href="{{ site.github_location | prepend: site.baseurl | prepend: site.url }}">GitHub Project</a></span>
   </div>
 </header>

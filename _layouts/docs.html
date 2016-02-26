@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+  {% include head.html %}
+
+  <body class="page">
+
+    {% include header.html %}
+
+
+
+    <div class="page-content docs">
+        <div class="doc-category">
+            <div class="docs">
+               <ul class="doc-list">
+                  <li>
+                     <a href="{{prepend: site.baseurl}}/docs/quickstart/">Quick Start</a>
+                  </li>
+                  <li>
+                     <a href="{{prepend: site.baseurl}}/docs/autobuild/">Autobuild</a>
+                  </li>
+                  <li>
+                     <a href="{{prepend: site.baseurl}}/docs/checkouts/">Checkouts</a>
+                  </li>
+                  <li>
+                     <a href="{{prepend: site.baseurl}}/docs/environment/">Environment</a>
+                  </li>
+                  <li>
+                     <a href="{{prepend: site.baseurl}}/docs/installation/">Installation</a>
+                  </li>
+                  <li>
+                     <a href="{{prepend: site.baseurl}}/docs/variables/">Environment Variables</a>
+                  </li>
+               </ul>
+
+                <div class="doc-content">
+                    {{ content }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include footer.html %}
+
+  </body>
+
+</html>
