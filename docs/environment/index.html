@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Environment</title>
+  <meta name="description" content="Bringing ZEN to your dev environment
+">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="https://g.zoosk.com/docs/environment/">
+  <link rel="alternate" type="application/rss+xml" title="ZENv" href="https://g.zoosk.com/feed.xml">
+  <style type="text/css">
+    .page-content.hero {
+      background-image : url("/images/Zenv_bakground-02.png");
+    }
+  </style>
+</head>
+
+
+  <body class="page">
+
+    <header class="site-header">
+  <span><img class="logo" src="/images/ZENV_brand_logo_only2.png" /></span>
+  <div class="categories">
+    <span class="category-item"><a href="/">Home</a></span>
+    <span class="category-item"><a href="/examples">Examples</a></span>
+    <span class="category-item"><a href="/docs/quickstart/">Docs</a></span>
+    <span class="category-item bold"><a class="bold" target="_blank" href="https://g.zoosk.com/platform/zenv">GitHub Project</a></span>
+  </div>
+</header>
+
+
+
+
+    <div class="page-content docs">
+        <div class="doc-category">
+            <div class="docs">
+               <ul class="doc-list">
+                  <li>
+                     <a href="/docs/quickstart/">Quick Start</a>
+                  </li>
+                  <li>
+                     <a href="/docs/autobuild/">Autobuild</a>
+                  </li>
+                  <li>
+                     <a href="/docs/checkouts/">Checkouts</a>
+                  </li>
+                  <li>
+                     <a href="/docs/environment/">Environment</a>
+                  </li>
+                  <li>
+                     <a href="/docs/installation/">Installation</a>
+                  </li>
+                  <li>
+                     <a href="/docs/variables/">Environment Variables</a>
+                  </li>
+               </ul>
+
+                <div class="doc-content">
+                    <h1 id="environment-setup">Environment Setup</h1>
+
+<p>ZEnv provides the capacity to modify the environment based on the current
+checkout, but it also allows you to create global environment variables and
+initialization scripts using the <code class="highlighter-rouge">environment</code> directory.</p>
+
+<p>Every <code class="highlighter-rouge">.sh</code> file in the <code class="highlighter-rouge">environment</code> directory will be loaded into the user’s
+environment at <em>startup time</em>. This means that these are all global settings.
+These will only be re-loaded on shell start.</p>
+
+<h2 id="built-in-environment-setup">Built-in environment setup</h2>
+
+<p>ZEnv provides several ease-of-use upgrades to the environment by default:</p>
+
+<ul>
+  <li>Tab completion for git commands, written by Shawn O. Pearce.</li>
+  <li>Several short-version git commands, such as <code class="highlighter-rouge">st</code> for <code class="highlighter-rouge">status</code> and <code class="highlighter-rouge">ci</code> for
+commit.</li>
+  <li>Colorized grep output.</li>
+  <li>Several variables useful for colorizing script output.</li>
+</ul>
+
+<p>For a full list of these, read the <code class="highlighter-rouge">vars.sh</code> file in the <code class="highlighter-rouge">environment</code> folder.</p>
+
+<h2 id="implications">Implications</h2>
+
+<p>Any code that you could normally add to your <code class="highlighter-rouge">.bash_login</code> file is just as
+useful in the <code class="highlighter-rouge">environment</code> directory as it is in your home directory. However,
+anything that you check into your team’s ZEnv repo will be replicated in every
+other developer’s environment. Be very careful to think about what you’re
+committing before you add something there.</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+    <div class="categories">
+        <span><img class="logo" src="/images/ZENV_brand_logo_only2.png" /></span>
+    </div>
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Quick Start</title>
+  <meta name="description" content="Bringing ZEN to your dev environment
+">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="https://g.zoosk.com/docs/quickstart/">
+  <link rel="alternate" type="application/rss+xml" title="ZENv" href="https://g.zoosk.com/feed.xml">
+  <style type="text/css">
+    .page-content.hero {
+      background-image : url("/images/Zenv_bakground-02.png");
+    }
+  </style>
+</head>
+
+
+  <body class="page">
+
+    <header class="site-header">
+  <span><img class="logo" src="/images/ZENV_brand_logo_only2.png" /></span>
+  <div class="categories">
+    <span class="category-item"><a href="/">Home</a></span>
+    <span class="category-item"><a href="/examples">Examples</a></span>
+    <span class="category-item"><a href="/docs/quickstart/">Docs</a></span>
+    <span class="category-item bold"><a class="bold" target="_blank" href="https://g.zoosk.com/platform/zenv">GitHub Project</a></span>
+  </div>
+</header>
+
+
+
+
+    <div class="page-content docs">
+        <div class="doc-category">
+            <div class="docs">
+               <ul class="doc-list">
+                  <li>
+                     <a href="/docs/quickstart/">Quick Start</a>
+                  </li>
+                  <li>
+                     <a href="/docs/autobuild/">Autobuild</a>
+                  </li>
+                  <li>
+                     <a href="/docs/checkouts/">Checkouts</a>
+                  </li>
+                  <li>
+                     <a href="/docs/environment/">Environment</a>
+                  </li>
+                  <li>
+                     <a href="/docs/installation/">Installation</a>
+                  </li>
+                  <li>
+                     <a href="/docs/variables/">Environment Variables</a>
+                  </li>
+               </ul>
+
+                <div class="doc-content">
+                    <h1 id="zenv-quickstart">ZEnv Quickstart</h1>
+
+<p>If you want to get a project running as quickly as possible without
+understanding much about how to use all of ZEnv’s features, this is the page
+for you.</p>
+
+<h2 id="setting-up-the-first-time">Setting up the first time</h2>
+
+<p>You can skip to step 4 if somebody on your team has already checked in the
+results of steps 1-3.</p>
+
+<ol>
+  <li>
+    <p>Modify <code class="highlighter-rouge">properties/global.properties</code> to add variables that you want to be
+available regardless of what checkout is being used. To force people to fill
+in values, write lines like this:</p>
+
+    <p><code class="highlighter-rouge">export FOO=@@echo 'default value'@@</code></p>
+
+    <p>The stuff between the <code class="highlighter-rouge">@@</code>s will be evaluated as the default, so you can do
+stuff like <code class="highlighter-rouge">$(whoami)</code>.</p>
+  </li>
+  <li>
+    <p>Copy the file <code class="highlighter-rouge">properties/default.work.properties</code> to
+<code class="highlighter-rouge">properties/XXX.work.properties</code>, where <code class="highlighter-rouge">XXX</code> is the name of the git repo
+you’ll be working on. (For example, for ZEnv it would be <code class="highlighter-rouge">zenv</code>.) Modify
+that file in the same way as #1, but for properties specific to that kind of
+checkout. Make sure to change <code class="highlighter-rouge">ZENV_BUILD_COMMAND</code>.</p>
+  </li>
+  <li>
+    <p>Repeat #2 for each git repository you want to work with.</p>
+  </li>
+  <li>
+    <p>Run <code class="highlighter-rouge">python install.py</code> and answer the questions.</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">git clone</code> your repository into the place that you told the install script
+that you have your checkouts.</p>
+  </li>
+  <li>
+    <p><code class="highlighter-rouge">use XXX</code>, where <code class="highlighter-rouge">XXX</code> is the folder name of the repo you just cloned.</p>
+  </li>
+  <li>
+    <p>Repeat steps 5 &amp; 6 for each repository you want to work with.</p>
+  </li>
+</ol>
+
+<h2 id="using-zenv-daily">Using ZEnv daily</h2>
+
+<p>Run <code class="highlighter-rouge">use &lt;checkout_name&gt;</code> to swap between checkouts.</p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+    <div class="categories">
+        <span><img class="logo" src="/images/ZENV_brand_logo_only2.png" /></span>
+    </div>
+</footer>
+
+
+  </body>
+
+</html>
