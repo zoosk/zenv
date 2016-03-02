@@ -20,7 +20,7 @@ if [ "$1" == '-h' -o "$1" == '--help' ]; then
     echo "${PROGNAME}: Gather information about checkouts."
     echo "Usage (find initialized checkouts): ${PROGNAME}"
     echo "Usage (get information about a checkout): ${PROGNAME} workspace_name [key]"
-    echo '    where key is one of repo_type, branch, dev_server, db_ip, server_dir, props_file, or build_cmd'
+    echo '    where key is one of repo_type, branch, or build_cmd'
     exit 1
 fi
 
@@ -60,22 +60,6 @@ else
         'branch' )
             echo "$BRANCH"
             ;;
-        'dev_server' )
-            source "${ZENV_WORKSPACE_SETTINGS}"
-            echo "$ZENV_DEVSERVER"
-            ;;
-        'db_ip' )
-            source "${ZENV_WORKSPACE_SETTINGS}"
-            echo "$ZENV_DBIP"
-            ;;
-        'server_dir' )
-            source "${ZENV_WORKSPACE_SETTINGS}"
-            echo "$ZENV_SERVERDIR"
-            ;;
-        'props_file' )
-            source "${ZENV_WORKSPACE_SETTINGS}"
-            echo "$ZENV_BUILDPROPS"
-            ;;
         'build_cmd' )
             source "${ZENV_WORKSPACE_SETTINGS}"
             echo "$ZENV_BUILD_COMMAND"
@@ -85,10 +69,6 @@ else
             echo "Workspace: ${PWD}
 Repo type: ${REPO_KIND}
 Branch: ${BRANCH}
-Dev server: ${ZENV_DEVSERVER}
-Database IP: ${ZENV_DBIP}
-Local server directory: ${ZENV_SERVERDIR}
-Properties file: ${ZENV_BUILDPROPS}
 Build command: ${ZENV_BUILD_COMMAND}
 "
             ;;
