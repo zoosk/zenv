@@ -16,10 +16,10 @@ through a complicated onboarding process again!
 ### Sharing dev tools
 
 ZEnv allows the creation and sharing of any number of tools for making work
-easier. Need to make sure all your developers have access to a linter or test
+easier. Need to make sure everyone has access to a linter or test
 runner? Just add it to the `bin` folder and check in.
 
-### Shell startup
+### Shell customization
 
 In addition to dev tools, you can add arbitrary code that will run on your
 developers' machines whenever they start a terminal. This allows you to share
@@ -32,83 +32,64 @@ each with their own set of requirements. ZEnv supports changing the set of
 available dev tools and environment variables depending on what you want to
 work on at the time.
 
-## Examples
-
-
-### Example 1: Creating dev tools
-
-The `build` command is nice, but it's one of the only commands that ZEnv
-provides. Instead of trying to think of everything, ZEnv gives you a new `bin`
-folder and says "go." So let's say you've decided to write a linter for your
-codebase. You've created an executable file called `lintit`, and you want
-your team to start linting their code too.
-
-All you need to do is add your file to the `bin` folder in ZEnv, and the linter
-instantly becomes available to all parties.
-
-
-### Example 2: Sharing command aliases
-
-It's happened to everyone. You're over at a coworker's computer, and they type
-some command you've never seen before. The screen lights up with the text of
-five or six commands all running at once, commands that you've been manually
-typing like a chump. Wouldn't it be great if you had that alias too?
-
-Luckily for you, ZEnv can load whatever you want into your environment when you
-start your terminal. So, you can go into ZEnv's `environment` folder and add
-aliases.sh with this in it:
-
-    alias starwars="telnet towel.blinkenlights.nl"
-
-After you check in your changes, both you and your coworkers can benefit from
-the glory of ASCII Star Wars. And hopefully your coworker will add their alias
-too.
-
-
-### Example 3: Building someone else's repo
-
-Let's say you're an enterprising iOS developer working at a new company. You've
-been hired to work on the app, but there's a completely separate team that
-manages the database back-end. This means you have to worry about two repos:
-
-- `db_backend`, which contains all of the DB team's code
-- `app_frontend`, which contains all of your app code
-
-In order to build a working test environment, you need to build both of these.
-Without ZEnv, a typical build process might look like this:
-
-    robink$ cd db_backend
-    robink$ phing -logger phing.listener.DefaultLogger -Dprops=../mydevprops.properties
-    ...
-    robink$ cd ../app_frontend
-    robink$ make
-    ...
-
-This works, but how long do you think it took to figure out the right syntax to
-run the DB team's phing build? Why should you even need to know that command?
-With ZEnv, the structure looks like this:
-
-    robink$ use db_backend
-    robink$ build
-    ...
-    robink$ use app_frontend
-    robink$ build
-    ...
-
-Wow! So, what happened?
-
-- `use` is a ZEnv command that changes the current checkout. It automatically
-  `cd`'s you into the correct directory, and sets up your environment variables
-  so that everything works.
-- `build` is a ZEnv command that runs a build command appropriate to whatever
-  checkout you're currently in. Each checkout has a properties file that's set
-  up by its owners that specifies what command this should be.
-
 
 ## Quick Start
 
-If you just want to get started without doing anything advanced, check out the
-`quickstart.md` file in the docs folder.
+1. Fork ZEnv into a place where you can commit your personalized environment.
+2. Clone ZEnv onto your computer.
+3. Optionally, add your new developer setup script to `setupscripts/global.setup.sh`
+   (or create a fully [custom developer setup](wiki/Custom-Developer-Setup))
+4. Optionally, add your personal dev tools to the `bin` folder.
+5. Run `python install.py` to set up as a new developer.
 
-That setup hardly scratches the surface of what's possible with ZEnv. For
-more information on that, check out the docs in the `docs` folder.
+After this, you're good to go! If you commit your changes, others will be able
+to run `python install.py` as well to immediately set up their boxes.
+
+Check out [the wiki](/wiki) for more information on how everything works.
+
+
+## Examples
+
+
+### Sharing dev tools
+
+Let's say you've decided to write a tool that parses production logs. It's very
+useful for you, and you want others to use it as well. Sharing it with your
+team is as simple as:
+
+1. Add your tool to the `bin` folder in ZEnv.
+2. Commit and push.
+3. Have your coworkers run `update_zenv`.
+
+
+### Installing a technology stack
+
+Any code that you add to `setupscripts/global.setup.sh` will run during initial
+setup, when somebody runs `python install.py`. You can use this to install
+your project's dependencies. For example, the following code makes sure that
+everybody has `brew`, `node`, and `gulp`:
+
+```
+# Download homebrew for Mac
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+# Install node using brew
+sudo brew install node
+# Install gulp for building
+npm install --global gulp-cli
+```
+
+When somebody new is hired, this code will automatically run during their
+ZEnv installation, setting up their computer completely painlessly.
+
+
+### Adding tab completion for git commands
+
+Everybody loves tab completion, and Shawn O. Pearce has written an
+[excellent bash script](https://github.com/git/git/blob/master/contrib/completion/git-completion.bash)
+that will do it for git commands. You can add that script to your
+company's computers by saving it in the `environment` folder with a `.sh`
+extension. After restarting your terminal, all git commands will
+automatically tab complete!
+
+After trying it out, push your changes and have your coworkers run `update_zenv`
+on their machines. They'll immediately benefit from your work.
