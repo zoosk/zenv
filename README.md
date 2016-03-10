@@ -1,16 +1,15 @@
 # ZEnv
 
-ZEnv is a coding environment manager for programmers. It allows you to keep
-your shell environment in source control, thereby keeping everyone in sync and
-allowing access to shared dev tools, aliases, and more.
+ZEnv is a coding environment manager for programmers. It allows you to create a custom shell environment
+that's stored in git, thereby keeping everyone in sync and allowing access to shared dev tools, aliases, and more.
 
 ## Features
 
 ### Developer setup
 
-ZEnv requires that developers install it before using it. When this happens,
-you can write arbitrary code that might install software dependencies, set up
-git configuration, and create any directories needed for working. Never slog
+Developers must install your custom environment before working. When this happens,
+you can run code that might install software dependencies, set up
+git configuration, or create any directories needed for working. Never slog
 through a complicated onboarding process again!
 
 ### Sharing dev tools
@@ -21,45 +20,34 @@ runner? Just add it to the `bin` folder and check in.
 
 ### Shell customization
 
-In addition to dev tools, you can add arbitrary code that will run on your
+In addition to dev tools, you can add any amount of code that will run on your
 developers' machines whenever they start a terminal. This allows you to share
 build aliases, environment variables, and much more.
 
 ### Multiple projects
 
 Sometimes you'll need to work with multiple checkouts of different projects,
-each with their own set of requirements. ZEnv supports changing the set of
-available dev tools and environment variables depending on what you want to
-work on at the time.
+each with their own set of requirements. ZEnv supports creating sub-environments,
+allowing you to change the set of available dev tools and environment variables depending on what
+developers need to work on at the time.
 
 
 ## Quick Start
 
-1. Fork ZEnv into a place where you can commit your personalized environment.
+1. Fork ZEnv so you can commit your updates.
 2. Clone ZEnv onto your computer.
-3. Optionally, add your new developer setup script to `setupscripts/global.setup.sh`
+3. Optionally, write a script that will set up your environment in `setupscripts/global.setup.sh`
    (or create a fully [custom developer setup](wiki/Custom-Developer-Setup))
 4. Optionally, add your personal dev tools to the `bin` folder.
-5. Run `python install.py` to set up as a new developer.
+5. Run `python install.py` to install the environment you've created.
 
 After this, you're good to go! If you commit your changes, others will be able
-to run `python install.py` as well to immediately set up their boxes.
+to run `python install.py` as well to set up their computers.
 
 Check out [the wiki](/wiki) for more information on how everything works.
 
 
 ## Examples
-
-
-### Sharing dev tools
-
-Let's say you've decided to write a tool that parses production logs. It's very
-useful for you, and you want others to use it as well. Sharing it with your
-team is as simple as:
-
-1. Add your tool to the `bin` folder in ZEnv.
-2. Commit and push.
-3. Have your coworkers run `update_zenv`.
 
 
 ### Installing a technology stack
@@ -78,8 +66,25 @@ sudo brew install node
 npm install --global gulp-cli
 ```
 
-When somebody new is hired, this code will automatically run during their
+When somebody new joins the project, this code will automatically run during their
 ZEnv installation, setting up their computer completely painlessly.
+
+
+### Sharing dev tools
+
+Let's say you've decided to write a tool that parses production logs called `parse_logs`. It's very
+useful for you, and you want others to use it as well. Sharing it with your
+team is as simple as adding it to the `bin` folder and pushing:
+
+```
+cd "$ZENV_ROOT"  # This puts you in the ZEnv checkout
+mv ~/bin/parse_logs bin/
+git commit -am 'Adding parse_logs tool'
+git push
+```
+
+After you've done this, your coworkers can run `update_zenv` and they'll
+immeditately be able to use your new tool.
 
 
 ### Adding tab completion for git commands
