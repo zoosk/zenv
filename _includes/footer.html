@@ -1,5 +1,11 @@
 <footer class="site-footer">
-    <div class="categories">
-        <span><img class="logo" src="{{prepend: site.baseurl}}/images/ZENV_brand_logo_only2.png" /></span>
+    <div class="site-menu">
+      <span><img class="logo" src="{{prepend: site.baseurl}}/images/ZENV_brand_logo_only2.png" /></span>
+      <span class="from-text">by</span><a target="_blank" href="https://www.zoosk.com?from=zenv"><img class="zoosk-logo-img" src="{{prepend: site.baseurl}}/images/Zoosk-blue-logo.png" /></a>
+      <div class="categories">
+        <span class="category-item"><a href="/">Home</a></span>
+        <span class="category-item"><a href="/docs/quickstart/">Docs</a></span>
+        <span class="category-item bold"><a class="bold" target="_blank" href="{{ site.github_location | prepend: site.baseurl | prepend: site.url }}">GitHub Project</a></span>
+      </div>
     </div>
 </footer>

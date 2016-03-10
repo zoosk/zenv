@@ -1,3 +1,11 @@
+@mixin vertical-align {
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
 body, h1, h2, h3, h4, h5, h6,
 p, blockquote, pre, hr,
 dl, dd, ol, ul, figure {
@@ -204,15 +212,36 @@ code, .code {
 
 header {
     height: 100px;
-    width: 800px;
     margin-left: auto;
     margin-right: auto;
     margin-top: 20px;
     color: $lightTextColor;
+}
+
+// FOOTER TEMPLATE
+
+.site-menu {
     font-size: 12px;
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 
     .logo {
         height: 100px;
+    }
+
+    .from-text {
+        vertical-align: top;
+        padding-left: 15px;
+        padding-right: 15px;
+        padding-top: 40px;
+        display: inline-block;
+    }
+
+    .zoosk-logo-img {
+        width: 75px;
+        vertical-align: top;
+        padding-top: 31px;
     }
 
     .categories {
@@ -227,23 +256,14 @@ header {
     }
 }
 
-// FOOTER TEMPLATE
-
 footer {
     border-top: 1px solid lighten($lightTextColor, 20%);
-    //height: 300px;
     width: 100%;
     color: $lightTextColor;
     font-size: 12px;
     background-color: $backgroundColor;
-
-    .categories {
-        padding-top: 20px;
-        padding-bottom: 20px;
-        margin-left: auto;
-        margin-right: auto;
-        width: 800px;
-    }
+    padding-top: 10px;
+    padding-bottom: 20px;
 }
 
 // EXAMPLES
