@@ -106,7 +106,7 @@
             </div>
             <div class="code-instructions right">
                 <h3>
-                    The Old Way
+                    Before
                 </h3>
                 <p>
                     Each developer needs to be in charge of setting up their own developer environment.  This is usually a set of commands in a wiki somewhere.
@@ -120,9 +120,16 @@
                     <span class="green">ZENv</span>
                 </div>
                 <div class="code-content">
+                    <p># Install ZENv</p>
                     <p>$ git clone https://your-zenv-fork/..</p>
                     <p>$ cd zenv</p>
                     <p>$ python install.py</p>
+                    <p>&nbsp;</p>
+                    <p># Start the ZENv terminal shell</p>
+                    <p>$ zenv</p>
+                    <p>Welcome to ZEnv. <span class="red">&lt;3</span></p>
+                    <p>For help, type 'zhelp'.</p>
+                    <p><span class="green">ZENv</span>$</p>
                 </div>
             </div>
             <div class="code-instructions left">
@@ -176,6 +183,7 @@
                     <p># Pick up changes from git</p>
                     <p><span class="green">ZENv</span>$ update_zenv</p>
                     <p><span class="green">ZENv</span>$ parse_logs</p>
+                    <p><span class="green">ZENv</span>$ ... (really sweet tool output)</p>
                 </div>
             </div>
             <div class="code-instructions left">
@@ -188,6 +196,13 @@
             </div>
         </div>
 
+        <h3 class="section bold example-title center">
+            Working with Multiple Projects
+        </h3>
+
+        <p class="center sub-heading">
+            Sometimes you'll need to work with multiple checkouts of different projects, each with their own set of requirements. ZEnv supports creating sub-environments, allowing you to change the set of available dev tools and environment variables depending on what developers need to work on at the time.
+        </p>
 
         <div class="section">
             <div class="code-box">
@@ -195,13 +210,13 @@
                     Terminal
                 </div>
                 <div class="code-content">
-                    <p>my_terminal$ cd db_backend</p>
-                    <p>my_terminal$ phing -logger -Dprops=../myprops</p>
+                    <p>$ cd db_backend</p>
+                    <p>$ phing -logger -Dprops=../myprops</p>
                     <p>...</p>
                     <p>&nbsp;</p>
                     <p>&nbsp;</p>
-                    <p>my_terminal$ cd ../app_frontend</p>
-                    <p>my_terminal$ make</p>
+                    <p>$ cd ../app_frontend</p>
+                    <p>$ make</p>
                     <p>...</p>
                 </div>
             </div>
@@ -233,12 +248,16 @@
             </div>
             <div class="code-instructions left">
                 <h3>
-                    Add <span class="bold">ZENv</span> to your Dev Environment
+                    With <span class="bold">ZENv</span>
                 </h3>
                 <p>
                     With ZENv, there's no need to spend time figuring out the subtleties of each project's build system.  Just build!
                 </p>
             </div>
+        </div>
+
+        <div class="section center">
+            <a href="https://g.zoosk.com/platform/zenv/wiki"><span class="read-more button">Read More</span></a>
         </div>
     </div>
 </div>
@@ -250,6 +269,7 @@
       <div class="categories">
         <span class="category-item"><a href="/">Home</a></span>
         <span class="category-item"><a href="/docs/quickstart/">Docs</a></span>
+        <span class="category-item"><a href="https://about.zoosk.com/en/engineering-blog">Engineering Blog</a></span>
         <span class="category-item bold"><a class="bold" target="_blank" href="https://g.zoosk.com/platform/zenv">GitHub Project</a></span>
       </div>
     </div>

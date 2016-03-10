@@ -40,6 +40,8 @@ body {
     color: #204851; }
   body .center {
     text-align: center; }
+  body .red {
+    color: red; }
   body .gradient-buffer {
     background: -webkit-gradient(linear, left top, left bottom, from(white), to(rgba(255, 255, 255, 0)));
     background: -moz-linear-gradient(top, white, rgba(255, 255, 255, 0));
@@ -178,6 +180,10 @@ code, .code {
   .bottom-section .sub-heading {
     margin-right: 10%;
     margin-left: 10%; }
+  .bottom-section .read-more {
+    color: #949494;
+    font-size: 2em;
+    margin-top: 30px; }
 
 .home .tagline {
   font-size: 2em;

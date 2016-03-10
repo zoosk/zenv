@@ -70,6 +70,10 @@ body {
         text-align: center;
     }
 
+    .red {
+        color: red;
+    }
+
     .gradient-buffer {
         @include gradient(white, $alphaColor);
         height: 130px;
@@ -206,6 +210,12 @@ code, .code {
     .sub-heading {
         margin-right: 10%;
         margin-left: 10%;
+    }
+
+    .read-more {
+        color: $lightTextColor;
+        font-size: 2em;
+        margin-top: 30px;
     }
 }
 
