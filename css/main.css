@@ -38,6 +38,10 @@ body {
   body .bold {
     font-weight: 600;
     color: #204851; }
+  body .center {
+    text-align: center; }
+  body .red {
+    color: red; }
   body .gradient-buffer {
     background: -webkit-gradient(linear, left top, left bottom, from(white), to(rgba(255, 255, 255, 0)));
     background: -moz-linear-gradient(top, white, rgba(255, 255, 255, 0));
@@ -169,6 +173,17 @@ code, .code {
       text-align: center; }
       .bottom-section .wrapper .about-blurb .blurb-title {
         margin-bottom: 30px; }
+  .bottom-section .example {
+    padding-top: 10px; }
+    .bottom-section .example .example-title {
+      text-align: center; }
+  .bottom-section .sub-heading {
+    margin-right: 10%;
+    margin-left: 10%; }
+  .bottom-section .read-more {
+    color: #949494;
+    font-size: 2em;
+    margin-top: 30px; }
 
 .home .tagline {
   font-size: 2em;
@@ -180,19 +195,33 @@ code, .code {
 
 header {
   height: 100px;
-  width: 800px;
   margin-left: auto;
   margin-right: auto;
   margin-top: 20px;
-  color: #949494;
-  font-size: 12px; }
-  header .logo {
+  color: #949494; }
+
+.site-menu {
+  font-size: 12px;
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto; }
+  .site-menu .logo {
     height: 100px; }
-  header .categories {
+  .site-menu .from-text {
+    vertical-align: top;
+    padding-left: 15px;
+    padding-right: 15px;
+    padding-top: 40px;
+    display: inline-block; }
+  .site-menu .zoosk-logo-img {
+    width: 75px;
+    vertical-align: top;
+    padding-top: 31px; }
+  .site-menu .categories {
     float: right;
     width: 50%;
     padding-top: 40px; }
-    header .categories .category-item {
+    .site-menu .categories .category-item {
       float: left;
       padding-right: 10%; }
 
@@ -201,13 +230,9 @@ footer {
   width: 100%;
   color: #949494;
   font-size: 12px;
-  background-color: #e9eff4; }
-  footer .categories {
-    padding-top: 20px;
-    padding-bottom: 20px;
-    margin-left: auto;
-    margin-right: auto;
-    width: 800px; }
+  background-color: #e9eff4;
+  padding-top: 10px;
+  padding-bottom: 20px; }
 
 .examples {
   margin-left: 10%;
