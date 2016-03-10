@@ -66,8 +66,16 @@ sudo brew install node
 npm install --global gulp-cli
 ```
 
-When somebody new joins the project, this code will automatically run during their
-ZEnv installation, setting up their computer completely painlessly.
+When somebody new joins the project, instead of running the painful and error-prone
+process above, all they have to do is:
+
+```
+git clone https://github.com/<your-fork>/zenv.git
+cd zenv
+python install.py
+```
+
+And as a bonus, they'll pick up all of your dev tools and environment variables as well!
 
 
 ### Sharing dev tools
