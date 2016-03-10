@@ -38,6 +38,8 @@ body {
   body .bold {
     font-weight: 600;
     color: #204851; }
+  body .center {
+    text-align: center; }
   body .gradient-buffer {
     background: -webkit-gradient(linear, left top, left bottom, from(white), to(rgba(255, 255, 255, 0)));
     background: -moz-linear-gradient(top, white, rgba(255, 255, 255, 0));
@@ -169,6 +171,13 @@ code, .code {
       text-align: center; }
       .bottom-section .wrapper .about-blurb .blurb-title {
         margin-bottom: 30px; }
+  .bottom-section .example {
+    padding-top: 10px; }
+    .bottom-section .example .example-title {
+      text-align: center; }
+  .bottom-section .sub-heading {
+    margin-right: 10%;
+    margin-left: 10%; }
 
 .home .tagline {
   font-size: 2em;

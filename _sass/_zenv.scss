@@ -66,6 +66,10 @@ body {
         color: $mainTextColor;
     }
 
+    .center {
+        text-align: center;
+    }
+
     .gradient-buffer {
         @include gradient(white, $alphaColor);
         height: 130px;
@@ -189,6 +193,19 @@ code, .code {
                 margin-bottom: 30px;
             }
         }
+    }
+
+    .example {
+        padding-top: 10px;
+
+        .example-title {
+            text-align: center;
+        }
+    }
+
+    .sub-heading {
+        margin-right: 10%;
+        margin-left: 10%;
     }
 }
 

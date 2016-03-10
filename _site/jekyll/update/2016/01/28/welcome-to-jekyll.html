@@ -29,6 +29,7 @@
     <div class="categories">
       <span class="category-item"><a href="/">Home</a></span>
       <span class="category-item"><a href="https://g.zoosk.com/platform/zenv/wiki">Docs</a></span>
+      <span class="category-item"><a href="https://about.zoosk.com/en/engineering-blog">Engineering Blog</a></span>
       <span class="category-item bold"><a class="bold" target="_blank" href="https://g.zoosk.com/platform/zenv">GitHub Project</a></span>
     </div>
   </div>
@@ -78,6 +79,115 @@
 
             It allows you to keep your shell environment in source control, thereby keeping everyone in sync and allowing access to shared dev tools, aliases, and more.
         </div>
+
+        <h3 class="section bold example-title center">
+            Installing a Tech Stack for a New Project
+        </h3>
+
+        <p class="center sub-heading">
+            For example, the following code makes sure that everybody has <span class="code">brew</span>, <span class="code">node</span>, and <span class="code">gulp</span>:
+        </p>
+
+        <div class="section">
+            <div class="code-box">
+                <div class="code-header">
+                    Terminal
+                </div>
+                <div class="code-content">
+                    <p># Download homebrew for Mac</p>
+                    <p>$ /usr/bin/ruby -e "https://..."</p>
+                    <p>&nbsp;</p>
+                    <p># Install node using brew</p>
+                    <p>$ sudo brew install node</p>
+                    <p>&nbsp;</p>
+                    <p># Install gulp for building</p>
+                    <p>$ npm install --global gulp-cli</p>
+                </div>
+            </div>
+            <div class="code-instructions right">
+                <h3>
+                    The Old Way
+                </h3>
+                <p>
+                    Each developer needs to be in charge of setting up their own developer environment.  This is usually a set of commands in a wiki somewhere.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="code-box">
+                <div class="code-header">
+                    <span class="green">ZENv</span>
+                </div>
+                <div class="code-content">
+                    <p>$ git clone https://your-zenv-fork/..</p>
+                    <p>$ cd zenv</p>
+                    <p>$ python install.py</p>
+                </div>
+            </div>
+            <div class="code-instructions left">
+                <h3>
+                    With <span class="bold">ZENv</span>
+                </h3>
+                <p>
+                    Bringing on new devs is easy now.  Just clone and install!
+                </p>
+            </div>
+        </div>
+
+        <h3 class="section bold example-title center">
+            Sharing Dev Tools
+        </h3>
+
+        <p class="center sub-heading">
+            Let's say you've decided to write a tool that parses production logs called <span class="code">parse_logs</span>. It's very useful for you, and you want others to use it as well. Sharing it with your team is as simple as adding it to the <span class="code">bin</span> folder and pushing:
+        </p>
+
+        <div class="section">
+            <div class="code-box">
+                <div class="code-header">
+                    Terminal
+                </div>
+                <div class="code-content">
+                    <p># This puts you in the ZEnv checkout</p>
+                    <p>$ cd "$ZENV_ROOT"</p>
+                    <p>&nbsp;</p>
+                    <p>$ mv ~/bin/parse_logs bin/</p>
+                    <p>$ git commit -am 'Adding parse_logs tool'</p>
+                    <p>$ git push</p>
+                </div>
+            </div>
+            <div class="code-instructions right">
+                <h3>
+                    Add your tool
+                </h3>
+                <p>
+                    Any executable that works on the command line can be added to ZENv by moving it into the <span class="code">/bin</span> directory.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="code-box">
+                <div class="code-header">
+                    <span class="green">ZENv</span>
+                </div>
+                <div class="code-content">
+                    <p># Pick up changes from git</p>
+                    <p><span class="green">ZENv</span>$ update_zenv</p>
+                    <p><span class="green">ZENv</span>$ parse_logs</p>
+                </div>
+            </div>
+            <div class="code-instructions left">
+                <h3>
+                    and share!
+                </h3>
+                <p>
+                    Other devs can easily pull down the changes to get access to your tool.
+                </p>
+            </div>
+        </div>
+
 
         <div class="section">
             <div class="code-box">
