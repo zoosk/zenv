@@ -37,14 +37,14 @@ developers need to work on at the time.
 1. Fork ZEnv so you can commit your updates.
 2. Clone ZEnv onto your computer.
 3. Optionally, write a script that will set up your environment in `setupscripts/global.setup.sh`
-   (or create a fully [custom developer setup](wiki/Custom-Developer-Setup))
+   (or create a fully [custom developer setup](https://github.com/zoosk/zenv/wiki/Custom-Developer-Setup))
 4. Optionally, add your personal dev tools to the `bin` folder.
 5. Run `python install.py` to install the environment you've created.
 
 After this, you're good to go! If you commit your changes, others will be able
 to run `python install.py` as well to set up their computers.
 
-Check out [the wiki](/wiki) for more information on how everything works.
+Check out [the wiki](https://github.com/zoosk/zenv/wiki) for more information on how everything works.
 
 
 ## Examples
