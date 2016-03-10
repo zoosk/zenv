@@ -53,7 +53,7 @@ function uninstall_zenv() {
 
     read -p 'This will delete all your checkout configuration. Are you sure you want to continue [y/n]? ' TEMP
     if [ "$TEMP" == 'y' ]; then
-        if [ "$ZENV_PLATFORM" = 'osx' ]; then
+        if [ "$ZENV_PLATFORM" == 'osx' ]; then
             sed -i '' '/### BEGIN ZENV INIT/,/### END ZENV INIT/d' "$STARTUP_FILE"
             sed -i '' '/^alias zenv/d' "$STARTUP_FILE"
         else
