@@ -83,8 +83,12 @@ git commit -am 'Adding parse_logs tool'
 git push
 ```
 
-After you've done this, your coworkers can run `update_zenv` and they'll
-immeditately be able to use your new tool.
+After you've done this, your coworkers can use your new tool easily:
+
+```
+update_zenv  # Pick up changes from git
+parse_logs
+```
 
 
 ### Adding tab completion for git commands
