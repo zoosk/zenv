@@ -21,8 +21,8 @@
 #
 
 from distutils import spawn
-from os import environ, unlink
-from os.path import dirname, realpath, join
+from os import environ, unlink, makedirs
+from os.path import dirname, realpath, join, exists
 import re
 import subprocess
 from sys import stdin
@@ -65,6 +65,10 @@ print ' Enter the path to where you store your checked-out git repositories (%s)
 ZENV_WORKSPACE = stdin.readline().rstrip("\n")
 if ZENV_WORKSPACE == '':
     ZENV_WORKSPACE = default
+
+# Create the dir if it doesn't exist
+if not exists(ZENV_WORKSPACE):
+    makedirs(ZENV_WORKSPACE)
 
 # Ask the user for the requested vars
 cli.fill_template_properties(props_template_lines)
@@ -145,4 +149,4 @@ if return_code != 0:
     exit(1)
 
 print '%s %s' % (colors.format_string('<3', colors.RED, colors.BOLD),
-                 colors.format_string("Setup is now complete! Restart your terminal and 'use' a checkout to begin using ZEnv.", colors.BOLD))
+                 colors.format_string("Setup is now complete! Restart your terminal to begin using ZEnv.", colors.BOLD))
