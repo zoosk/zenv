@@ -2,10 +2,10 @@
 
 ## Dev Mode
 
-[Read docs about jekyl here.](https://jekyllrb.com/docs/home/)
-To serve in dev mode: `jekyll serve --baseurl ""`
-This will automatically build your HTML and SASS css files.  
-View the page on localhost:4000
+* [Read docs about jekyl here.](https://jekyllrb.com/docs/home/)
+* To serve in dev mode: `jekyll serve --baseurl ""`
+* This will automatically build your HTML and SASS css files.
+* View the page on localhost:4000
 
 ## Deploying
 
